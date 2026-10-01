@@ -1,0 +1,86 @@
+# minecraft:lush_caves
+1234 -256 -192
+# minecraft:deep_dark
+1234 -256 232
+# minecraft:snowy_slopes
+1234 -240 224
+# minecraft:dripstone_caves
+1234 -208 -64
+# minecraft:jagged_peaks
+1234 -184 -48
+# minecraft:frozen_peaks
+1234 -168 -16
+# minecraft:stony_peaks
+1234 88 88
+# minecraft:deep_dark
+0 -256 -112
+# minecraft:dripstone_caves
+0 -248 -96
+# minecraft:lush_caves
+0 -224 -40
+# minecraft:frozen_peaks
+0 -160 48
+# minecraft:snowy_slopes
+0 -48 152
+# minecraft:wooded_badlands
+0 -24 -256
+# minecraft:badlands
+0 -16 -216
+# minecraft:stony_peaks
+0 40 72
+# minecraft:jagged_peaks
+0 96 224
+# minecraft:dripstone_caves
+7122209284156038298 -256 -256
+# minecraft:lush_caves
+7122209284156038298 -256 24
+# minecraft:deep_dark
+7122209284156038298 -232 -144
+# minecraft:frozen_peaks
+7122209284156038298 -120 136
+# minecraft:snowy_slopes
+7122209284156038298 -104 152
+# minecraft:jagged_peaks
+7122209284156038298 -104 168
+# minecraft:dripstone_caves
+-1 -256 -232
+# minecraft:deep_dark
+-1 -256 -144
+# minecraft:lush_caves
+-1 -240 -64
+# minecraft:frozen_peaks
+-1 -192 192
+# minecraft:stony_peaks
+-1 -184 152
+# minecraft:wooded_badlands
+-1 -176 -256
+# minecraft:badlands
+-1 -168 -224
+# minecraft:snowy_slopes
+-1 -40 -176
+# minecraft:jagged_peaks
+-1 -32 -184
+# minecraft:badlands
+4511451270791457643 -256 -240
+# minecraft:lush_caves
+4511451270791457643 -256 8
+# minecraft:dripstone_caves
+4511451270791457643 -184 -136
+# minecraft:deep_dark
+4511451270791457643 -176 -152
+# minecraft:jagged_peaks
+4511451270791457643 -168 80
+# minecraft:wooded_badlands
+4511451270791457643 -160 -200
+# minecraft:snowy_slopes
+4511451270791457643 -160 80
+# minecraft:frozen_peaks
+4511451270791457643 -64 176
+# minecraft:stony_peaks
+4511451270791457643 192 192
+# Current save: spawn and saved player locations
+4511451270791457643 0 0
+4511451270791457643 -15 6
+4511451270791457643 -28 -12
+4511451270791457643 -25 6
+4511451270791457643 -6 5

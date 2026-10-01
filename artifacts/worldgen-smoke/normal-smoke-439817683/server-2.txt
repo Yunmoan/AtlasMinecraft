@@ -1,0 +1,41 @@
+[13:25:57] [Server thread/INFO]:    _  _____ _        _    ____ 
+[13:25:57] [Server thread/INFO]:   / \|_   _| |      / \  / ___|
+[13:25:57] [Server thread/INFO]:  / _ \ | | | |     / _ \ \___ \
+[13:25:57] [Server thread/INFO]: / ___ \| | | |___ / ___ \ ___) |
+[13:25:57] [Server thread/INFO]: /_/   \_\_| |_____/_/   \_\____/
+[13:25:57] [Server thread/INFO]: Atlas Minecraft Java 1.21.1 server
+[13:25:57] [Server thread/INFO]: Build time: 2026-10-01T05:24:06Z
+[13:25:57] [Server thread/INFO]: Starting Minecraft server version 1.21.1
+[13:25:57] [Server thread/INFO]: Loading properties
+[13:25:57] [Server thread/INFO]: Default game type: CREATIVE
+[13:25:57] [Server thread/INFO]: Preparing level "world"
+[13:25:57] [Server thread/INFO]: World loaded: world (seed 1234, age 255, daytime 13001, weather rain)
+[13:25:57] [Server thread/INFO]: World generator (path: E:\AtlasMinecraft\artifacts\worldgen-smoke\normal-smoke-439817683\world, mode: Minecraft 1.21.1 Overworld (pure Go terrain, caves, ores, forest rocks, blue ice, clay/gravel disks, supported trees and vegetation; incomplete decoration, no structures))
+[13:25:57] [Server thread/WARN]: vanilla generation is incomplete (reason: noise, biomes, surface, caves and supported decoration/trees/vegetation are generated; structures, decorated/special trees and remaining features are not yet implemented)
+[13:25:57] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[13:25:57] [Server thread/INFO]: Spawn chunk ready in 2 ms
+[13:25:57] [Server thread/INFO]: listening on 127.0.0.1:10950 (protocol 767, online mode false)
+[13:25:57] [Server thread/INFO]: login start: TestBot (offline UUID 30fecbe1-2271-3418-8553-d3ded0e95f56)
+[13:25:57] [Server thread/INFO]: player joined: TestBot (eid 1)
+[13:26:16] [Server thread/INFO]: <TestBot> hello from atlas-test
+[13:26:16] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 0 stone
+[13:26:16] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 1 stone
+[13:26:16] [Server thread/INFO]: TestBot issued server command: /tp 0.5 201 0.5
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /help
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /where
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 10 200 0 stone
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 0 201 1 stone
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 0 202 1 stone
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 1 200 0 stone
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 1 201 0 air
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 1 210 0 112
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 2 200 0 grass_block
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /time set night
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /weather rain
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /setblock 0 74 0 stone
+[13:26:17] [Server thread/INFO]: TestBot issued server command: /tp 34 85 -17
+[13:26:17] [Server thread/INFO]: Console issued server command: /save
+[13:26:17] [Server thread/INFO]: player left: TestBot
+[13:26:17] [Server thread/INFO]: World saved.
+[13:26:17] [Server thread/INFO]: Stopping server
+[13:26:17] [Server thread/INFO]: server stopped cleanly

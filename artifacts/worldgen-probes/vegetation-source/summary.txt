@@ -1,0 +1,2 @@
+Summary for vanilla/server-inner.jar
+Decompiled with CFR 0.152

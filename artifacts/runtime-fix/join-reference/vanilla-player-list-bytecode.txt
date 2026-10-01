@@ -1,0 +1,2393 @@
+﻿Compiled from "SourceFile"
+public abstract class aur {
+  public static final java.io.File a;
+
+  public static final java.io.File b;
+
+  public static final java.io.File c;
+
+  public static final java.io.File d;
+
+  public static final wz e;
+
+  public static final wz f;
+
+  private static final org.slf4j.Logger h;
+
+  private static final int i;
+
+  private static final java.text.SimpleDateFormat j;
+
+  private final net.minecraft.server.MinecraftServer k;
+
+  private final java.util.List<aqv> l;
+
+  private final java.util.Map<java.util.UUID, aqv> m;
+
+  private final auy n;
+
+  private final auo o;
+
+  private final aus p;
+
+  private final ava q;
+
+  private final java.util.Map<java.util.UUID, avv> r;
+
+  private final java.util.Map<java.util.UUID, akz> s;
+
+  private final eri t;
+
+  private boolean u;
+
+  private final jt<ala> v;
+
+  protected final int g;
+
+  private int w;
+
+  private int x;
+
+  private boolean y;
+
+  private static final boolean z;
+
+  private int A;
+
+  public aur(net.minecraft.server.MinecraftServer, jt<ala>, eri, int);
+    Code:
+       0: aload_0
+       1: invokespecial #103                // Method java/lang/Object."<init>":()V
+       4: aload_0
+       5: invokestatic  #109                // Method com/google/common/collect/Lists.newArrayList:()Ljava/util/ArrayList;
+       8: putfield      #111                // Field l:Ljava/util/List;
+      11: aload_0
+      12: invokestatic  #117                // Method com/google/common/collect/Maps.newHashMap:()Ljava/util/HashMap;
+      15: putfield      #119                // Field m:Ljava/util/Map;
+      18: aload_0
+      19: new           #121                // class auy
+      22: dup
+      23: getstatic     #123                // Field a:Ljava/io/File;
+      26: invokespecial #126                // Method auy."<init>":(Ljava/io/File;)V
+      29: putfield      #128                // Field n:Lauy;
+      32: aload_0
+      33: new           #130                // class auo
+      36: dup
+      37: getstatic     #132                // Field b:Ljava/io/File;
+      40: invokespecial #133                // Method auo."<init>":(Ljava/io/File;)V
+      43: putfield      #135                // Field o:Lauo;
+      46: aload_0
+      47: new           #137                // class aus
+      50: dup
+      51: getstatic     #139                // Field c:Ljava/io/File;
+      54: invokespecial #140                // Method aus."<init>":(Ljava/io/File;)V
+      57: putfield      #142                // Field p:Laus;
+      60: aload_0
+      61: new           #144                // class ava
+      64: dup
+      65: getstatic     #146                // Field d:Ljava/io/File;
+      68: invokespecial #147                // Method ava."<init>":(Ljava/io/File;)V
+      71: putfield      #149                // Field q:Lava;
+      74: aload_0
+      75: invokestatic  #117                // Method com/google/common/collect/Maps.newHashMap:()Ljava/util/HashMap;
+      78: putfield      #151                // Field r:Ljava/util/Map;
+      81: aload_0
+      82: invokestatic  #117                // Method com/google/common/collect/Maps.newHashMap:()Ljava/util/HashMap;
+      85: putfield      #153                // Field s:Ljava/util/Map;
+      88: aload_0
+      89: aload_1
+      90: putfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      93: aload_0
+      94: aload_2
+      95: putfield      #157                // Field v:Ljt;
+      98: aload_0
+      99: iload         4
+     101: putfield      #159                // Field g:I
+     104: aload_0
+     105: aload_3
+     106: putfield      #161                // Field t:Leri;
+     109: return
+
+  public void a(vt, aqv, arj);
+    Code:
+       0: aload_2
+       1: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+       4: astore        4
+       6: aload_0
+       7: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      10: invokevirtual #180                // Method net/minecraft/server/MinecraftServer.au:()Laun;
+      13: astore        5
+      15: aload         5
+      17: ifnull        65
+      20: aload         5
+      22: aload         4
+      24: invokevirtual #186                // Method com/mojang/authlib/GameProfile.getId:()Ljava/util/UUID;
+      27: invokevirtual #191                // Method aun.a:(Ljava/util/UUID;)Ljava/util/Optional;
+      30: astore        7
+      32: aload         7
+      34: invokedynamic #211,  0            // InvokeDynamic #0:apply:()Ljava/util/function/Function;
+      39: invokevirtual #217                // Method java/util/Optional.map:(Ljava/util/function/Function;)Ljava/util/Optional;
+      42: aload         4
+      44: invokevirtual #197                // Method com/mojang/authlib/GameProfile.getName:()Ljava/lang/String;
+      47: invokevirtual #220                // Method java/util/Optional.orElse:(Ljava/lang/Object;)Ljava/lang/Object;
+      50: checkcast     #222                // class java/lang/String
+      53: astore        6
+      55: aload         5
+      57: aload         4
+      59: invokevirtual #225                // Method aun.a:(Lcom/mojang/authlib/GameProfile;)V
+      62: goto          72
+      65: aload         4
+      67: invokevirtual #197                // Method com/mojang/authlib/GameProfile.getName:()Ljava/lang/String;
+      70: astore        6
+      72: aload_0
+      73: aload_2
+      74: invokevirtual #232                // Method a:(Laqv;)Ljava/util/Optional;
+      77: astore        7
+      79: aload         7
+      81: invokedynamic #238,  0            // InvokeDynamic #1:apply:()Ljava/util/function/Function;
+      86: invokevirtual #241                // Method java/util/Optional.flatMap:(Ljava/util/function/Function;)Ljava/util/Optional;
+      89: getstatic     #246                // Field dcw.h:Lakq;
+      92: invokevirtual #220                // Method java/util/Optional.orElse:(Ljava/lang/Object;)Ljava/lang/Object;
+      95: checkcast     #248                // class akq
+      98: astore        8
+     100: aload_0
+     101: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     104: aload         8
+     106: invokevirtual #251                // Method net/minecraft/server/MinecraftServer.a:(Lakq;)Laqu;
+     109: astore        9
+     111: aload         9
+     113: ifnonnull     140
+     116: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+     119: ldc           #255                // String Unknown respawn dimension {}, defaulting to overworld
+     121: aload         8
+     123: invokeinterface #261,  3          // InterfaceMethod org/slf4j/Logger.warn:(Ljava/lang/String;Ljava/lang/Object;)V
+     128: aload_0
+     129: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     132: invokevirtual #264                // Method net/minecraft/server/MinecraftServer.I:()Laqu;
+     135: astore        10
+     137: goto          144
+     140: aload         9
+     142: astore        10
+     144: aload_2
+     145: aload         10
+     147: invokevirtual #269                // Method aqv.a:(Laqu;)V
+     150: aload_1
+     151: aload_0
+     152: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     155: invokevirtual #273                // Method net/minecraft/server/MinecraftServer.bn:()Z
+     158: invokevirtual #276                // Method vt.a:(Z)Ljava/lang/String;
+     161: astore        11
+     163: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+     166: ldc_w         #278                // String {}[{}] logged in with entity id {} at ({}, {}, {})
+     169: bipush        6
+     171: anewarray     #4                  // class java/lang/Object
+     174: dup
+     175: iconst_0
+     176: aload_2
+     177: invokevirtual #282                // Method aqv.ah:()Lwz;
+     180: invokeinterface #287,  1          // InterfaceMethod wz.getString:()Ljava/lang/String;
+     185: aastore
+     186: dup
+     187: iconst_1
+     188: aload         11
+     190: aastore
+     191: dup
+     192: iconst_2
+     193: aload_2
+     194: invokevirtual #291                // Method aqv.an:()I
+     197: invokestatic  #297                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+     200: aastore
+     201: dup
+     202: iconst_3
+     203: aload_2
+     204: invokevirtual #301                // Method aqv.dt:()D
+     207: invokestatic  #306                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     210: aastore
+     211: dup
+     212: iconst_4
+     213: aload_2
+     214: invokevirtual #309                // Method aqv.dv:()D
+     217: invokestatic  #306                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     220: aastore
+     221: dup
+     222: iconst_5
+     223: aload_2
+     224: invokevirtual #312                // Method aqv.dz:()D
+     227: invokestatic  #306                // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+     230: aastore
+     231: invokeinterface #316,  3          // InterfaceMethod org/slf4j/Logger.info:(Ljava/lang/String;[Ljava/lang/Object;)V
+     236: aload         10
+     238: invokevirtual #320                // Method aqu.A_:()Lerb;
+     241: astore        12
+     243: aload_2
+     244: aload         7
+     246: aconst_null
+     247: invokevirtual #220                // Method java/util/Optional.orElse:(Ljava/lang/Object;)Ljava/lang/Object;
+     250: checkcast     #322                // class ub
+     253: invokevirtual #325                // Method aqv.c:(Lub;)V
+     256: new           #327                // class aru
+     259: dup
+     260: aload_0
+     261: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     264: aload_1
+     265: aload_2
+     266: aload_3
+     267: invokespecial #330                // Method aru."<init>":(Lnet/minecraft/server/MinecraftServer;Lvt;Laqv;Larj;)V
+     270: astore        13
+     272: aload_1
+     273: getstatic     #335                // Field agh.a:Lwh$a;
+     276: aload_0
+     277: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     280: invokevirtual #339                // Method net/minecraft/server/MinecraftServer.bc:()Lka$b;
+     283: invokestatic  #344                // Method wk.a:(Lka;)Ljava/util/function/Function;
+     286: invokeinterface #347,  2          // InterfaceMethod wh$a.a:(Ljava/util/function/Function;)Lwh;
+     291: aload         13
+     293: invokevirtual #350                // Method vt.a:(Lwh;Lwf;)V
+     296: aload         10
+     298: invokevirtual #354                // Method aqu.ab:()Ldcs;
+     301: astore        14
+     303: aload         14
+     305: getstatic     #358                // Field dcs.D:Ldcs$e;
+     308: invokevirtual #361                // Method dcs.b:(Ldcs$e;)Z
+     311: istore        15
+     313: aload         14
+     315: getstatic     #363                // Field dcs.q:Ldcs$e;
+     318: invokevirtual #361                // Method dcs.b:(Ldcs$e;)Z
+     321: istore        16
+     323: aload         14
+     325: getstatic     #365                // Field dcs.w:Ldcs$e;
+     328: invokevirtual #361                // Method dcs.b:(Ldcs$e;)Z
+     331: istore        17
+     333: aload         13
+     335: new           #367                // class adl
+     338: dup
+     339: aload_2
+     340: invokevirtual #291                // Method aqv.an:()I
+     343: aload         12
+     345: invokeinterface #371,  1          // InterfaceMethod erb.l:()Z
+     350: aload_0
+     351: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     354: invokevirtual #375                // Method net/minecraft/server/MinecraftServer.J:()Ljava/util/Set;
+     357: aload_0
+     358: invokevirtual #377                // Method n:()I
+     361: aload_0
+     362: getfield      #379                // Field w:I
+     365: aload_0
+     366: getfield      #381                // Field x:I
+     369: iload         16
+     371: iload         15
+     373: ifne          380
+     376: iconst_1
+     377: goto          381
+     380: iconst_0
+     381: iload         17
+     383: aload_2
+     384: aload         10
+     386: invokevirtual #386                // Method aqv.b:(Laqu;)Lagd;
+     389: aload_0
+     390: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     393: invokevirtual #389                // Method net/minecraft/server/MinecraftServer.aB:()Z
+     396: invokespecial #392                // Method adl."<init>":(IZLjava/util/Set;IIIZZZLagd;Z)V
+     399: invokevirtual #395                // Method aru.b:(Lzg;)V
+     402: aload         13
+     404: new           #397                // class ach
+     407: dup
+     408: aload         12
+     410: invokeinterface #400,  1          // InterfaceMethod erb.q:()Lbqo;
+     415: aload         12
+     417: invokeinterface #402,  1          // InterfaceMethod erb.r:()Z
+     422: invokespecial #405                // Method ach."<init>":(Lbqo;Z)V
+     425: invokevirtual #395                // Method aru.b:(Lzg;)V
+     428: aload         13
+     430: new           #407                // class adu
+     433: dup
+     434: aload_2
+     435: invokevirtual #411                // Method aqv.fZ:()Lcmu;
+     438: invokespecial #414                // Method adu."<init>":(Lcmu;)V
+     441: invokevirtual #395                // Method aru.b:(Lzg;)V
+     444: aload         13
+     446: new           #416                // class aeu
+     449: dup
+     450: aload_2
+     451: invokevirtual #420                // Method aqv.fY:()Lcmw;
+     454: getfield      #424                // Field cmw.k:I
+     457: invokespecial #427                // Method aeu."<init>":(I)V
+     460: invokevirtual #395                // Method aru.b:(Lzg;)V
+     463: aload         13
+     465: new           #429                // class agc
+     468: dup
+     469: aload_0
+     470: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     473: invokevirtual #433                // Method net/minecraft/server/MinecraftServer.aJ:()Lczd;
+     476: invokevirtual #438                // Method czd.b:()Ljava/util/Collection;
+     479: invokespecial #441                // Method agc."<init>":(Ljava/util/Collection;)V
+     482: invokevirtual #395                // Method aru.b:(Lzg;)V
+     485: aload_0
+     486: aload_2
+     487: invokevirtual #444                // Method e:(Laqv;)V
+     490: aload_2
+     491: invokevirtual #447                // Method aqv.I:()Lavv;
+     494: invokevirtual #451                // Method avv.c:()V
+     497: aload_2
+     498: invokevirtual #454                // Method aqv.J:()Lavu;
+     501: aload_2
+     502: invokevirtual #458                // Method avu.a:(Laqv;)V
+     505: aload_0
+     506: aload         10
+     508: invokevirtual #461                // Method aqu.f:()Lalk;
+     511: aload_2
+     512: invokevirtual #464                // Method a:(Lalk;Laqv;)V
+     515: aload_0
+     516: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     519: invokevirtual #467                // Method net/minecraft/server/MinecraftServer.aw:()V
+     522: aload_2
+     523: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+     526: invokevirtual #197                // Method com/mojang/authlib/GameProfile.getName:()Ljava/lang/String;
+     529: aload         6
+     531: invokevirtual #471                // Method java/lang/String.equalsIgnoreCase:(Ljava/lang/String;)Z
+     534: ifeq          559
+     537: ldc_w         #473                // String multiplayer.player.joined
+     540: iconst_1
+     541: anewarray     #4                  // class java/lang/Object
+     544: dup
+     545: iconst_0
+     546: aload_2
+     547: invokevirtual #476                // Method aqv.S_:()Lwz;
+     550: aastore
+     551: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+     554: astore        18
+     556: goto          583
+     559: ldc_w         #481                // String multiplayer.player.joined.renamed
+     562: iconst_2
+     563: anewarray     #4                  // class java/lang/Object
+     566: dup
+     567: iconst_0
+     568: aload_2
+     569: invokevirtual #476                // Method aqv.S_:()Lwz;
+     572: aastore
+     573: dup
+     574: iconst_1
+     575: aload         6
+     577: aastore
+     578: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+     581: astore        18
+     583: aload_0
+     584: aload         18
+     586: getstatic     #487                // Field n.o:Ln;
+     589: invokevirtual #490                // Method xn.a:(Ln;)Lxn;
+     592: iconst_0
+     593: invokevirtual #493                // Method a:(Lwz;Z)V
+     596: aload         13
+     598: aload_2
+     599: invokevirtual #301                // Method aqv.dt:()D
+     602: aload_2
+     603: invokevirtual #309                // Method aqv.dv:()D
+     606: aload_2
+     607: invokevirtual #312                // Method aqv.dz:()D
+     610: aload_2
+     611: invokevirtual #497                // Method aqv.dE:()F
+     614: aload_2
+     615: invokevirtual #500                // Method aqv.dG:()F
+     618: invokevirtual #503                // Method aru.a:(DDDFF)V
+     621: aload_0
+     622: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     625: invokevirtual #507                // Method net/minecraft/server/MinecraftServer.av:()Lajq;
+     628: astore        19
+     630: aload         19
+     632: ifnull        648
+     635: aload_3
+     636: invokevirtual #509                // Method arj.d:()Z
+     639: ifne          648
+     642: aload_2
+     643: aload         19
+     645: invokevirtual #512                // Method aqv.a:(Lajq;)V
+     648: aload_2
+     649: getfield      #515                // Field aqv.c:Laru;
+     652: aload_0
+     653: getfield      #111                // Field l:Ljava/util/List;
+     656: invokestatic  #518                // Method aea.a:(Ljava/util/Collection;)Laea;
+     659: invokevirtual #395                // Method aru.b:(Lzg;)V
+     662: aload_0
+     663: getfield      #111                // Field l:Ljava/util/List;
+     666: aload_2
+     667: invokeinterface #524,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     672: pop
+     673: aload_0
+     674: getfield      #119                // Field m:Ljava/util/Map;
+     677: aload_2
+     678: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+     681: aload_2
+     682: invokeinterface #533,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     687: pop
+     688: aload_0
+     689: aload_2
+     690: invokestatic  #537                // InterfaceMethod java/util/List.of:(Ljava/lang/Object;)Ljava/util/List;
+     693: invokestatic  #518                // Method aea.a:(Ljava/util/Collection;)Laea;
+     696: invokevirtual #539                // Method a:(Lzg;)V
+     699: aload_0
+     700: aload_2
+     701: aload         10
+     703: invokevirtual #542                // Method a:(Laqv;Laqu;)V
+     706: aload         10
+     708: aload_2
+     709: invokevirtual #543                // Method aqu.a:(Laqv;)V
+     712: aload_0
+     713: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     716: invokevirtual #547                // Method net/minecraft/server/MinecraftServer.aN:()Lalt;
+     719: aload_2
+     720: invokevirtual #550                // Method alt.a:(Laqv;)V
+     723: aload_0
+     724: aload_2
+     725: invokevirtual #552                // Method d:(Laqv;)V
+     728: aload         7
+     730: invokevirtual #555                // Method java/util/Optional.isPresent:()Z
+     733: ifeq          975
+     736: aload         7
+     738: invokevirtual #559                // Method java/util/Optional.get:()Ljava/lang/Object;
+     741: checkcast     #322                // class ub
+     744: ldc_w         #561                // String RootVehicle
+     747: bipush        10
+     749: invokevirtual #564                // Method ub.b:(Ljava/lang/String;I)Z
+     752: ifeq          975
+     755: aload         7
+     757: invokevirtual #559                // Method java/util/Optional.get:()Ljava/lang/Object;
+     760: checkcast     #322                // class ub
+     763: ldc_w         #561                // String RootVehicle
+     766: invokevirtual #567                // Method ub.p:(Ljava/lang/String;)Lub;
+     769: astore        20
+     771: aload         20
+     773: ldc_w         #569                // String Entity
+     776: invokevirtual #567                // Method ub.p:(Ljava/lang/String;)Lub;
+     779: aload         10
+     781: aload         10
+     783: invokedynamic #578,  0            // InvokeDynamic #2:apply:(Laqu;)Ljava/util/function/Function;
+     788: invokestatic  #583                // Method bsx.a:(Lub;Ldcw;Ljava/util/function/Function;)Lbsr;
+     791: astore        21
+     793: aload         21
+     795: ifnull        975
+     798: aload         20
+     800: ldc_w         #585                // String Attach
+     803: invokevirtual #587                // Method ub.b:(Ljava/lang/String;)Z
+     806: ifeq          822
+     809: aload         20
+     811: ldc_w         #585                // String Attach
+     814: invokevirtual #590                // Method ub.a:(Ljava/lang/String;)Ljava/util/UUID;
+     817: astore        22
+     819: goto          825
+     822: aconst_null
+     823: astore        22
+     825: aload         21
+     827: invokevirtual #593                // Method bsr.cz:()Ljava/util/UUID;
+     830: aload         22
+     832: invokevirtual #596                // Method java/util/UUID.equals:(Ljava/lang/Object;)Z
+     835: ifeq          849
+     838: aload_2
+     839: aload         21
+     841: iconst_1
+     842: invokevirtual #599                // Method aqv.a:(Lbsr;Z)Z
+     845: pop
+     846: goto          910
+     849: aload         21
+     851: invokevirtual #603                // Method bsr.cW:()Ljava/lang/Iterable;
+     854: invokeinterface #609,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+     859: astore        23
+     861: aload         23
+     863: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     868: ifeq          910
+     871: aload         23
+     873: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     878: checkcast     #26                 // class bsr
+     881: astore        24
+     883: aload         24
+     885: invokevirtual #593                // Method bsr.cz:()Ljava/util/UUID;
+     888: aload         22
+     890: invokevirtual #596                // Method java/util/UUID.equals:(Ljava/lang/Object;)Z
+     893: ifeq          907
+     896: aload_2
+     897: aload         24
+     899: iconst_1
+     900: invokevirtual #599                // Method aqv.a:(Lbsr;Z)Z
+     903: pop
+     904: goto          910
+     907: goto          861
+     910: aload_2
+     911: invokevirtual #620                // Method aqv.bS:()Z
+     914: ifne          975
+     917: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+     920: ldc_w         #622                // String Couldn\'t reattach entity to player
+     923: invokeinterface #625,  2          // InterfaceMethod org/slf4j/Logger.warn:(Ljava/lang/String;)V
+     928: aload         21
+     930: invokevirtual #628                // Method bsr.aq:()V
+     933: aload         21
+     935: invokevirtual #603                // Method bsr.cW:()Ljava/lang/Iterable;
+     938: invokeinterface #609,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+     943: astore        23
+     945: aload         23
+     947: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     952: ifeq          975
+     955: aload         23
+     957: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     962: checkcast     #26                 // class bsr
+     965: astore        24
+     967: aload         24
+     969: invokevirtual #628                // Method bsr.aq:()V
+     972: goto          945
+     975: aload_2
+     976: invokevirtual #630                // Method aqv.h:()V
+     979: return
+
+  protected void a(alk, aqv);
+    Code:
+       0: invokestatic  #679                // Method com/google/common/collect/Sets.newHashSet:()Ljava/util/HashSet;
+       3: astore_3
+       4: aload_1
+       5: invokevirtual #683                // Method alk.g:()Ljava/util/Collection;
+       8: invokeinterface #686,  1          // InterfaceMethod java/util/Collection.iterator:()Ljava/util/Iterator;
+      13: astore        4
+      15: aload         4
+      17: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      22: ifeq          53
+      25: aload         4
+      27: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      32: checkcast     #690                // class eyb
+      35: astore        5
+      37: aload_2
+      38: getfield      #515                // Field aqv.c:Laru;
+      41: aload         5
+      43: iconst_1
+      44: invokestatic  #695                // Method afh.a:(Leyb;Z)Lafh;
+      47: invokevirtual #395                // Method aru.b:(Lzg;)V
+      50: goto          15
+      53: invokestatic  #701                // Method exx.values:()[Lexx;
+      56: astore        4
+      58: aload         4
+      60: arraylength
+      61: istore        5
+      63: iconst_0
+      64: istore        6
+      66: iload         6
+      68: iload         5
+      70: if_icmpge     170
+      73: aload         4
+      75: iload         6
+      77: aaload
+      78: astore        7
+      80: aload_1
+      81: aload         7
+      83: invokevirtual #706                // Method alk.a:(Lexx;)Lexy;
+      86: astore        8
+      88: aload         8
+      90: ifnull        164
+      93: aload_3
+      94: aload         8
+      96: invokeinterface #709,  2          // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+     101: ifne          164
+     104: aload_1
+     105: aload         8
+     107: invokevirtual #712                // Method alk.d:(Lexy;)Ljava/util/List;
+     110: astore        9
+     112: aload         9
+     114: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+     119: astore        10
+     121: aload         10
+     123: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     128: ifeq          155
+     131: aload         10
+     133: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     138: checkcast     #717                // class zg
+     141: astore        11
+     143: aload_2
+     144: getfield      #515                // Field aqv.c:Laru;
+     147: aload         11
+     149: invokevirtual #395                // Method aru.b:(Lzg;)V
+     152: goto          121
+     155: aload_3
+     156: aload         8
+     158: invokeinterface #718,  2          // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+     163: pop
+     164: iinc          6, 1
+     167: goto          66
+     170: return
+
+  public void a(aqu);
+    Code:
+       0: aload_1
+       1: invokevirtual #731                // Method aqu.C_:()Ldut;
+       4: new           #7                  // class aur$1
+       7: dup
+       8: aload_0
+       9: invokespecial #734                // Method aur$1."<init>":(Laur;)V
+      12: invokevirtual #739                // Method dut.a:(Ldur;)V
+      15: return
+
+  public java.util.Optional<ub> a(aqv);
+    Code:
+       0: aload_0
+       1: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       4: invokevirtual #744                // Method net/minecraft/server/MinecraftServer.bb:()Lerl;
+       7: invokeinterface #749,  1          // InterfaceMethod erl.w:()Lub;
+      12: astore_2
+      13: aload_0
+      14: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      17: aload_1
+      18: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+      21: invokevirtual #752                // Method net/minecraft/server/MinecraftServer.a:(Lcom/mojang/authlib/GameProfile;)Z
+      24: ifeq          55
+      27: aload_2
+      28: ifnull        55
+      31: aload_2
+      32: invokestatic  #755                // Method java/util/Optional.of:(Ljava/lang/Object;)Ljava/util/Optional;
+      35: astore_3
+      36: aload_1
+      37: aload_2
+      38: invokevirtual #757                // Method aqv.g:(Lub;)V
+      41: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+      44: ldc_w         #759                // String loading single player
+      47: invokeinterface #762,  2          // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;)V
+      52: goto          64
+      55: aload_0
+      56: getfield      #161                // Field t:Leri;
+      59: aload_1
+      60: invokevirtual #767                // Method eri.b:(Lcmx;)Ljava/util/Optional;
+      63: astore_3
+      64: aload_3
+      65: areturn
+
+  protected void b(aqv);
+    Code:
+       0: aload_0
+       1: getfield      #161                // Field t:Leri;
+       4: aload_1
+       5: invokevirtual #770                // Method eri.a:(Lcmx;)V
+       8: aload_0
+       9: getfield      #151                // Field r:Ljava/util/Map;
+      12: aload_1
+      13: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+      16: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      21: checkcast     #449                // class avv
+      24: astore_2
+      25: aload_2
+      26: ifnull        33
+      29: aload_2
+      30: invokevirtual #774                // Method avv.a:()V
+      33: aload_0
+      34: getfield      #153                // Field s:Ljava/util/Map;
+      37: aload_1
+      38: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+      41: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      46: checkcast     #776                // class akz
+      49: astore_3
+      50: aload_3
+      51: ifnull        58
+      54: aload_3
+      55: invokevirtual #778                // Method akz.b:()V
+      58: return
+
+  public void c(aqv);
+    Code:
+       0: aload_1
+       1: invokevirtual #782                // Method aqv.A:()Laqu;
+       4: astore_2
+       5: aload_1
+       6: getstatic     #787                // Field avz.j:Lakr;
+       9: invokevirtual #790                // Method aqv.a:(Lakr;)V
+      12: aload_0
+      13: aload_1
+      14: invokevirtual #792                // Method b:(Laqv;)V
+      17: aload_1
+      18: invokevirtual #620                // Method aqv.bS:()Z
+      21: ifeq          65
+      24: aload_1
+      25: invokevirtual #796                // Method aqv.cZ:()Lbsr;
+      28: astore_3
+      29: aload_3
+      30: invokevirtual #799                // Method bsr.cY:()Z
+      33: ifeq          65
+      36: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+      39: ldc_w         #801                // String Removing player mount
+      42: invokeinterface #762,  2          // InterfaceMethod org/slf4j/Logger.debug:(Ljava/lang/String;)V
+      47: aload_1
+      48: invokevirtual #804                // Method aqv.ad:()V
+      51: aload_3
+      52: invokevirtual #808                // Method bsr.cV:()Ljava/util/stream/Stream;
+      55: invokedynamic #819,  0            // InvokeDynamic #3:accept:()Ljava/util/function/Consumer;
+      60: invokeinterface #825,  2          // InterfaceMethod java/util/stream/Stream.forEach:(Ljava/util/function/Consumer;)V
+      65: aload_1
+      66: invokevirtual #828                // Method aqv.ak:()V
+      69: aload_2
+      70: aload_1
+      71: getstatic     #831                // Field bsr$c.d:Lbsr$c;
+      74: invokevirtual #834                // Method aqu.a:(Laqv;Lbsr$c;)V
+      77: aload_1
+      78: invokevirtual #838                // Method aqv.R:()Lakz;
+      81: invokevirtual #839                // Method akz.a:()V
+      84: aload_0
+      85: getfield      #111                // Field l:Ljava/util/List;
+      88: aload_1
+      89: invokeinterface #842,  2          // InterfaceMethod java/util/List.remove:(Ljava/lang/Object;)Z
+      94: pop
+      95: aload_0
+      96: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      99: invokevirtual #547                // Method net/minecraft/server/MinecraftServer.aN:()Lalt;
+     102: aload_1
+     103: invokevirtual #843                // Method alt.b:(Laqv;)V
+     106: aload_1
+     107: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+     110: astore_3
+     111: aload_0
+     112: getfield      #119                // Field m:Ljava/util/Map;
+     115: aload_3
+     116: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+     121: checkcast     #170                // class aqv
+     124: astore        4
+     126: aload         4
+     128: aload_1
+     129: if_acmpne     165
+     132: aload_0
+     133: getfield      #119                // Field m:Ljava/util/Map;
+     136: aload_3
+     137: invokeinterface #845,  2          // InterfaceMethod java/util/Map.remove:(Ljava/lang/Object;)Ljava/lang/Object;
+     142: pop
+     143: aload_0
+     144: getfield      #151                // Field r:Ljava/util/Map;
+     147: aload_3
+     148: invokeinterface #845,  2          // InterfaceMethod java/util/Map.remove:(Ljava/lang/Object;)Ljava/lang/Object;
+     153: pop
+     154: aload_0
+     155: getfield      #153                // Field s:Ljava/util/Map;
+     158: aload_3
+     159: invokeinterface #845,  2          // InterfaceMethod java/util/Map.remove:(Ljava/lang/Object;)Ljava/lang/Object;
+     164: pop
+     165: aload_0
+     166: new           #847                // class adz
+     169: dup
+     170: aload_1
+     171: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+     174: invokestatic  #537                // InterfaceMethod java/util/List.of:(Ljava/lang/Object;)Ljava/util/List;
+     177: invokespecial #850                // Method adz."<init>":(Ljava/util/List;)V
+     180: invokevirtual #539                // Method a:(Lzg;)V
+     183: return
+
+  public wz a(java.net.SocketAddress, com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_0
+       1: getfield      #128                // Field n:Lauy;
+       4: aload_2
+       5: invokevirtual #853                // Method auy.a:(Lcom/mojang/authlib/GameProfile;)Z
+       8: ifeq          81
+      11: aload_0
+      12: getfield      #128                // Field n:Lauy;
+      15: aload_2
+      16: invokevirtual #856                // Method auy.b:(Ljava/lang/Object;)Lauv;
+      19: checkcast     #858                // class auz
+      22: astore_3
+      23: ldc_w         #860                // String multiplayer.disconnect.banned.reason
+      26: iconst_1
+      27: anewarray     #4                  // class java/lang/Object
+      30: dup
+      31: iconst_0
+      32: aload_3
+      33: invokevirtual #862                // Method auz.d:()Ljava/lang/String;
+      36: aastore
+      37: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+      40: astore        4
+      42: aload_3
+      43: invokevirtual #865                // Method auz.c:()Ljava/util/Date;
+      46: ifnull        78
+      49: aload         4
+      51: ldc_w         #867                // String multiplayer.disconnect.banned.expiration
+      54: iconst_1
+      55: anewarray     #4                  // class java/lang/Object
+      58: dup
+      59: iconst_0
+      60: getstatic     #869                // Field j:Ljava/text/SimpleDateFormat;
+      63: aload_3
+      64: invokevirtual #865                // Method auz.c:()Ljava/util/Date;
+      67: invokevirtual #875                // Method java/text/SimpleDateFormat.format:(Ljava/util/Date;)Ljava/lang/String;
+      70: aastore
+      71: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+      74: invokevirtual #878                // Method xn.b:(Lwz;)Lxn;
+      77: pop
+      78: aload         4
+      80: areturn
+      81: aload_0
+      82: aload_2
+      83: invokevirtual #882                // Method c:(Lcom/mojang/authlib/GameProfile;)Z
+      86: ifne          96
+      89: ldc_w         #884                // String multiplayer.disconnect.not_whitelisted
+      92: invokestatic  #887                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+      95: areturn
+      96: aload_0
+      97: getfield      #135                // Field o:Lauo;
+     100: aload_1
+     101: invokevirtual #890                // Method auo.a:(Ljava/net/SocketAddress;)Z
+     104: ifeq          174
+     107: aload_0
+     108: getfield      #135                // Field o:Lauo;
+     111: aload_1
+     112: invokevirtual #893                // Method auo.b:(Ljava/net/SocketAddress;)Laup;
+     115: astore_3
+     116: ldc_w         #895                // String multiplayer.disconnect.banned_ip.reason
+     119: iconst_1
+     120: anewarray     #4                  // class java/lang/Object
+     123: dup
+     124: iconst_0
+     125: aload_3
+     126: invokevirtual #898                // Method aup.d:()Ljava/lang/String;
+     129: aastore
+     130: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+     133: astore        4
+     135: aload_3
+     136: invokevirtual #899                // Method aup.c:()Ljava/util/Date;
+     139: ifnull        171
+     142: aload         4
+     144: ldc_w         #901                // String multiplayer.disconnect.banned_ip.expiration
+     147: iconst_1
+     148: anewarray     #4                  // class java/lang/Object
+     151: dup
+     152: iconst_0
+     153: getstatic     #869                // Field j:Ljava/text/SimpleDateFormat;
+     156: aload_3
+     157: invokevirtual #899                // Method aup.c:()Ljava/util/Date;
+     160: invokevirtual #875                // Method java/text/SimpleDateFormat.format:(Ljava/util/Date;)Ljava/lang/String;
+     163: aastore
+     164: invokestatic  #479                // InterfaceMethod wz.a:(Ljava/lang/String;[Ljava/lang/Object;)Lxn;
+     167: invokevirtual #878                // Method xn.b:(Lwz;)Lxn;
+     170: pop
+     171: aload         4
+     173: areturn
+     174: aload_0
+     175: getfield      #111                // Field l:Ljava/util/List;
+     178: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+     183: aload_0
+     184: getfield      #159                // Field g:I
+     187: if_icmplt     205
+     190: aload_0
+     191: aload_2
+     192: invokevirtual #906                // Method d:(Lcom/mojang/authlib/GameProfile;)Z
+     195: ifne          205
+     198: ldc_w         #908                // String multiplayer.disconnect.server_full
+     201: invokestatic  #887                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+     204: areturn
+     205: aconst_null
+     206: areturn
+
+  public aqv a(com.mojang.authlib.GameProfile, aqh);
+    Code:
+       0: new           #170                // class aqv
+       3: dup
+       4: aload_0
+       5: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       8: aload_0
+       9: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      12: invokevirtual #264                // Method net/minecraft/server/MinecraftServer.I:()Laqu;
+      15: aload_1
+      16: aload_2
+      17: invokespecial #915                // Method aqv."<init>":(Lnet/minecraft/server/MinecraftServer;Laqu;Lcom/mojang/authlib/GameProfile;Laqh;)V
+      20: areturn
+
+  public boolean e(com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_1
+       1: invokevirtual #186                // Method com/mojang/authlib/GameProfile.getId:()Ljava/util/UUID;
+       4: astore_2
+       5: invokestatic  #919                // Method com/google/common/collect/Sets.newIdentityHashSet:()Ljava/util/Set;
+       8: astore_3
+       9: aload_0
+      10: getfield      #111                // Field l:Ljava/util/List;
+      13: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      18: astore        4
+      20: aload         4
+      22: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      27: ifeq          66
+      30: aload         4
+      32: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      37: checkcast     #170                // class aqv
+      40: astore        5
+      42: aload         5
+      44: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+      47: aload_2
+      48: invokevirtual #596                // Method java/util/UUID.equals:(Ljava/lang/Object;)Z
+      51: ifeq          63
+      54: aload_3
+      55: aload         5
+      57: invokeinterface #718,  2          // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      62: pop
+      63: goto          20
+      66: aload_0
+      67: getfield      #119                // Field m:Ljava/util/Map;
+      70: aload_1
+      71: invokevirtual #186                // Method com/mojang/authlib/GameProfile.getId:()Ljava/util/UUID;
+      74: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      79: checkcast     #170                // class aqv
+      82: astore        4
+      84: aload         4
+      86: ifnull        98
+      89: aload_3
+      90: aload         4
+      92: invokeinterface #718,  2          // InterfaceMethod java/util/Set.add:(Ljava/lang/Object;)Z
+      97: pop
+      98: aload_3
+      99: invokeinterface #920,  1          // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+     104: astore        5
+     106: aload         5
+     108: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     113: ifeq          142
+     116: aload         5
+     118: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     123: checkcast     #170                // class aqv
+     126: astore        6
+     128: aload         6
+     130: getfield      #515                // Field aqv.c:Laru;
+     133: getstatic     #922                // Field f:Lwz;
+     136: invokevirtual #925                // Method aru.a:(Lwz;)V
+     139: goto          106
+     142: aload_3
+     143: invokeinterface #928,  1          // InterfaceMethod java/util/Set.isEmpty:()Z
+     148: ifne          155
+     151: iconst_1
+     152: goto          156
+     155: iconst_0
+     156: ireturn
+
+  public aqv a(aqv, boolean, bsr$c);
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: aload_1
+       5: invokeinterface #842,  2          // InterfaceMethod java/util/List.remove:(Ljava/lang/Object;)Z
+      10: pop
+      11: aload_1
+      12: invokevirtual #782                // Method aqv.A:()Laqu;
+      15: aload_1
+      16: aload_3
+      17: invokevirtual #834                // Method aqu.a:(Laqv;Lbsr$c;)V
+      20: aload_1
+      21: iload_2
+      22: getstatic     #933                // Field eqc.a:Leqc$a;
+      25: invokevirtual #936                // Method aqv.a:(ZLeqc$a;)Leqc;
+      28: astore        4
+      30: aload         4
+      32: invokevirtual #938                // Method eqc.a:()Laqu;
+      35: astore        5
+      37: new           #170                // class aqv
+      40: dup
+      41: aload_0
+      42: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      45: aload         5
+      47: aload_1
+      48: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+      51: aload_1
+      52: invokevirtual #942                // Method aqv.C:()Laqh;
+      55: invokespecial #915                // Method aqv."<init>":(Lnet/minecraft/server/MinecraftServer;Laqu;Lcom/mojang/authlib/GameProfile;Laqh;)V
+      58: astore        6
+      60: aload         6
+      62: aload_1
+      63: getfield      #515                // Field aqv.c:Laru;
+      66: putfield      #515                // Field aqv.c:Laru;
+      69: aload         6
+      71: aload_1
+      72: iload_2
+      73: invokevirtual #945                // Method aqv.a:(Laqv;Z)V
+      76: aload         6
+      78: aload_1
+      79: invokevirtual #291                // Method aqv.an:()I
+      82: invokevirtual #947                // Method aqv.e:(I)V
+      85: aload         6
+      87: aload_1
+      88: invokevirtual #951                // Method aqv.fq:()Lbtg;
+      91: invokevirtual #954                // Method aqv.a:(Lbtg;)V
+      94: aload         4
+      96: invokevirtual #956                // Method eqc.f:()Z
+      99: ifne          108
+     102: aload         6
+     104: aload_1
+     105: invokevirtual #957                // Method aqv.b:(Laqv;)V
+     108: aload_1
+     109: invokevirtual #960                // Method aqv.ao:()Ljava/util/Set;
+     112: invokeinterface #920,  1          // InterfaceMethod java/util/Set.iterator:()Ljava/util/Iterator;
+     117: astore        7
+     119: aload         7
+     121: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     126: ifeq          152
+     129: aload         7
+     131: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     136: checkcast     #222                // class java/lang/String
+     139: astore        8
+     141: aload         6
+     143: aload         8
+     145: invokevirtual #962                // Method aqv.a:(Ljava/lang/String;)Z
+     148: pop
+     149: goto          119
+     152: aload         4
+     154: invokevirtual #965                // Method eqc.b:()Lexc;
+     157: astore        7
+     159: aload         6
+     161: aload         7
+     163: getfield      #969                // Field exc.c:D
+     166: aload         7
+     168: getfield      #971                // Field exc.d:D
+     171: aload         7
+     173: getfield      #973                // Field exc.e:D
+     176: aload         4
+     178: invokevirtual #975                // Method eqc.d:()F
+     181: aload         4
+     183: invokevirtual #977                // Method eqc.e:()F
+     186: invokevirtual #979                // Method aqv.b:(DDDFF)V
+     189: aload         4
+     191: invokevirtual #956                // Method eqc.f:()Z
+     194: ifeq          216
+     197: aload         6
+     199: getfield      #515                // Field aqv.c:Laru;
+     202: new           #35                 // class adb
+     205: dup
+     206: getstatic     #982                // Field adb.b:Ladb$a;
+     209: fconst_0
+     210: invokespecial #985                // Method adb."<init>":(Ladb$a;F)V
+     213: invokevirtual #395                // Method aru.b:(Lzg;)V
+     216: iload_2
+     217: ifeq          224
+     220: iconst_1
+     221: goto          225
+     224: iconst_0
+     225: istore        8
+     227: aload         6
+     229: invokevirtual #782                // Method aqv.A:()Laqu;
+     232: astore        9
+     234: aload         9
+     236: invokevirtual #320                // Method aqu.A_:()Lerb;
+     239: astore        10
+     241: aload         6
+     243: getfield      #515                // Field aqv.c:Laru;
+     246: new           #987                // class aei
+     249: dup
+     250: aload         6
+     252: aload         9
+     254: invokevirtual #386                // Method aqv.b:(Laqu;)Lagd;
+     257: iload         8
+     259: invokespecial #990                // Method aei."<init>":(Lagd;B)V
+     262: invokevirtual #395                // Method aru.b:(Lzg;)V
+     265: aload         6
+     267: getfield      #515                // Field aqv.c:Laru;
+     270: aload         6
+     272: invokevirtual #301                // Method aqv.dt:()D
+     275: aload         6
+     277: invokevirtual #309                // Method aqv.dv:()D
+     280: aload         6
+     282: invokevirtual #312                // Method aqv.dz:()D
+     285: aload         6
+     287: invokevirtual #497                // Method aqv.dE:()F
+     290: aload         6
+     292: invokevirtual #500                // Method aqv.dG:()F
+     295: invokevirtual #503                // Method aru.a:(DDDFF)V
+     298: aload         6
+     300: getfield      #515                // Field aqv.c:Laru;
+     303: new           #992                // class aex
+     306: dup
+     307: aload         5
+     309: invokevirtual #996                // Method aqu.V:()Ljd;
+     312: aload         5
+     314: invokevirtual #999                // Method aqu.W:()F
+     317: invokespecial #1002               // Method aex."<init>":(Ljd;F)V
+     320: invokevirtual #395                // Method aru.b:(Lzg;)V
+     323: aload         6
+     325: getfield      #515                // Field aqv.c:Laru;
+     328: new           #397                // class ach
+     331: dup
+     332: aload         10
+     334: invokeinterface #400,  1          // InterfaceMethod erb.q:()Lbqo;
+     339: aload         10
+     341: invokeinterface #402,  1          // InterfaceMethod erb.r:()Z
+     346: invokespecial #405                // Method ach."<init>":(Lbqo;Z)V
+     349: invokevirtual #395                // Method aru.b:(Lzg;)V
+     352: aload         6
+     354: getfield      #515                // Field aqv.c:Laru;
+     357: new           #1004               // class afd
+     360: dup
+     361: aload         6
+     363: getfield      #1008               // Field aqv.cs:F
+     366: aload         6
+     368: getfield      #1011               // Field aqv.cr:I
+     371: aload         6
+     373: getfield      #1014               // Field aqv.cq:I
+     376: invokespecial #1017               // Method afd."<init>":(FII)V
+     379: invokevirtual #395                // Method aru.b:(Lzg;)V
+     382: aload_0
+     383: aload         6
+     385: invokevirtual #552                // Method d:(Laqv;)V
+     388: aload_0
+     389: aload         6
+     391: aload         5
+     393: invokevirtual #542                // Method a:(Laqv;Laqu;)V
+     396: aload_0
+     397: aload         6
+     399: invokevirtual #444                // Method e:(Laqv;)V
+     402: aload         5
+     404: aload         6
+     406: invokevirtual #1018               // Method aqu.b:(Laqv;)V
+     409: aload_0
+     410: getfield      #111                // Field l:Ljava/util/List;
+     413: aload         6
+     415: invokeinterface #524,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+     420: pop
+     421: aload_0
+     422: getfield      #119                // Field m:Ljava/util/Map;
+     425: aload         6
+     427: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+     430: aload         6
+     432: invokeinterface #533,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     437: pop
+     438: aload         6
+     440: invokevirtual #630                // Method aqv.h:()V
+     443: aload         6
+     445: aload         6
+     447: invokevirtual #1021               // Method aqv.ew:()F
+     450: invokevirtual #1024               // Method aqv.v:(F)V
+     453: iload_2
+     454: ifne          538
+     457: aload         4
+     459: invokevirtual #965                // Method eqc.b:()Lexc;
+     462: invokestatic  #1029               // Method jd.a:(Ljw;)Ljd;
+     465: astore        11
+     467: aload         5
+     469: aload         11
+     471: invokevirtual #1033               // Method aqu.a_:(Ljd;)Ldtc;
+     474: astore        12
+     476: aload         12
+     478: getstatic     #1039               // Field dga.pl:Ldfy;
+     481: invokevirtual #1044               // Method dtc.a:(Ldfy;)Z
+     484: ifeq          538
+     487: aload         6
+     489: getfield      #515                // Field aqv.c:Laru;
+     492: new           #1046               // class afp
+     495: dup
+     496: getstatic     #1052               // Field avp.vy:Ljm$c;
+     499: getstatic     #1057               // Field avq.e:Lavq;
+     502: aload         11
+     504: invokevirtual #1059               // Method jd.u:()I
+     507: i2d
+     508: aload         11
+     510: invokevirtual #1061               // Method jd.v:()I
+     513: i2d
+     514: aload         11
+     516: invokevirtual #1063               // Method jd.w:()I
+     519: i2d
+     520: fconst_1
+     521: fconst_1
+     522: aload         5
+     524: invokevirtual #1067               // Method aqu.E_:()Layw;
+     527: invokeinterface #1072,  1         // InterfaceMethod ayw.g:()J
+     532: invokespecial #1075               // Method afp."<init>":(Ljm;Lavq;DDDFFJ)V
+     535: invokevirtual #395                // Method aru.b:(Lzg;)V
+     538: aload         6
+     540: areturn
+
+  public void d(aqv);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_1
+       3: getfield      #515                // Field aqv.c:Laru;
+       6: invokevirtual #1083               // Method a:(Lbtn;Laru;)V
+       9: return
+
+  public void a(btn, aru);
+    Code:
+       0: aload_1
+       1: invokevirtual #1088               // Method btn.et:()Ljava/util/Collection;
+       4: invokeinterface #686,  1          // InterfaceMethod java/util/Collection.iterator:()Ljava/util/Iterator;
+       9: astore_3
+      10: aload_3
+      11: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      16: ifeq          51
+      19: aload_3
+      20: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      25: checkcast     #1090               // class brz
+      28: astore        4
+      30: aload_2
+      31: new           #1092               // class agb
+      34: dup
+      35: aload_1
+      36: invokevirtual #1093               // Method btn.an:()I
+      39: aload         4
+      41: iconst_0
+      42: invokespecial #1096               // Method agb."<init>":(ILbrz;Z)V
+      45: invokevirtual #395                // Method aru.b:(Lzg;)V
+      48: goto          10
+      51: return
+
+  public void e(aqv);
+    Code:
+       0: aload_1
+       1: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+       4: astore_2
+       5: aload_0
+       6: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       9: aload_2
+      10: invokevirtual #1101               // Method net/minecraft/server/MinecraftServer.c:(Lcom/mojang/authlib/GameProfile;)I
+      13: istore_3
+      14: aload_0
+      15: aload_1
+      16: iload_3
+      17: invokevirtual #1104               // Method a:(Laqv;I)V
+      20: return
+
+  public void d();
+    Code:
+       0: aload_0
+       1: dup
+       2: getfield      #1106               // Field A:I
+       5: iconst_1
+       6: iadd
+       7: dup_x1
+       8: putfield      #1106               // Field A:I
+      11: sipush        600
+      14: if_icmple     43
+      17: aload_0
+      18: new           #43                 // class aea
+      21: dup
+      22: getstatic     #1109               // Field aea$a.e:Laea$a;
+      25: invokestatic  #1114               // Method java/util/EnumSet.of:(Ljava/lang/Enum;)Ljava/util/EnumSet;
+      28: aload_0
+      29: getfield      #111                // Field l:Ljava/util/List;
+      32: invokespecial #1117               // Method aea."<init>":(Ljava/util/EnumSet;Ljava/util/Collection;)V
+      35: invokevirtual #539                // Method a:(Lzg;)V
+      38: aload_0
+      39: iconst_0
+      40: putfield      #1106               // Field A:I
+      43: return
+
+  public void a(zg<?>);
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+       9: astore_2
+      10: aload_2
+      11: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      16: ifeq          40
+      19: aload_2
+      20: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      25: checkcast     #170                // class aqv
+      28: astore_3
+      29: aload_3
+      30: getfield      #515                // Field aqv.c:Laru;
+      33: aload_1
+      34: invokevirtual #395                // Method aru.b:(Lzg;)V
+      37: goto          10
+      40: return
+
+  public void a(zg<?>, akq<dcw>);
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+       9: astore_3
+      10: aload_3
+      11: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      16: ifeq          54
+      19: aload_3
+      20: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      25: checkcast     #170                // class aqv
+      28: astore        4
+      30: aload         4
+      32: invokevirtual #1124               // Method aqv.dO:()Ldcw;
+      35: invokevirtual #1128               // Method dcw.af:()Lakq;
+      38: aload_2
+      39: if_acmpne     51
+      42: aload         4
+      44: getfield      #515                // Field aqv.c:Laru;
+      47: aload_1
+      48: invokevirtual #395                // Method aru.b:(Lzg;)V
+      51: goto          10
+      54: return
+
+  public void a(cmx, wz);
+    Code:
+       0: aload_1
+       1: invokevirtual #1135               // Method cmx.ck:()Leyb;
+       4: astore_3
+       5: aload_3
+       6: ifnonnull     10
+       9: return
+      10: aload_3
+      11: invokevirtual #1138               // Method eyi.g:()Ljava/util/Collection;
+      14: astore        4
+      16: aload         4
+      18: invokeinterface #686,  1          // InterfaceMethod java/util/Collection.iterator:()Ljava/util/Iterator;
+      23: astore        5
+      25: aload         5
+      27: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      32: ifeq          78
+      35: aload         5
+      37: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      42: checkcast     #222                // class java/lang/String
+      45: astore        6
+      47: aload_0
+      48: aload         6
+      50: invokevirtual #1141               // Method a:(Ljava/lang/String;)Laqv;
+      53: astore        7
+      55: aload         7
+      57: ifnull        25
+      60: aload         7
+      62: aload_1
+      63: if_acmpne     69
+      66: goto          25
+      69: aload         7
+      71: aload_2
+      72: invokevirtual #1142               // Method aqv.a:(Lwz;)V
+      75: goto          25
+      78: return
+
+  public void b(cmx, wz);
+    Code:
+       0: aload_1
+       1: invokevirtual #1135               // Method cmx.ck:()Leyb;
+       4: astore_3
+       5: aload_3
+       6: ifnonnull     16
+       9: aload_0
+      10: aload_2
+      11: iconst_0
+      12: invokevirtual #493                // Method a:(Lwz;Z)V
+      15: return
+      16: iconst_0
+      17: istore        4
+      19: iload         4
+      21: aload_0
+      22: getfield      #111                // Field l:Ljava/util/List;
+      25: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+      30: if_icmpge     70
+      33: aload_0
+      34: getfield      #111                // Field l:Ljava/util/List;
+      37: iload         4
+      39: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      44: checkcast     #170                // class aqv
+      47: astore        5
+      49: aload         5
+      51: invokevirtual #1150               // Method aqv.ck:()Leyb;
+      54: aload_3
+      55: if_acmpeq     64
+      58: aload         5
+      60: aload_2
+      61: invokevirtual #1142               // Method aqv.a:(Lwz;)V
+      64: iinc          4, 1
+      67: goto          19
+      70: return
+
+  public java.lang.String[] e();
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+       9: anewarray     #222                // class java/lang/String
+      12: astore_1
+      13: iconst_0
+      14: istore_2
+      15: iload_2
+      16: aload_0
+      17: getfield      #111                // Field l:Ljava/util/List;
+      20: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+      25: if_icmpge     56
+      28: aload_1
+      29: iload_2
+      30: aload_0
+      31: getfield      #111                // Field l:Ljava/util/List;
+      34: iload_2
+      35: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      40: checkcast     #170                // class aqv
+      43: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+      46: invokevirtual #197                // Method com/mojang/authlib/GameProfile.getName:()Ljava/lang/String;
+      49: aastore
+      50: iinc          2, 1
+      53: goto          15
+      56: aload_1
+      57: areturn
+
+  public auy f();
+    Code:
+       0: aload_0
+       1: getfield      #128                // Field n:Lauy;
+       4: areturn
+
+  public auo g();
+    Code:
+       0: aload_0
+       1: getfield      #135                // Field o:Lauo;
+       4: areturn
+
+  public void a(com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_0
+       1: getfield      #142                // Field p:Laus;
+       4: new           #1157               // class aut
+       7: dup
+       8: aload_1
+       9: aload_0
+      10: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      13: invokevirtual #1159               // Method net/minecraft/server/MinecraftServer.k:()I
+      16: aload_0
+      17: getfield      #142                // Field p:Laus;
+      20: aload_1
+      21: invokevirtual #1160               // Method aus.a:(Lcom/mojang/authlib/GameProfile;)Z
+      24: invokespecial #1163               // Method aut."<init>":(Lcom/mojang/authlib/GameProfile;IZ)V
+      27: invokevirtual #1166               // Method aus.a:(Lauv;)V
+      30: aload_0
+      31: aload_1
+      32: invokevirtual #186                // Method com/mojang/authlib/GameProfile.getId:()Ljava/util/UUID;
+      35: invokevirtual #1169               // Method a:(Ljava/util/UUID;)Laqv;
+      38: astore_2
+      39: aload_2
+      40: ifnull        48
+      43: aload_0
+      44: aload_2
+      45: invokevirtual #444                // Method e:(Laqv;)V
+      48: return
+
+  public void b(com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_0
+       1: getfield      #142                // Field p:Laus;
+       4: aload_1
+       5: invokevirtual #1171               // Method aus.c:(Ljava/lang/Object;)V
+       8: aload_0
+       9: aload_1
+      10: invokevirtual #186                // Method com/mojang/authlib/GameProfile.getId:()Ljava/util/UUID;
+      13: invokevirtual #1169               // Method a:(Ljava/util/UUID;)Laqv;
+      16: astore_2
+      17: aload_2
+      18: ifnull        26
+      21: aload_0
+      22: aload_2
+      23: invokevirtual #444                // Method e:(Laqv;)V
+      26: return
+
+  private void a(aqv, int);
+    Code:
+       0: aload_1
+       1: getfield      #515                // Field aqv.c:Laru;
+       4: ifnull        50
+       7: iload_2
+       8: ifgt          17
+      11: bipush        24
+      13: istore_3
+      14: goto          34
+      17: iload_2
+      18: iconst_4
+      19: if_icmplt     28
+      22: bipush        28
+      24: istore_3
+      25: goto          34
+      28: bipush        24
+      30: iload_2
+      31: iadd
+      32: i2b
+      33: istore_3
+      34: aload_1
+      35: getfield      #515                // Field aqv.c:Laru;
+      38: new           #1173               // class acy
+      41: dup
+      42: aload_1
+      43: iload_3
+      44: invokespecial #1176               // Method acy."<init>":(Lbsr;B)V
+      47: invokevirtual #395                // Method aru.b:(Lzg;)V
+      50: aload_0
+      51: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      54: invokevirtual #1180               // Method net/minecraft/server/MinecraftServer.aH:()Leu;
+      57: aload_1
+      58: invokevirtual #1183               // Method eu.a:(Laqv;)V
+      61: return
+
+  public boolean c(com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_0
+       1: getfield      #1185               // Field u:Z
+       4: ifeq          29
+       7: aload_0
+       8: getfield      #142                // Field p:Laus;
+      11: aload_1
+      12: invokevirtual #1187               // Method aus.d:(Ljava/lang/Object;)Z
+      15: ifne          29
+      18: aload_0
+      19: getfield      #149                // Field q:Lava;
+      22: aload_1
+      23: invokevirtual #1188               // Method ava.d:(Ljava/lang/Object;)Z
+      26: ifeq          33
+      29: iconst_1
+      30: goto          34
+      33: iconst_0
+      34: ireturn
+
+  public boolean f(com.mojang.authlib.GameProfile);
+    Code:
+       0: aload_0
+       1: getfield      #142                // Field p:Laus;
+       4: aload_1
+       5: invokevirtual #1187               // Method aus.d:(Ljava/lang/Object;)Z
+       8: ifne          44
+      11: aload_0
+      12: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      15: aload_1
+      16: invokevirtual #752                // Method net/minecraft/server/MinecraftServer.a:(Lcom/mojang/authlib/GameProfile;)Z
+      19: ifeq          37
+      22: aload_0
+      23: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      26: invokevirtual #744                // Method net/minecraft/server/MinecraftServer.bb:()Lerl;
+      29: invokeinterface #1190,  1         // InterfaceMethod erl.m:()Z
+      34: ifne          44
+      37: aload_0
+      38: getfield      #1192               // Field y:Z
+      41: ifeq          48
+      44: iconst_1
+      45: goto          49
+      48: iconst_0
+      49: ireturn
+
+  public aqv a(java.lang.String);
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+       9: istore_2
+      10: iconst_0
+      11: istore_3
+      12: iload_3
+      13: iload_2
+      14: if_icmpge     56
+      17: aload_0
+      18: getfield      #111                // Field l:Ljava/util/List;
+      21: iload_3
+      22: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      27: checkcast     #170                // class aqv
+      30: astore        4
+      32: aload         4
+      34: invokevirtual #174                // Method aqv.fX:()Lcom/mojang/authlib/GameProfile;
+      37: invokevirtual #197                // Method com/mojang/authlib/GameProfile.getName:()Ljava/lang/String;
+      40: aload_1
+      41: invokevirtual #471                // Method java/lang/String.equalsIgnoreCase:(Ljava/lang/String;)Z
+      44: ifeq          50
+      47: aload         4
+      49: areturn
+      50: iinc          3, 1
+      53: goto          12
+      56: aconst_null
+      57: areturn
+
+  public void a(cmx, double, double, double, double, akq<dcw>, zg<?>);
+    Code:
+       0: iconst_0
+       1: istore        12
+       3: iload         12
+       5: aload_0
+       6: getfield      #111                // Field l:Ljava/util/List;
+       9: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+      14: if_icmpge     129
+      17: aload_0
+      18: getfield      #111                // Field l:Ljava/util/List;
+      21: iload         12
+      23: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      28: checkcast     #170                // class aqv
+      31: astore        13
+      33: aload         13
+      35: aload_1
+      36: if_acmpne     42
+      39: goto          123
+      42: aload         13
+      44: invokevirtual #1124               // Method aqv.dO:()Ldcw;
+      47: invokevirtual #1128               // Method dcw.af:()Lakq;
+      50: aload         10
+      52: if_acmpeq     58
+      55: goto          123
+      58: dload_2
+      59: aload         13
+      61: invokevirtual #301                // Method aqv.dt:()D
+      64: dsub
+      65: dstore        14
+      67: dload         4
+      69: aload         13
+      71: invokevirtual #309                // Method aqv.dv:()D
+      74: dsub
+      75: dstore        16
+      77: dload         6
+      79: aload         13
+      81: invokevirtual #312                // Method aqv.dz:()D
+      84: dsub
+      85: dstore        18
+      87: dload         14
+      89: dload         14
+      91: dmul
+      92: dload         16
+      94: dload         16
+      96: dmul
+      97: dadd
+      98: dload         18
+     100: dload         18
+     102: dmul
+     103: dadd
+     104: dload         8
+     106: dload         8
+     108: dmul
+     109: dcmpg
+     110: ifge          123
+     113: aload         13
+     115: getfield      #515                // Field aqv.c:Laru;
+     118: aload         11
+     120: invokevirtual #395                // Method aru.b:(Lzg;)V
+     123: iinc          12, 1
+     126: goto          3
+     129: return
+
+  public void h();
+    Code:
+       0: iconst_0
+       1: istore_1
+       2: iload_1
+       3: aload_0
+       4: getfield      #111                // Field l:Ljava/util/List;
+       7: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+      12: if_icmpge     38
+      15: aload_0
+      16: aload_0
+      17: getfield      #111                // Field l:Ljava/util/List;
+      20: iload_1
+      21: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      26: checkcast     #170                // class aqv
+      29: invokevirtual #792                // Method b:(Laqv;)V
+      32: iinc          1, 1
+      35: goto          2
+      38: return
+
+  public ava i();
+    Code:
+       0: aload_0
+       1: getfield      #149                // Field q:Lava;
+       4: areturn
+
+  public java.lang.String[] j();
+    Code:
+       0: aload_0
+       1: getfield      #149                // Field q:Lava;
+       4: invokevirtual #1197               // Method ava.a:()[Ljava/lang/String;
+       7: areturn
+
+  public aus k();
+    Code:
+       0: aload_0
+       1: getfield      #142                // Field p:Laus;
+       4: areturn
+
+  public java.lang.String[] l();
+    Code:
+       0: aload_0
+       1: getfield      #142                // Field p:Laus;
+       4: invokevirtual #1199               // Method aus.a:()[Ljava/lang/String;
+       7: areturn
+
+  public void a();
+    Code:
+       0: return
+
+  public void a(aqv, aqu);
+    Code:
+       0: aload_0
+       1: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       4: invokevirtual #264                // Method net/minecraft/server/MinecraftServer.I:()Laqu;
+       7: invokevirtual #731                // Method aqu.C_:()Ldut;
+      10: astore_3
+      11: aload_1
+      12: getfield      #515                // Field aqv.c:Laru;
+      15: new           #1201               // class ade
+      18: dup
+      19: aload_3
+      20: invokespecial #1204               // Method ade."<init>":(Ldut;)V
+      23: invokevirtual #395                // Method aru.b:(Lzg;)V
+      26: aload_1
+      27: getfield      #515                // Field aqv.c:Laru;
+      30: new           #1206               // class afl
+      33: dup
+      34: aload_2
+      35: invokevirtual #1208               // Method aqu.Z:()J
+      38: aload_2
+      39: invokevirtual #1211               // Method aqu.aa:()J
+      42: aload_2
+      43: invokevirtual #354                // Method aqu.ab:()Ldcs;
+      46: getstatic     #1213               // Field dcs.l:Ldcs$e;
+      49: invokevirtual #361                // Method dcs.b:(Ldcs$e;)Z
+      52: invokespecial #1216               // Method afl."<init>":(JJZ)V
+      55: invokevirtual #395                // Method aru.b:(Lzg;)V
+      58: aload_1
+      59: getfield      #515                // Field aqv.c:Laru;
+      62: new           #992                // class aex
+      65: dup
+      66: aload_2
+      67: invokevirtual #996                // Method aqu.V:()Ljd;
+      70: aload_2
+      71: invokevirtual #999                // Method aqu.W:()F
+      74: invokespecial #1002               // Method aex."<init>":(Ljd;F)V
+      77: invokevirtual #395                // Method aru.b:(Lzg;)V
+      80: aload_2
+      81: invokevirtual #1218               // Method aqu.ad:()Z
+      84: ifeq          149
+      87: aload_1
+      88: getfield      #515                // Field aqv.c:Laru;
+      91: new           #35                 // class adb
+      94: dup
+      95: getstatic     #1220               // Field adb.c:Ladb$a;
+      98: fconst_0
+      99: invokespecial #985                // Method adb."<init>":(Ladb$a;F)V
+     102: invokevirtual #395                // Method aru.b:(Lzg;)V
+     105: aload_1
+     106: getfield      #515                // Field aqv.c:Laru;
+     109: new           #35                 // class adb
+     112: dup
+     113: getstatic     #1222               // Field adb.i:Ladb$a;
+     116: aload_2
+     117: fconst_1
+     118: invokevirtual #1225               // Method aqu.d:(F)F
+     121: invokespecial #985                // Method adb."<init>":(Ladb$a;F)V
+     124: invokevirtual #395                // Method aru.b:(Lzg;)V
+     127: aload_1
+     128: getfield      #515                // Field aqv.c:Laru;
+     131: new           #35                 // class adb
+     134: dup
+     135: getstatic     #1227               // Field adb.j:Ladb$a;
+     138: aload_2
+     139: fconst_1
+     140: invokevirtual #1229               // Method aqu.b:(F)F
+     143: invokespecial #985                // Method adb."<init>":(Ladb$a;F)V
+     146: invokevirtual #395                // Method aru.b:(Lzg;)V
+     149: aload_1
+     150: getfield      #515                // Field aqv.c:Laru;
+     153: new           #35                 // class adb
+     156: dup
+     157: getstatic     #1231               // Field adb.o:Ladb$a;
+     160: fconst_0
+     161: invokespecial #985                // Method adb."<init>":(Ladb$a;F)V
+     164: invokevirtual #395                // Method aru.b:(Lzg;)V
+     167: aload_0
+     168: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     171: invokevirtual #1235               // Method net/minecraft/server/MinecraftServer.aQ:()Lall;
+     174: aload_1
+     175: invokevirtual #1238               // Method all.a:(Laqv;)V
+     178: return
+
+  public void f(aqv);
+    Code:
+       0: aload_1
+       1: getfield      #1243               // Field aqv.cc:Lcqw;
+       4: invokevirtual #1246               // Method cqw.b:()V
+       7: aload_1
+       8: invokevirtual #1248               // Method aqv.x:()V
+      11: aload_1
+      12: getfield      #515                // Field aqv.c:Laru;
+      15: new           #416                // class aeu
+      18: dup
+      19: aload_1
+      20: invokevirtual #420                // Method aqv.fY:()Lcmw;
+      23: getfield      #424                // Field cmw.k:I
+      26: invokespecial #427                // Method aeu."<init>":(I)V
+      29: invokevirtual #395                // Method aru.b:(Lzg;)V
+      32: return
+
+  public int m();
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+       9: ireturn
+
+  public int n();
+    Code:
+       0: aload_0
+       1: getfield      #159                // Field g:I
+       4: ireturn
+
+  public boolean o();
+    Code:
+       0: aload_0
+       1: getfield      #1185               // Field u:Z
+       4: ireturn
+
+  public void a(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #1185               // Field u:Z
+       5: return
+
+  public java.util.List<aqv> b(java.lang.String);
+    Code:
+       0: invokestatic  #109                // Method com/google/common/collect/Lists.newArrayList:()Ljava/util/ArrayList;
+       3: astore_2
+       4: aload_0
+       5: getfield      #111                // Field l:Ljava/util/List;
+       8: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      13: astore_3
+      14: aload_3
+      15: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      20: ifeq          58
+      23: aload_3
+      24: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      29: checkcast     #170                // class aqv
+      32: astore        4
+      34: aload         4
+      36: invokevirtual #1255               // Method aqv.B:()Ljava/lang/String;
+      39: aload_1
+      40: invokevirtual #1256               // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+      43: ifeq          55
+      46: aload_2
+      47: aload         4
+      49: invokeinterface #524,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      54: pop
+      55: goto          14
+      58: aload_2
+      59: areturn
+
+  public int p();
+    Code:
+       0: aload_0
+       1: getfield      #379                // Field w:I
+       4: ireturn
+
+  public int q();
+    Code:
+       0: aload_0
+       1: getfield      #381                // Field x:I
+       4: ireturn
+
+  public net.minecraft.server.MinecraftServer c();
+    Code:
+       0: aload_0
+       1: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       4: areturn
+
+  public ub r();
+    Code:
+       0: aconst_null
+       1: areturn
+
+  public void b(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #1192               // Field y:Z
+       5: return
+
+  public void s();
+    Code:
+       0: iconst_0
+       1: istore_1
+       2: iload_1
+       3: aload_0
+       4: getfield      #111                // Field l:Ljava/util/List;
+       7: invokeinterface #904,  1          // InterfaceMethod java/util/List.size:()I
+      12: if_icmpge     46
+      15: aload_0
+      16: getfield      #111                // Field l:Ljava/util/List;
+      19: iload_1
+      20: invokeinterface #1149,  2         // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+      25: checkcast     #170                // class aqv
+      28: getfield      #515                // Field aqv.c:Laru;
+      31: ldc_w         #1259               // String multiplayer.disconnect.server_shutdown
+      34: invokestatic  #887                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+      37: invokevirtual #925                // Method aru.a:(Lwz;)V
+      40: iinc          1, 1
+      43: goto          2
+      46: return
+
+  public void a(wz, boolean);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_1
+       3: invokedynamic #1268,  0           // InvokeDynamic #4:apply:(Lwz;)Ljava/util/function/Function;
+       8: iload_2
+       9: invokevirtual #1271               // Method a:(Lwz;Ljava/util/function/Function;Z)V
+      12: return
+
+  public void a(wz, java.util.function.Function<aqv, wz>, boolean);
+    Code:
+       0: aload_0
+       1: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+       4: aload_1
+       5: invokevirtual #1273               // Method net/minecraft/server/MinecraftServer.a:(Lwz;)V
+       8: aload_0
+       9: getfield      #111                // Field l:Ljava/util/List;
+      12: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      17: astore        4
+      19: aload         4
+      21: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      26: ifeq          70
+      29: aload         4
+      31: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      36: checkcast     #170                // class aqv
+      39: astore        5
+      41: aload_2
+      42: aload         5
+      44: invokeinterface #1277,  2         // InterfaceMethod java/util/function/Function.apply:(Ljava/lang/Object;)Ljava/lang/Object;
+      49: checkcast     #284                // class wz
+      52: astore        6
+      54: aload         6
+      56: ifnull        67
+      59: aload         5
+      61: aload         6
+      63: iload_3
+      64: invokevirtual #1279               // Method aqv.b:(Lwz;Z)V
+      67: goto          19
+      70: return
+
+  public void a(xp, et, wv$a);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: dup
+       4: invokestatic  #1287               // Method java/util/Objects.requireNonNull:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: invokedynamic #1298,  0           // InvokeDynamic #5:test:(Let;)Ljava/util/function/Predicate;
+      13: aload_2
+      14: invokevirtual #1301               // Method et.i:()Laqv;
+      17: aload_3
+      18: invokevirtual #1304               // Method a:(Lxp;Ljava/util/function/Predicate;Laqv;Lwv$a;)V
+      21: return
+
+  public void a(xp, aqv, wv$a);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: dup
+       4: invokestatic  #1287               // Method java/util/Objects.requireNonNull:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: invokedynamic #1314,  0           // InvokeDynamic #6:test:(Laqv;)Ljava/util/function/Predicate;
+      13: aload_2
+      14: aload_3
+      15: invokevirtual #1304               // Method a:(Lxp;Ljava/util/function/Predicate;Laqv;Lwv$a;)V
+      18: return
+
+  private void a(xp, java.util.function.Predicate<aqv>, aqv, wv$a);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokevirtual #1318               // Method a:(Lxp;)Z
+       5: istore        5
+       7: aload_0
+       8: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      11: aload_1
+      12: invokevirtual #1322               // Method xp.d:()Lwz;
+      15: aload         4
+      17: iload         5
+      19: ifeq          26
+      22: aconst_null
+      23: goto          29
+      26: ldc_w         #1326               // String Not Secure
+      29: invokevirtual #1329               // Method net/minecraft/server/MinecraftServer.a:(Lwz;Lwv$a;Ljava/lang/String;)V
+      32: aload_1
+      33: invokestatic  #1334               // InterfaceMethod xo.a:(Lxp;)Lxo;
+      36: astore        6
+      38: iconst_0
+      39: istore        7
+      41: aload_0
+      42: getfield      #111                // Field l:Ljava/util/List;
+      45: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      50: astore        8
+      52: aload         8
+      54: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      59: ifeq          120
+      62: aload         8
+      64: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      69: checkcast     #170                // class aqv
+      72: astore        9
+      74: aload_2
+      75: aload         9
+      77: invokeinterface #1336,  2         // InterfaceMethod java/util/function/Predicate.test:(Ljava/lang/Object;)Z
+      82: istore        10
+      84: aload         9
+      86: aload         6
+      88: iload         10
+      90: aload         4
+      92: invokevirtual #1339               // Method aqv.a:(Lxo;ZLwv$a;)V
+      95: iload         7
+      97: iload         10
+      99: ifeq          113
+     102: aload_1
+     103: invokevirtual #1341               // Method xp.j:()Z
+     106: ifeq          113
+     109: iconst_1
+     110: goto          114
+     113: iconst_0
+     114: ior
+     115: istore        7
+     117: goto          52
+     120: iload         7
+     122: ifeq          136
+     125: aload_3
+     126: ifnull        136
+     129: aload_3
+     130: getstatic     #1343               // Field e:Lwz;
+     133: invokevirtual #1142               // Method aqv.a:(Lwz;)V
+     136: return
+
+  private boolean a(xp);
+    Code:
+       0: aload_1
+       1: invokevirtual #1348               // Method xp.i:()Z
+       4: ifeq          21
+       7: aload_1
+       8: invokestatic  #1354               // Method java/time/Instant.now:()Ljava/time/Instant;
+      11: invokevirtual #1357               // Method xp.a:(Ljava/time/Instant;)Z
+      14: ifne          21
+      17: iconst_1
+      18: goto          22
+      21: iconst_0
+      22: ireturn
+
+  public avv a(cmx);
+    Code:
+       0: aload_1
+       1: invokevirtual #1359               // Method cmx.cz:()Ljava/util/UUID;
+       4: astore_2
+       5: aload_0
+       6: getfield      #151                // Field r:Ljava/util/Map;
+       9: aload_2
+      10: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      15: checkcast     #449                // class avv
+      18: astore_3
+      19: aload_3
+      20: ifnonnull     173
+      23: aload_0
+      24: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      27: getstatic     #1364               // Field erd.b:Lerd;
+      30: invokevirtual #1367               // Method net/minecraft/server/MinecraftServer.a:(Lerd;)Ljava/nio/file/Path;
+      33: invokeinterface #1373,  1         // InterfaceMethod java/nio/file/Path.toFile:()Ljava/io/File;
+      38: astore        4
+      40: new           #1375               // class java/io/File
+      43: dup
+      44: aload         4
+      46: aload_2
+      47: invokestatic  #1378               // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+      50: invokedynamic #1390,  0           // InvokeDynamic #7:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      55: invokespecial #1393               // Method java/io/File."<init>":(Ljava/io/File;Ljava/lang/String;)V
+      58: astore        5
+      60: aload         5
+      62: invokevirtual #1396               // Method java/io/File.exists:()Z
+      65: ifne          147
+      68: new           #1375               // class java/io/File
+      71: dup
+      72: aload         4
+      74: aload_1
+      75: invokevirtual #1397               // Method cmx.ah:()Lwz;
+      78: invokeinterface #287,  1          // InterfaceMethod wz.getString:()Ljava/lang/String;
+      83: invokedynamic #1390,  0           // InvokeDynamic #7:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      88: invokespecial #1393               // Method java/io/File."<init>":(Ljava/io/File;Ljava/lang/String;)V
+      91: astore        6
+      93: aload         6
+      95: invokevirtual #1401               // Method java/io/File.toPath:()Ljava/nio/file/Path;
+      98: astore        7
+     100: aload         7
+     102: invokestatic  #1405               // Method v.a:(Ljava/nio/file/Path;)Z
+     105: ifeq          147
+     108: aload         7
+     110: invokestatic  #1407               // Method v.b:(Ljava/nio/file/Path;)Z
+     113: ifeq          147
+     116: aload         7
+     118: aload         4
+     120: invokevirtual #1410               // Method java/io/File.getPath:()Ljava/lang/String;
+     123: invokeinterface #1413,  2         // InterfaceMethod java/nio/file/Path.startsWith:(Ljava/lang/String;)Z
+     128: ifeq          147
+     131: aload         6
+     133: invokevirtual #1416               // Method java/io/File.isFile:()Z
+     136: ifeq          147
+     139: aload         6
+     141: aload         5
+     143: invokevirtual #1420               // Method java/io/File.renameTo:(Ljava/io/File;)Z
+     146: pop
+     147: new           #449                // class avv
+     150: dup
+     151: aload_0
+     152: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+     155: aload         5
+     157: invokespecial #1423               // Method avv."<init>":(Lnet/minecraft/server/MinecraftServer;Ljava/io/File;)V
+     160: astore_3
+     161: aload_0
+     162: getfield      #151                // Field r:Ljava/util/Map;
+     165: aload_2
+     166: aload_3
+     167: invokeinterface #533,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     172: pop
+     173: aload_3
+     174: areturn
+
+  public akz g(aqv);
+    Code:
+       0: aload_1
+       1: invokevirtual #527                // Method aqv.cz:()Ljava/util/UUID;
+       4: astore_2
+       5: aload_0
+       6: getfield      #153                // Field s:Ljava/util/Map;
+       9: aload_2
+      10: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      15: checkcast     #776                // class akz
+      18: astore_3
+      19: aload_3
+      20: ifnonnull     87
+      23: aload_0
+      24: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      27: getstatic     #1427               // Field erd.a:Lerd;
+      30: invokevirtual #1367               // Method net/minecraft/server/MinecraftServer.a:(Lerd;)Ljava/nio/file/Path;
+      33: aload_2
+      34: invokestatic  #1378               // Method java/lang/String.valueOf:(Ljava/lang/Object;)Ljava/lang/String;
+      37: invokedynamic #1390,  0           // InvokeDynamic #7:makeConcatWithConstants:(Ljava/lang/String;)Ljava/lang/String;
+      42: invokeinterface #1431,  2         // InterfaceMethod java/nio/file/Path.resolve:(Ljava/lang/String;)Ljava/nio/file/Path;
+      47: astore        4
+      49: new           #776                // class akz
+      52: dup
+      53: aload_0
+      54: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      57: invokevirtual #1435               // Method net/minecraft/server/MinecraftServer.aD:()Lcom/mojang/datafixers/DataFixer;
+      60: aload_0
+      61: aload_0
+      62: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      65: invokevirtual #1439               // Method net/minecraft/server/MinecraftServer.aE:()Lale;
+      68: aload         4
+      70: aload_1
+      71: invokespecial #1442               // Method akz."<init>":(Lcom/mojang/datafixers/DataFixer;Laur;Lale;Ljava/nio/file/Path;Laqv;)V
+      74: astore_3
+      75: aload_0
+      76: getfield      #153                // Field s:Ljava/util/Map;
+      79: aload_2
+      80: aload_3
+      81: invokeinterface #533,  3          // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+      86: pop
+      87: aload_3
+      88: aload_1
+      89: invokevirtual #1443               // Method akz.a:(Laqv;)V
+      92: aload_3
+      93: areturn
+
+  public void a(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #379                // Field w:I
+       5: aload_0
+       6: new           #1445               // class aew
+       9: dup
+      10: iload_1
+      11: invokespecial #1446               // Method aew."<init>":(I)V
+      14: invokevirtual #539                // Method a:(Lzg;)V
+      17: aload_0
+      18: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      21: invokevirtual #1449               // Method net/minecraft/server/MinecraftServer.K:()Ljava/lang/Iterable;
+      24: invokeinterface #609,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+      29: astore_2
+      30: aload_2
+      31: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      36: ifeq          64
+      39: aload_2
+      40: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      45: checkcast     #266                // class aqu
+      48: astore_3
+      49: aload_3
+      50: ifnull        61
+      53: aload_3
+      54: invokevirtual #1452               // Method aqu.l:()Laqs;
+      57: iload_1
+      58: invokevirtual #1456               // Method aqs.a:(I)V
+      61: goto          30
+      64: return
+
+  public void b(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #381                // Field x:I
+       5: aload_0
+       6: new           #1458               // class afj
+       9: dup
+      10: iload_1
+      11: invokespecial #1459               // Method afj."<init>":(I)V
+      14: invokevirtual #539                // Method a:(Lzg;)V
+      17: aload_0
+      18: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      21: invokevirtual #1449               // Method net/minecraft/server/MinecraftServer.K:()Ljava/lang/Iterable;
+      24: invokeinterface #609,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+      29: astore_2
+      30: aload_2
+      31: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      36: ifeq          64
+      39: aload_2
+      40: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      45: checkcast     #266                // class aqu
+      48: astore_3
+      49: aload_3
+      50: ifnull        61
+      53: aload_3
+      54: invokevirtual #1452               // Method aqu.l:()Laqs;
+      57: iload_1
+      58: invokevirtual #1461               // Method aqs.b:(I)V
+      61: goto          30
+      64: return
+
+  public java.util.List<aqv> t();
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Ljava/util/List;
+       4: areturn
+
+  public aqv a(java.util.UUID);
+    Code:
+       0: aload_0
+       1: getfield      #119                // Field m:Ljava/util/Map;
+       4: aload_1
+       5: invokeinterface #772,  2          // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      10: checkcast     #170                // class aqv
+      13: areturn
+
+  public boolean d(com.mojang.authlib.GameProfile);
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  public void u();
+    Code:
+       0: aload_0
+       1: getfield      #153                // Field s:Ljava/util/Map;
+       4: invokeinterface #1465,  1         // InterfaceMethod java/util/Map.values:()Ljava/util/Collection;
+       9: invokeinterface #686,  1          // InterfaceMethod java/util/Collection.iterator:()Ljava/util/Iterator;
+      14: astore_1
+      15: aload_1
+      16: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      21: ifeq          48
+      24: aload_1
+      25: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      30: checkcast     #776                // class akz
+      33: astore_2
+      34: aload_2
+      35: aload_0
+      36: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      39: invokevirtual #1439               // Method net/minecraft/server/MinecraftServer.aE:()Lale;
+      42: invokevirtual #1468               // Method akz.a:(Lale;)V
+      45: goto          15
+      48: aload_0
+      49: new           #1470               // class zx
+      52: dup
+      53: aload_0
+      54: getfield      #157                // Field v:Ljt;
+      57: invokestatic  #1475               // Method awx.a:(Ljt;)Ljava/util/Map;
+      60: invokespecial #1478               // Method zx."<init>":(Ljava/util/Map;)V
+      63: invokevirtual #539                // Method a:(Lzg;)V
+      66: new           #429                // class agc
+      69: dup
+      70: aload_0
+      71: getfield      #155                // Field k:Lnet/minecraft/server/MinecraftServer;
+      74: invokevirtual #433                // Method net/minecraft/server/MinecraftServer.aJ:()Lczd;
+      77: invokevirtual #438                // Method czd.b:()Ljava/util/Collection;
+      80: invokespecial #441                // Method agc."<init>":(Ljava/util/Collection;)V
+      83: astore_1
+      84: aload_0
+      85: getfield      #111                // Field l:Ljava/util/List;
+      88: invokeinterface #713,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+      93: astore_2
+      94: aload_2
+      95: invokeinterface #614,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     100: ifeq          132
+     103: aload_2
+     104: invokeinterface #617,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     109: checkcast     #170                // class aqv
+     112: astore_3
+     113: aload_3
+     114: getfield      #515                // Field aqv.c:Laru;
+     117: aload_1
+     118: invokevirtual #395                // Method aru.b:(Lzg;)V
+     121: aload_3
+     122: invokevirtual #454                // Method aqv.J:()Lavu;
+     125: aload_3
+     126: invokevirtual #458                // Method avu.a:(Laqv;)V
+     129: goto          94
+     132: return
+
+  public boolean v();
+    Code:
+       0: aload_0
+       1: getfield      #1192               // Field y:Z
+       4: ireturn
+
+  private static wz a(wz, aqv);
+    Code:
+       0: aload_0
+       1: areturn
+
+  private static void a(bsr);
+    Code:
+       0: aload_0
+       1: getstatic     #831                // Field bsr$c.d:Lbsr$c;
+       4: invokevirtual #1482               // Method bsr.b:(Lbsr$c;)V
+       7: return
+
+  private static bsr a(aqu, bsr);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokevirtual #1485               // Method aqu.c:(Lbsr;)Z
+       5: ifne          10
+       8: aconst_null
+       9: areturn
+      10: aload_1
+      11: areturn
+
+  private static java.util.Optional a(ub);
+    Code:
+       0: new           #1487               // class com/mojang/serialization/Dynamic
+       3: dup
+       4: getstatic     #1492               // Field up.a:Lup;
+       7: aload_0
+       8: ldc_w         #1494               // String Dimension
+      11: invokevirtual #1497               // Method ub.c:(Ljava/lang/String;)Luy;
+      14: invokespecial #1500               // Method com/mojang/serialization/Dynamic."<init>":(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)V
+      17: invokestatic  #1505               // Method dwy.a:(Lcom/mojang/serialization/Dynamic;)Lcom/mojang/serialization/DataResult;
+      20: getstatic     #253                // Field h:Lorg/slf4j/Logger;
+      23: dup
+      24: invokestatic  #1287               // Method java/util/Objects.requireNonNull:(Ljava/lang/Object;)Ljava/lang/Object;
+      27: pop
+      28: invokedynamic #1513,  0           // InvokeDynamic #8:accept:(Lorg/slf4j/Logger;)Ljava/util/function/Consumer;
+      33: invokeinterface #1519,  2         // InterfaceMethod com/mojang/serialization/DataResult.resultOrPartial:(Ljava/util/function/Consumer;)Ljava/util/Optional;
+      38: areturn
+
+  static {};
+    Code:
+       0: new           #1375               // class java/io/File
+       3: dup
+       4: ldc_w         #1522               // String banned-players.json
+       7: invokespecial #1524               // Method java/io/File."<init>":(Ljava/lang/String;)V
+      10: putstatic     #123                // Field a:Ljava/io/File;
+      13: new           #1375               // class java/io/File
+      16: dup
+      17: ldc_w         #1526               // String banned-ips.json
+      20: invokespecial #1524               // Method java/io/File."<init>":(Ljava/lang/String;)V
+      23: putstatic     #132                // Field b:Ljava/io/File;
+      26: new           #1375               // class java/io/File
+      29: dup
+      30: ldc_w         #1528               // String ops.json
+      33: invokespecial #1524               // Method java/io/File."<init>":(Ljava/lang/String;)V
+      36: putstatic     #139                // Field c:Ljava/io/File;
+      39: new           #1375               // class java/io/File
+      42: dup
+      43: ldc_w         #1530               // String whitelist.json
+      46: invokespecial #1524               // Method java/io/File."<init>":(Ljava/lang/String;)V
+      49: putstatic     #146                // Field d:Ljava/io/File;
+      52: ldc_w         #1532               // String chat.filtered_full
+      55: invokestatic  #887                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+      58: putstatic     #1343               // Field e:Lwz;
+      61: ldc_w         #1534               // String multiplayer.disconnect.duplicate_login
+      64: invokestatic  #887                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+      67: putstatic     #922                // Field f:Lwz;
+      70: invokestatic  #1540               // Method com/mojang/logging/LogUtils.getLogger:()Lorg/slf4j/Logger;
+      73: putstatic     #253                // Field h:Lorg/slf4j/Logger;
+      76: new           #871                // class java/text/SimpleDateFormat
+      79: dup
+      80: ldc_w         #1542               // String yyyy-MM-dd \'at\' HH:mm:ss z
+      83: invokespecial #1543               // Method java/text/SimpleDateFormat."<init>":(Ljava/lang/String;)V
+      86: putstatic     #869                // Field j:Ljava/text/SimpleDateFormat;
+      89: return
+}

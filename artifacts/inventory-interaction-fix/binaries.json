@@ -1,0 +1,14 @@
+﻿[
+    {
+        "name":  "atlas.exe",
+        "sha256":  "9D511764E506E204CDA16BF3632D76A6A2119A3E4E58E2D90CA719193AE35242",
+        "backup":  "E:\\AtlasMinecraft\\artifacts\\inventory-interaction-fix\\atlas-previous.exe",
+        "root":  "E:\\AtlasMinecraft\\atlas.exe"
+    },
+    {
+        "name":  "atlas-test.exe",
+        "sha256":  "5AB93ACFA6DE046278AA16E68653953E2CB6C364D494488B793CDDA4E202B62C",
+        "backup":  "E:\\AtlasMinecraft\\artifacts\\inventory-interaction-fix\\atlas-test-previous.exe",
+        "root":  "E:\\AtlasMinecraft\\atlas-test.exe"
+    }
+]

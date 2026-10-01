@@ -1,0 +1,154 @@
+[
+  {
+    "name": "default_minecraft:max_stack_size",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:lore",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:enchantments",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:repair_cost",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:attribute_modifiers",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:rarity",
+    "hex": "01010000"
+  },
+  {
+    "name": "default_minecraft:fire_resistant",
+    "hex": "0101010015"
+  },
+  {
+    "name": "default_minecraft:container",
+    "hex": "010101003400"
+  },
+  {
+    "name": "default_minecraft:pot_decorations",
+    "hex": "0101010033049907990799079907"
+  },
+  {
+    "name": "default_minecraft:damage",
+    "hex": "010101000300"
+  },
+  {
+    "name": "default_minecraft:max_damage",
+    "hex": "010101000219"
+  },
+  {
+    "name": "default_minecraft:food",
+    "hex": "0101010014044019999a003fcccccd0000"
+  },
+  {
+    "name": "default_minecraft:tool",
+    "hex": "010101001602027a0141700000010100196d696e6563726166743a73776f72645f656666696369656e74013fc00000003f80000002"
+  },
+  {
+    "name": "default_minecraft:enchantment_glint_override",
+    "hex": "010101001201"
+  },
+  {
+    "name": "default_minecraft:bucket_entity_data",
+    "hex": "01010100260a00"
+  },
+  {
+    "name": "default_minecraft:bundle_contents",
+    "hex": "010101001e00"
+  },
+  {
+    "name": "default_minecraft:map_decorations",
+    "hex": "010101001b0a00"
+  },
+  {
+    "name": "default_minecraft:map_color",
+    "hex": "01010100190046402e"
+  },
+  {
+    "name": "default_minecraft:potion_contents",
+    "hex": "010101001f000000"
+  },
+  {
+    "name": "default_minecraft:writable_book_content",
+    "hex": "010101002100"
+  },
+  {
+    "name": "default_minecraft:fireworks",
+    "hex": "010101002e0100"
+  },
+  {
+    "name": "default_minecraft:stored_enchantments",
+    "hex": "01010100170001"
+  },
+  {
+    "name": "default_minecraft:banner_patterns",
+    "hex": "010101003100"
+  },
+  {
+    "name": "default_minecraft:recipes",
+    "hex": "010101002b090000000000"
+  },
+  {
+    "name": "default_minecraft:debug_stick_state",
+    "hex": "01010100240a00"
+  },
+  {
+    "name": "default_minecraft:jukebox_playable",
+    "hex": "010101002a000c6d696e6563726166743a313301"
+  },
+  {
+    "name": "default_minecraft:charged_projectiles",
+    "hex": "010101001d00"
+  },
+  {
+    "name": "default_minecraft:suspicious_stew_effects",
+    "hex": "010101002000"
+  },
+  {
+    "name": "default_minecraft:bees",
+    "hex": "010101003600"
+  },
+  {
+    "name": "default_minecraft:ominous_bottle_amplifier",
+    "hex": "010101002900"
+  },
+  {
+    "name": "custom_0",
+    "hex": "01e60701001f01190000"
+  },
+  {
+    "name": "custom_1",
+    "hex": "01e60701001f000100123456010002d80401000100"
+  },
+  {
+    "name": "custom_2",
+    "hex": "03a006010014043e99999a013f4ccccd00010000c801000101003f000000"
+  },
+  {
+    "name": "custom_3",
+    "hex": "01a006010014043e99999a003fcccccd01019f06000001090164000101003f800000"
+  },
+  {
+    "name": "custom_4",
+    "hex": "010105000d0c012504000508000a576972652070726f62651201"
+  },
+  {
+    "name": "custom_5",
+    "hex": "010101000a01010201010104617869730101780000"
+  },
+  {
+    "name": "custom_6",
+    "hex": "010101002f010541746c617300010874657874757265730570726f626501097369676e6174757265"
+  },
+  {
+    "name": "custom_7",
+    "hex": "010101003403000001e60701001f01180000"
+  }
+]

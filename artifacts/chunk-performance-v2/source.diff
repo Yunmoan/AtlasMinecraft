@@ -1,0 +1,1789 @@
+--- before/cmd/atlas-test/main.go
++++ cmd/atlas-test/main.go
+@@ -9,6 +9,7 @@
+ 	"crypto/md5"
+ 	"flag"
+ 	"fmt"
++	"math"
+ 	"net"
+ 	"os"
+ 	"strconv"
+@@ -357,7 +358,7 @@
+ 		}
+ 		check("saved player position", match, fmt.Sprintf("position=%v", firstPosition))
+ 		if match {
+-			cx, cz := int32(expected[0])>>4, int32(expected[2])>>4
++			cx, cz := int32(math.Floor(expected[0]/16)), int32(math.Floor(expected[2]/16))
+ 			check("first chunk at player position", firstChunk == [2]int32{cx, cz}, fmt.Sprintf("first chunk=%v", firstChunk))
+ 		}
+ 	}
+--- before/internal/anvil/region.go
++++ internal/anvil/region.go
+@@ -12,6 +12,7 @@
+ 	"io"
+ 	"os"
+ 	"path/filepath"
++	"sync"
+ 	"time"
+ 
+ 	"atlas/internal/nbt"
+@@ -30,40 +31,73 @@
+ // ReadChunk reads a named-root chunk NBT compound. Missing region files and
+ // empty location entries are reported as exists=false.
+ func ReadChunk(dir string, cx, cz int32) (string, nbt.Tag, bool, error) {
++	kind, compressed, exists, err := readChunkRecord(dir, cx, cz)
++	if err != nil || !exists {
++		return "", nbt.Tag{}, false, err
++	}
++	return decodeChunkRecord(kind, compressed, cx, cz)
++}
++
++// Read only the location, record header and compressed payload. Close all
++// handles before decompression so region replacement is never held up by CPU
++// work on Windows, and reading one chunk costs no whole-region allocation.
++func readChunkRecord(dir string, cx, cz int32) (byte, []byte, bool, error) {
+ 	path := regionPath(dir, cx, cz)
+-	b, err := os.ReadFile(path)
++	f, err := os.Open(path)
+ 	if errors.Is(err, os.ErrNotExist) {
+-		return "", nbt.Tag{}, false, nil
+-	}
+-	if err != nil {
+-		return "", nbt.Tag{}, false, err
+-	}
+-	if len(b) < 2*sector || len(b) > maxRegionBytes {
+-		return "", nbt.Tag{}, false, fmt.Errorf("invalid region size: %s", path)
++		return 0, nil, false, nil
++	}
++	if err != nil {
++		return 0, nil, false, err
++	}
++	defer f.Close()
++	info, err := f.Stat()
++	if err != nil {
++		return 0, nil, false, err
++	}
++	if info.Size() < 2*sector || info.Size() > maxRegionBytes {
++		return 0, nil, false, fmt.Errorf("invalid region size: %s", path)
+ 	}
+ 	i := chunkIndex(cx, cz)
+-	loc := binary.BigEndian.Uint32(b[i*4 : i*4+4])
++	var location [4]byte
++	if _, err := f.ReadAt(location[:], int64(i*4)); err != nil {
++		return 0, nil, false, err
++	}
++	loc := binary.BigEndian.Uint32(location[:])
+ 	if loc == 0 {
+-		return "", nbt.Tag{}, false, nil
++		return 0, nil, false, nil
+ 	}
+ 	offset, count := int(loc>>8), int(loc&255)
+-	if offset < 2 || count < 1 || offset*sector+5 > len(b) {
+-		return "", nbt.Tag{}, false, fmt.Errorf("invalid chunk location %d,%d", cx, cz)
++	if offset < 2 || count < 1 || int64(offset*sector+5) > info.Size() {
++		return 0, nil, false, fmt.Errorf("invalid chunk location %d,%d", cx, cz)
+ 	}
+ 	at := offset * sector
+-	n := int(binary.BigEndian.Uint32(b[at : at+4]))
+-	if n < 1 || n+4 > count*sector || at+4+n > len(b) {
+-		return "", nbt.Tag{}, false, fmt.Errorf("invalid chunk length %d,%d", cx, cz)
+-	}
+-	kind := b[at+4]
+-	compressed := b[at+5 : at+4+n]
++	var header [5]byte
++	if _, err := f.ReadAt(header[:], int64(at)); err != nil {
++		return 0, nil, false, err
++	}
++	n := int(binary.BigEndian.Uint32(header[:4]))
++	if n < 1 || n+4 > count*sector || int64(at+4+n) > info.Size() {
++		return 0, nil, false, fmt.Errorf("invalid chunk length %d,%d", cx, cz)
++	}
++	kind := header[4]
++	var compressed []byte
+ 	if kind&0x80 != 0 {
+ 		compressed, err = readExternalChunk(filepath.Join(dir, fmt.Sprintf("c.%d.%d.mcc", cx, cz)))
+ 		if err != nil {
+-			return "", nbt.Tag{}, false, err
++			return 0, nil, false, err
+ 		}
+ 		kind &^= 0x80
+-	}
++	} else {
++		compressed = make([]byte, n-1)
++		if _, err := f.ReadAt(compressed, int64(at+5)); err != nil {
++			return 0, nil, false, err
++		}
++	}
++	return kind, compressed, true, nil
++}
++
++func decodeChunkRecord(kind byte, compressed []byte, cx, cz int32) (string, nbt.Tag, bool, error) {
+ 	data, err := decompress(kind, compressed)
+ 	if err != nil {
+ 		return "", nbt.Tag{}, false, fmt.Errorf("decompress chunk %d,%d: %w", cx, cz, err)
+@@ -129,23 +163,42 @@
+ // preserved by the nbt tree. The caller must not concurrently edit the same
+ // region from another process.
+ func WriteChunk(dir string, cx, cz int32, name string, root nbt.Tag) error {
++	payload, err := encodeChunkRecord(name, root)
++	if err != nil {
++		return err
++	}
++	return writeChunkRecord(dir, cx, cz, payload)
++}
++
++var chunkCompressors = sync.Pool{New: func() any { return zlib.NewWriter(io.Discard) }}
++
++func encodeChunkRecord(name string, root nbt.Tag) ([]byte, error) {
+ 	data, err := nbt.Marshal(name, root)
+ 	if err != nil {
+-		return err
++		return nil, err
+ 	}
+ 	var compressed bytes.Buffer
+-	zw := zlib.NewWriter(&compressed)
++	zw := chunkCompressors.Get().(*zlib.Writer)
++	zw.Reset(&compressed)
++	defer func() {
++		zw.Reset(io.Discard) // do not retain a previous chunk's buffer
++		chunkCompressors.Put(zw)
++	}()
+ 	if _, err = zw.Write(data); err != nil {
+ 		zw.Close()
+-		return err
++		return nil, err
+ 	}
+ 	if err = zw.Close(); err != nil {
+-		return err
++		return nil, err
+ 	}
+ 	payload := compressed.Bytes()
+ 	if len(payload)+5 > 255*sector {
+-		return errors.New("compressed chunk requires external .mcc storage")
+-	}
++		return nil, errors.New("compressed chunk requires external .mcc storage")
++	}
++	return payload, nil
++}
++
++func writeChunkRecord(dir string, cx, cz int32, payload []byte) error {
+ 	path := regionPath(dir, cx, cz)
+ 	if err := os.MkdirAll(dir, 0755); err != nil {
+ 		return err
+--- before/internal/world/chunk.go
++++ internal/world/chunk.go
+@@ -193,6 +193,7 @@
+ 	dirtySections [NumSections]bool
+ 	lights        *light.Data
+ 	lightStale    bool
++	blockRevision uint64
+ }
+ 
+ func NewChunk(cx, cz int32) *Chunk {
+@@ -232,6 +233,7 @@
+ 		c.sect[si] = sec
+ 	}
+ 	sec.set(localIndexOf(lx, int(y), lz), state)
++	c.blockRevision++
+ 	c.dirty = true
+ 	c.dirtySections[si] = true
+ 
+--- before/internal/world/region.go
++++ internal/world/region.go
+@@ -54,6 +54,7 @@
+ 	world *World
+ 
+ 	chunks          map[chunkKey]*Chunk
++	packets         chunkPacketCache
+ 	pending         map[chunkKey][]PacketSink // sinks waiting for a chunk to generate
+ 	pendingLoads    map[chunkKey][]chan chunkResult
+ 	pendingReady    map[chunkKey][]chan error
+@@ -202,7 +203,7 @@
+ 				continue
+ 			}
+ 			if ch := r.chunks[k]; ch != nil {
+-				deliverChunk(msg.to, msg.cx, msg.cz, buildChunkDataPacket(msg.cx, msg.cz, ch))
++				deliverChunk(msg.to, msg.cx, msg.cz, r.packets.packet(ch))
+ 				continue
+ 			}
+ 			r.pending[k] = append(r.pending[k], msg.to)
+@@ -215,7 +216,7 @@
+ 				continue
+ 			}
+ 			if ch := r.chunks[k]; ch != nil {
+-				msg.result <- chunkResult{payload: buildChunkDataPacket(msg.cx, msg.cz, ch)}
++				msg.result <- chunkResult{payload: r.packets.packet(ch)}
+ 				continue
+ 			}
+ 			r.pendingLoads[k] = append(r.pendingLoads[k], msg.result)
+@@ -283,7 +284,7 @@
+ 			delete(r.pendingEdits, k)
+ 			var payload []byte
+ 			if len(r.pending[k]) > 0 || len(r.pendingLoads[k]) > 0 {
+-				payload = buildChunkDataPacket(msg.cx, msg.cz, msg.chunk)
++				payload = r.packets.packet(msg.chunk)
+ 			}
+ 			for _, result := range r.pendingReady[k] {
+ 				result <- nil
+--- before/internal/world/vanilla.go
++++ internal/world/vanilla.go
+@@ -19,6 +19,7 @@
+ // understand. The version check prevents accidental writes to other formats.
+ type VanillaSave struct {
+ 	mu                     sync.Mutex
++	regions                anvil.Store
+ 	dir                    string
+ 	name                   string
+ 	root                   nbt.Tag
+@@ -172,11 +173,7 @@
+ }
+ 
+ func (v *VanillaSave) loadChunk(cx, cz int32) (*Chunk, error) {
+-	// Windows cannot atomically replace an .mca while another worker has it
+-	// open. Share the persistence lock for the read, then generate outside it.
+-	v.mu.Lock()
+-	name, root, exists, err := anvil.ReadChunk(filepath.Join(v.dir, "region"), cx, cz)
+-	v.mu.Unlock()
++	name, root, exists, err := v.regions.ReadChunk(filepath.Join(v.dir, "region"), cx, cz)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -214,15 +211,17 @@
+ }
+ 
+ func (v *VanillaSave) persistChunk(chunk *Chunk) error {
++	// Chunk state belongs to its actor (or its generating worker before
++	// publication). Only metadata needs the save-wide mutex.
++	name, root, err := chunk.updateAnvilBlocks()
++	if err != nil {
++		return err
++	}
++	if err := v.regions.WriteChunk(filepath.Join(v.dir, "region"), chunk.cx, chunk.cz, name, root); err != nil {
++		return err
++	}
+ 	v.mu.Lock()
+ 	defer v.mu.Unlock()
+-	name, root, err := chunk.updateAnvilBlocks()
+-	if err != nil {
+-		return err
+-	}
+-	if err := anvil.WriteChunk(filepath.Join(v.dir, "region"), chunk.cx, chunk.cz, name, root); err != nil {
+-		return err
+-	}
+ 	levelRoot, _ := v.root.Object()
+ 	level, _ := levelRoot.Object("Data")
+ 	if marker, ok := level.Object("AtlasWorldgen"); ok && chunk.cx == v.spawnX>>4 && chunk.cz == v.spawnZ>>4 {
+--- before/internal/world/world.go
++++ internal/world/world.go
+@@ -189,7 +189,9 @@
+ 	}
+ 	select {
+ 	case res := <-result:
+-		return res.payload, res.err
++		// Public callers own the returned bytes; network sinks consume immutable
++		// shared cache buffers without an extra copy.
++		return append([]byte(nil), res.payload...), res.err
+ 	case <-w.done:
+ 		return nil, ErrWorldClosed
+ 	}
+--- before/internal/worldgen/aquifer.go
++++ internal/worldgen/aquifer.go
+@@ -20,22 +20,66 @@
+ }
+ 
+ type noiseAquifer struct {
+-	sampler  *DensitySampler
+-	settings *DensitySettings
+-	random   PositionalRandom
+-	centers  map[densityPosition]densityPosition
+-	fluids   map[densityPosition]aquiferFluid
+-	surfaces map[densityPosition]int32
+-	err      error
++	sampler    *DensitySampler
++	settings   *DensitySettings
++	random     PositionalRandom
++	centers    map[densityPosition]densityPosition
++	fluids     map[densityPosition]aquiferFluid
++	surfaces   map[densityPosition]int32
++	err        error
++	gridMin    densityPosition
++	gridHeight int32
++	centerGrid []aquiferCenter
++}
++
++type aquiferCenter struct {
++	position densityPosition
++	valid    bool
+ }
+ 
+ func newNoiseAquifer(sampler *DensitySampler, settings *DensitySettings, random PositionalRandom) *noiseAquifer {
+-	return &noiseAquifer{
++	aquifer := &noiseAquifer{
+ 		sampler: sampler, settings: settings, random: random,
+ 		centers:  make(map[densityPosition]densityPosition),
+ 		fluids:   make(map[densityPosition]aquiferFluid),
+ 		surfaces: make(map[densityPosition]int32),
+ 	}
++	if sampler.chunk != nil {
++		// Only 3x3 aquifer grid columns can influence blocks in this chunk.
++		// A compact array avoids twelve coordinate-map lookups per air/fluid
++		// block. Out-of-grid probes still use the general coordinate cache.
++		minY := floorCell(settings.MinY+1, 12)/12 - 1
++		maxY := floorCell(settings.MinY+settings.Height, 12)/12 + 1
++		aquifer.gridMin = densityPosition{sampler.chunk.minX/16 - 1, minY, sampler.chunk.minZ/16 - 1}
++		aquifer.gridHeight = maxY - minY + 1
++		aquifer.centerGrid = make([]aquiferCenter, 9*aquifer.gridHeight)
++	}
++	return aquifer
++}
++
++func (aquifer *noiseAquifer) centerAt(grid densityPosition) densityPosition {
++	x, y, z := grid.x-aquifer.gridMin.x, grid.y-aquifer.gridMin.y, grid.z-aquifer.gridMin.z
++	var cached *aquiferCenter
++	if x >= 0 && x < 3 && z >= 0 && z < 3 && y >= 0 && y < aquifer.gridHeight {
++		cached = &aquifer.centerGrid[(x*aquifer.gridHeight+y)*3+z]
++		if cached.valid {
++			return cached.position
++		}
++	} else if center, ok := aquifer.centers[grid]; ok {
++		return center
++	}
++	positionRandom := aquifer.random.At(grid.x, grid.y, grid.z)
++	center := densityPosition{
++		x: grid.x*16 + positionRandom.NextIntBound(10),
++		y: grid.y*12 + positionRandom.NextIntBound(9),
++		z: grid.z*16 + positionRandom.NextIntBound(10),
++	}
++	if cached != nil {
++		cached.position, cached.valid = center, true
++	} else {
++		aquifer.centers[grid] = center
++	}
++	return center
+ }
+ 
+ func (aquifer *noiseAquifer) sample(field string, x, y, z int32) float64 {
+@@ -74,16 +118,7 @@
+ 		for offsetY := int32(-1); offsetY <= 1; offsetY++ {
+ 			for offsetZ := int32(0); offsetZ <= 1; offsetZ++ {
+ 				grid := densityPosition{x: gridX + offsetX, y: gridY + offsetY, z: gridZ + offsetZ}
+-				center, exists := aquifer.centers[grid]
+-				if !exists {
+-					positionRandom := aquifer.random.At(grid.x, grid.y, grid.z)
+-					center = densityPosition{
+-						x: grid.x*16 + positionRandom.NextIntBound(10),
+-						y: grid.y*12 + positionRandom.NextIntBound(9),
+-						z: grid.z*16 + positionRandom.NextIntBound(10),
+-					}
+-					aquifer.centers[grid] = center
+-				}
++				center := aquifer.centerAt(grid)
+ 				deltaX, deltaY, deltaZ := center.x-x, center.y-y, center.z-z
+ 				distance := deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ
+ 				if distances[0] >= distance {
+--- before/internal/worldgen/density.go
++++ internal/worldgen/density.go
+@@ -12,13 +12,14 @@
+ // expression tree; evaluation support is added separately as each vanilla
+ // generation stage is reproduced. References share the same parsed node.
+ type DensityNode struct {
+-	Kind     string
+-	Name     string
+-	Noise    string
+-	Children map[string]*DensityNode
+-	Numbers  map[string]float64
+-	Spline   *DensitySpline
+-	Text     map[string]string
++	Kind       string
++	Name       string
++	Noise      string
++	Children   map[string]*DensityNode
++	Numbers    map[string]float64
++	Spline     *DensitySpline
++	Text       map[string]string
++	evaluation *densityEvaluation
+ }
+ 
+ type DensitySpline struct {
+@@ -157,7 +158,9 @@
+ 		if err := json.Unmarshal(raw, &value); err != nil || math.IsInf(value, 0) || math.IsNaN(value) {
+ 			return nil, fmt.Errorf("%s: expected finite constant or density object", path)
+ 		}
+-		return &DensityNode{Kind: "constant", Numbers: map[string]float64{"value": value}}, nil
++		n := &DensityNode{Kind: "constant", Numbers: map[string]float64{"value": value}}
++		n.evaluation = prepareDensityEvaluation(n)
++		return n, nil
+ 	}
+ 	var fields map[string]json.RawMessage
+ 	if err := json.Unmarshal(raw, &fields); err != nil {
+@@ -292,6 +295,7 @@
+ 			return nil, fmt.Errorf("%s: unexpected field %q for %s", path, key, fullKind)
+ 		}
+ 	}
++	n.evaluation = prepareDensityEvaluation(n)
+ 	return n, nil
+ }
+ 
+--- before/internal/worldgen/density_eval.go
++++ internal/worldgen/density_eval.go
+@@ -46,12 +46,18 @@
+ 	if n == nil {
+ 		return 0, fmt.Errorf("nil density node")
+ 	}
+-	child := func(key string) (float64, error) {
+-		return s.Sample(n.Children[key], x, y, z)
++	evaluation := n.evaluation
++	if evaluation == nil {
++		// Manually constructed probe expressions retain their map semantics.
++		// Never mutate the node here: parsed trees are shared between workers.
++		evaluation = prepareDensityEvaluation(n)
++	}
++	child := func(index int) (float64, error) {
++		return s.Sample(evaluation.children[index], x, y, z)
+ 	}
+ 	switch n.Kind {
+ 	case "constant":
+-		return n.Numbers["value"], nil
++		return evaluation.numbers[densityValue], nil
+ 	case "blend_alpha":
+ 		return 1, nil // No old/new chunk blending in a direct sample.
+ 	case "blend_offset":
+@@ -60,37 +66,37 @@
+ 		if s.chunk != nil {
+ 			return s.sampleFlatCache(n, x, y, z)
+ 		}
+-		return child("argument")
++		return child(densityArgument)
+ 	case "cache_2d":
+ 		if s.chunk != nil {
+ 			return s.sampleCache2D(n, x, y, z)
+ 		}
+-		return child("argument")
++		return child(densityArgument)
+ 	case "cache_all_in_cell":
+ 		if s.chunk == nil {
+ 			return 0, fmt.Errorf("cell cache requires a NoiseChunk")
+ 		}
+ 		previous := s.chunk.fillingCell
+ 		s.chunk.fillingCell = true
+-		value, err := child("argument")
++		value, err := child(densityArgument)
+ 		s.chunk.fillingCell = previous
+ 		return value, err
+ 	case "cache_once", "blend_density":
+-		return child("argument")
++		return child(densityArgument)
+ 	case "interpolated":
+ 		if s.chunk != nil && s.chunk.singlePoint {
+-			return child("argument")
++			return child(densityArgument)
+ 		}
+ 		if s.cellWidth <= 0 || s.cellHeight <= 0 {
+ 			return 0, fmt.Errorf("interpolated density requires a noise cell")
+ 		}
+-		return s.interpolate(n.Children["argument"], x, y, z)
++		return s.interpolate(n.argument(), x, y, z)
+ 	case "add", "mul", "min", "max":
+-		a, err := child("argument1")
+-		if err != nil {
+-			return 0, err
+-		}
+-		b, err := child("argument2")
++		a, err := child(densityLeft)
++		if err != nil {
++			return 0, err
++		}
++		b, err := child(densityRight)
+ 		if err != nil {
+ 			return 0, err
+ 		}
+@@ -105,7 +111,7 @@
+ 			return math.Max(a, b), nil
+ 		}
+ 	case "abs", "square", "cube", "half_negative", "quarter_negative", "squeeze":
+-		v, err := child("argument")
++		v, err := child(densityArgument)
+ 		if err != nil {
+ 			return 0, err
+ 		}
+@@ -130,33 +136,33 @@
+ 		}
+ 		return v, nil
+ 	case "clamp":
+-		v, err := child("input")
+-		if err != nil {
+-			return 0, err
+-		}
+-		return math.Max(n.Numbers["min"], math.Min(n.Numbers["max"], v)), nil
++		v, err := child(densityInput)
++		if err != nil {
++			return 0, err
++		}
++		return math.Max(evaluation.numbers[densityMin], math.Min(evaluation.numbers[densityMax], v)), nil
+ 	case "range_choice":
+-		v, err := child("input")
+-		if err != nil {
+-			return 0, err
+-		}
+-		if v >= n.Numbers["min_inclusive"] && v < n.Numbers["max_exclusive"] {
+-			return child("when_in_range")
+-		}
+-		return child("when_out_of_range")
++		v, err := child(densityInput)
++		if err != nil {
++			return 0, err
++		}
++		if v >= evaluation.numbers[densityMinInclusive] && v < evaluation.numbers[densityMaxExclusive] {
++			return child(densityWhenIn)
++		}
++		return child(densityWhenOut)
+ 	case "y_clamped_gradient":
+-		from, to := n.Numbers["from_y"], n.Numbers["to_y"]
++		from, to := evaluation.numbers[densityFromY], evaluation.numbers[densityToY]
+ 		if from == to {
+ 			return 0, fmt.Errorf("zero-width y gradient")
+ 		}
+ 		t := math.Max(0, math.Min(1, (float64(y)-from)/(to-from)))
+-		return n.Numbers["from_value"] + t*(n.Numbers["to_value"]-n.Numbers["from_value"]), nil
++		return evaluation.numbers[densityFromValue] + t*(evaluation.numbers[densityToValue]-evaluation.numbers[densityFromValue]), nil
+ 	case "noise":
+ 		noise, err := s.noise(n.Noise)
+ 		if err != nil {
+ 			return 0, err
+ 		}
+-		xz, ys := n.Numbers["xz_scale"], n.Numbers["y_scale"]
++		xz, ys := evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale]
+ 		return noise.Noise(float64(x)*xz, float64(y)*ys, float64(z)*xz), nil
+ 	case "shift", "shift_a", "shift_b":
+ 		noise, err := s.noise(n.Noise)
+@@ -172,15 +178,15 @@
+ 		}
+ 		return 4 * noise.Noise(fx*0.25, fy*0.25, fz*0.25), nil
+ 	case "shifted_noise":
+-		shiftX, err := child("shift_x")
+-		if err != nil {
+-			return 0, err
+-		}
+-		shiftY, err := child("shift_y")
+-		if err != nil {
+-			return 0, err
+-		}
+-		shiftZ, err := child("shift_z")
++		shiftX, err := child(densityShiftX)
++		if err != nil {
++			return 0, err
++		}
++		shiftY, err := child(densityShiftY)
++		if err != nil {
++			return 0, err
++		}
++		shiftZ, err := child(densityShiftZ)
+ 		if err != nil {
+ 			return 0, err
+ 		}
+@@ -188,7 +194,7 @@
+ 		if err != nil {
+ 			return 0, err
+ 		}
+-		xz, ys := n.Numbers["xz_scale"], n.Numbers["y_scale"]
++		xz, ys := evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale]
+ 		return noise.Noise(float64(x)*xz+shiftX, float64(y)*ys+shiftY, float64(z)*xz+shiftZ), nil
+ 	case "spline":
+ 		v, err := s.sampleSpline(n.Spline, x, y, z)
+@@ -196,13 +202,13 @@
+ 	case "old_blended_noise":
+ 		b := s.blended[n]
+ 		if b == nil {
+-			b = NewBlendedNoise(s.Seed, n.Numbers["xz_scale"], n.Numbers["y_scale"],
+-				n.Numbers["xz_factor"], n.Numbers["y_factor"], n.Numbers["smear_scale_multiplier"])
++			b = NewBlendedNoise(s.Seed, evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale],
++				evaluation.numbers[densityXZFactor], evaluation.numbers[densityYFactor], evaluation.numbers[densitySmearScale])
+ 			s.blended[n] = b
+ 		}
+ 		return b.Noise(x, y, z), nil
+ 	case "weird_scaled_sampler":
+-		input, err := child("input")
++		input, err := child(densityInput)
+ 		if err != nil {
+ 			return 0, err
+ 		}
+--- before/internal/worldgen/feature_plan.go
++++ internal/worldgen/feature_plan.go
+@@ -132,11 +132,12 @@
+ 		return nil, err
+ 	}
+ 	// Validate region-dependent operations too, without executing predicates.
+-	if _, err := bindPlacement(nil, definition, nil, nil); err != nil {
++	template, err := compilePlacementTemplate(definition, nil)
++	if err != nil {
+ 		return nil, err
+ 	}
+ 	return func(region *OverworldFeatureRegion, random *WorldgenRandom, p FeaturePosition) (bool, error) {
+-		operations, err := bindPlacement(region, definition, nil, nil)
++		operations, err := template.bind(region, nil)
+ 		if err != nil {
+ 			return false, err
+ 		}
+--- before/internal/worldgen/feature_region.go
++++ internal/worldgen/feature_region.go
+@@ -14,6 +14,11 @@
+ 
+ type featureColumnPosition struct {
+ 	blockX, blockZ int32
++}
++
++type featureChunkOverlay struct {
++	blocks         map[int]SurfaceBlockState
++	postProcessing map[int]bool
+ }
+ 
+ // OverworldFeatureRegion exposes already-generated neighboring chunks to block
+@@ -21,6 +26,7 @@
+ type OverworldFeatureRegion struct {
+ 	chunks         map[featureChunkPosition]*NoiseChunkResult
+ 	borrowed       map[featureChunkPosition]bool
++	overlays       map[featureChunkPosition]*featureChunkOverlay
+ 	heights        map[featureColumnPosition]int32
+ 	motionHeights  map[featureColumnPosition]int32
+ 	surfaceHeights map[featureColumnPosition]int32
+@@ -50,6 +56,19 @@
+ 	return chunk, nil
+ }
+ 
++func (region *OverworldFeatureRegion) stateAt(chunk *NoiseChunkResult, overlay *featureChunkOverlay, x, y, z int32) SurfaceBlockState {
++	if overlay != nil {
++		if state, ok := overlay.blocks[int((y-chunk.MinY)*256+z*16+x)]; ok {
++			return state
++		}
++	}
++	return chunk.surfaceState(x, y, z)
++}
++
++func (region *OverworldFeatureRegion) overlayAt(x, z int32) *featureChunkOverlay {
++	return region.overlays[featureChunkPosition{x >> 4, z >> 4}]
++}
++
+ func (region *OverworldFeatureRegion) OceanFloorHeightAt(blockX, blockZ int32) (int32, error) {
+ 	column := featureColumnPosition{blockX, blockZ}
+ 	if height, exists := region.heights[column]; exists {
+@@ -59,8 +78,9 @@
+ 	if err != nil {
+ 		return 0, err
+ 	}
++	overlay := region.overlayAt(blockX, blockZ)
+ 	for y := chunk.MinY + chunk.Height - 1; y >= chunk.MinY; y-- {
+-		solid, err := oceanFloorSolid(chunk.surfaceState(blockX&15, y, blockZ&15))
++		solid, err := oceanFloorSolid(region.stateAt(chunk, overlay, blockX&15, y, blockZ&15))
+ 		if err != nil {
+ 			return 0, err
+ 		}
+@@ -86,8 +106,9 @@
+ 		if err != nil {
+ 			return 0, err
+ 		}
++		overlay := region.overlayAt(blockX, blockZ)
+ 		for y := chunk.MinY + chunk.Height - 1; y >= chunk.MinY; y-- {
+-			name := chunk.surfaceState(blockX&15, y, blockZ&15).Name
++			name := region.stateAt(chunk, overlay, blockX&15, y, blockZ&15).Name
+ 			if name != "minecraft:air" && name != "minecraft:cave_air" && name != "minecraft:void_air" {
+ 				region.surfaceHeights[column] = y + 1
+ 				return y + 1, nil
+@@ -107,8 +128,9 @@
+ 	if err != nil {
+ 		return 0, err
+ 	}
++	overlay := region.overlayAt(blockX, blockZ)
+ 	for y := chunk.MinY + chunk.Height - 1; y >= chunk.MinY; y-- {
+-		blocksMotion, err := motionBlocking(chunk.surfaceState(blockX&15, y, blockZ&15))
++		blocksMotion, err := motionBlocking(region.stateAt(chunk, overlay, blockX&15, y, blockZ&15))
+ 		if err != nil {
+ 			return 0, err
+ 		}
+@@ -129,7 +151,7 @@
+ 	if err != nil {
+ 		return SurfaceBlockState{}, err
+ 	}
+-	return chunk.surfaceState(position.X&15, position.Y, position.Z&15), nil
++	return region.stateAt(chunk, region.overlayAt(position.X, position.Z), position.X&15, position.Y, position.Z&15), nil
+ }
+ 
+ func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state SurfaceBlockState) error {
+@@ -142,17 +164,21 @@
+ 	}
+ 	key := featureChunkPosition{position.X >> 4, position.Z >> 4}
+ 	if region.borrowed[key] {
+-		private := *chunk
+-		private.PostProcessing = append([]bool(nil), chunk.PostProcessing...)
+-		private.SurfaceBlocks = make(map[int]SurfaceBlockState, len(chunk.SurfaceBlocks))
+-		for index, state := range chunk.SurfaceBlocks {
+-			private.SurfaceBlocks[index] = state
+-		}
+-		chunk = &private
+-		region.chunks[key] = chunk
+-		delete(region.borrowed, key)
+-	}
+-	chunk.setSurfaceState(position.X&15, position.Y, position.Z&15, state)
++		// A sparse write overlay avoids copying the entire surface map and
++		// postprocessing array of every neighbor for each decoration replay.
++		if region.overlays == nil {
++			region.overlays = make(map[featureChunkPosition]*featureChunkOverlay)
++		}
++		overlay := region.overlays[key]
++		if overlay == nil {
++			overlay = &featureChunkOverlay{blocks: make(map[int]SurfaceBlockState)}
++			region.overlays[key] = overlay
++		}
++		index, _ := chunk.Index(position.X&15, position.Y, position.Z&15)
++		overlay.blocks[index] = state
++	} else {
++		chunk.setSurfaceState(position.X&15, position.Y, position.Z&15, state)
++	}
+ 	// Underground ore writes cannot change the top of a column. Invalidating
+ 	// every heightmap here made each vein scan from Y=319 all over again.
+ 	column := featureColumnPosition{position.X, position.Z}
+@@ -180,12 +206,35 @@
+ 	if err != nil {
+ 		return err
+ 	}
++	index, _ := chunk.Index(p.X&15, p.Y, p.Z&15)
++	if overlay := region.overlayAt(p.X, p.Z); overlay != nil {
++		if overlay.postProcessing == nil {
++			overlay.postProcessing = make(map[int]bool)
++		}
++		overlay.postProcessing[index] = true
++		return nil
++	}
+ 	if chunk.PostProcessing == nil {
+ 		chunk.PostProcessing = make([]bool, len(chunk.Blocks))
+ 	}
+-	index, _ := chunk.Index(p.X&15, p.Y, p.Z&15)
+ 	chunk.PostProcessing[index] = true
+ 	return nil
++}
++
++func (region *OverworldFeatureRegion) cloneChunk(cx, cz int32) *NoiseChunkResult {
++	chunk := cloneTerrain(region.chunks[featureChunkPosition{cx, cz}])
++	if overlay := region.overlayAt(cx*16, cz*16); overlay != nil {
++		for index, state := range overlay.blocks {
++			chunk.SurfaceBlocks[index] = cloneSurfaceState(state)
++		}
++		if len(overlay.postProcessing) > 0 && chunk.PostProcessing == nil {
++			chunk.PostProcessing = make([]bool, len(chunk.Blocks))
++		}
++		for index := range overlay.postProcessing {
++			chunk.PostProcessing[index] = true
++		}
++	}
++	return chunk
+ }
+ 
+ func (region *OverworldFeatureRegion) InWorld(position FeaturePosition) bool {
+--- before/internal/worldgen/feature_stream.go
++++ internal/worldgen/feature_stream.go
+@@ -7,6 +7,30 @@
+ 
+ type positionConsumer func(FeaturePosition) error
+ type placementOperation func(FeaturePosition, *WorldgenRandom, positionConsumer) error
++
++type placementBinding func(*OverworldFeatureRegion, func(int32, int32, int32) (string, error)) placementOperation
++
++type placementTemplate struct {
++	operations []placementOperation
++	bindings   []placementBinding
++	needsBiome bool
++}
++
++func (template *placementTemplate) bind(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) ([]placementOperation, error) {
++	if template.needsBiome && biomeAtQuart == nil {
++		return nil, fmt.Errorf("biome filter without top-level feature context")
++	}
++	if len(template.bindings) == 0 {
++		return template.operations, nil
++	}
++	operations := append([]placementOperation(nil), template.operations...)
++	for i, binding := range template.bindings {
++		if binding != nil {
++			operations[i] = binding(region, biomeAtQuart)
++		}
++	}
++	return operations, nil
++}
+ 
+ // compilePlacement builds a lazy modifier pipeline. Placement and feature
+ // execution share one random stream in vanilla: collecting every candidate
+@@ -174,6 +198,16 @@
+ 
+ func bindPlacement(region *OverworldFeatureRegion, definition PlacedFeatureDefinition, feature *PlacedFeature,
+ 	biomeAtQuart func(int32, int32, int32) (string, error)) ([]placementOperation, error) {
++	template, err := compilePlacementTemplate(definition, feature)
++	if err != nil {
++		return nil, err
++	}
++	return template.bind(region, biomeAtQuart)
++}
++
++// Compile providers and predicates once, then bind only the private region and
++// biome callback for each replay. Templates capture no mutable random stream.
++func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *PlacedFeature) (*placementTemplate, error) {
+ 	name := definition.Feature
+ 	if feature != nil {
+ 		name = feature.Name
+@@ -186,9 +220,14 @@
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	template := &placementTemplate{operations: operations}
++	var bindings []placementBinding
+ 	for i, operation := range operations {
+ 		if operation != nil {
+ 			continue
++		}
++		if bindings == nil {
++			bindings = make([]placementBinding, len(operations))
+ 		}
+ 		var modifier struct {
+ 			Type       string          `json:"type"`
+@@ -205,62 +244,71 @@
+ 		}
+ 		switch modifier.Type {
+ 		case "minecraft:biome":
+-			if feature == nil || biomeAtQuart == nil {
++			template.needsBiome = true
++			if feature == nil {
+ 				return nil, fmt.Errorf("biome filter without top-level feature context")
+ 			}
+-			operations[i] = func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+-				biome, err := biomeAtQuart(position.X>>2, position.Y>>2, position.Z>>2)
+-				if err != nil {
+-					return err
+-				}
+-				for _, index := range order.biomes[biome][feature.Step] {
+-					if index == feature.Index {
++			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
++				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
++					biome, err := biomeAtQuart(position.X>>2, position.Y>>2, position.Z>>2)
++					if err != nil {
++						return err
++					}
++					for _, index := range order.biomes[biome][feature.Step] {
++						if index == feature.Index {
++							return next(position)
++						}
++					}
++					return nil
++				}
++			}
++		case "minecraft:heightmap":
++			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
++				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
++					height, err := region.HeightmapAt(modifier.Heightmap, position.X, position.Z)
++					if err != nil {
++						return err
++					}
++					if height > -64 {
++						position.Y = height
+ 						return next(position)
+ 					}
+-				}
+-				return nil
+-			}
+-		case "minecraft:heightmap":
+-			operations[i] = func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+-				height, err := region.HeightmapAt(modifier.Heightmap, position.X, position.Z)
+-				if err != nil {
+-					return err
+-				}
+-				if height > -64 {
+-					position.Y = height
+-					return next(position)
+-				}
+-				return nil
++					return nil
++				}
+ 			}
+ 		case "minecraft:block_predicate_filter":
+ 			predicate, err := compileFeaturePredicate(modifier.Predicate)
+ 			if err != nil {
+ 				return nil, err
+ 			}
+-			operations[i] = func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+-				matches, err := predicate(region, position)
+-				if err != nil {
+-					return err
+-				}
+-				if matches {
+-					return next(position)
+-				}
+-				return nil
++			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
++				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
++					matches, err := predicate(region, position)
++					if err != nil {
++						return err
++					}
++					if matches {
++						return next(position)
++					}
++					return nil
++				}
+ 			}
+ 		case "minecraft:surface_water_depth_filter":
+-			operations[i] = func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+-				floor, err := region.HeightmapAt("OCEAN_FLOOR", position.X, position.Z)
+-				if err != nil {
+-					return err
+-				}
+-				surface, err := region.HeightmapAt("WORLD_SURFACE", position.X, position.Z)
+-				if err != nil {
+-					return err
+-				}
+-				if surface-floor <= modifier.WaterDepth {
+-					return next(position)
+-				}
+-				return nil
++			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
++				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
++					floor, err := region.HeightmapAt("OCEAN_FLOOR", position.X, position.Z)
++					if err != nil {
++						return err
++					}
++					surface, err := region.HeightmapAt("WORLD_SURFACE", position.X, position.Z)
++					if err != nil {
++						return err
++					}
++					if surface-floor <= modifier.WaterDepth {
++						return next(position)
++					}
++					return nil
++				}
+ 			}
+ 		case "minecraft:environment_scan":
+ 			if modifier.MaxSteps < 1 || modifier.MaxSteps > 32 || (modifier.Direction != "up" && modifier.Direction != "down") {
+@@ -277,16 +325,36 @@
+ 					return nil, err
+ 				}
+ 			}
+-			operations[i] = func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+-				ok, err := allowed(region, position)
+-				if err != nil || !ok {
+-					return err
+-				}
+-				delta := int32(1)
+-				if modifier.Direction == "down" {
+-					delta = -1
+-				}
+-				for range modifier.MaxSteps {
++			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
++				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
++					ok, err := allowed(region, position)
++					if err != nil || !ok {
++						return err
++					}
++					delta := int32(1)
++					if modifier.Direction == "down" {
++						delta = -1
++					}
++					for range modifier.MaxSteps {
++						ok, err = target(region, position)
++						if err != nil {
++							return err
++						}
++						if ok {
++							return next(position)
++						}
++						position.Y += delta
++						if position.Y < -64 || position.Y >= 320 {
++							return nil
++						}
++						ok, err = allowed(region, position)
++						if err != nil {
++							return err
++						}
++						if !ok {
++							break
++						}
++					}
+ 					ok, err = target(region, position)
+ 					if err != nil {
+ 						return err
+@@ -294,30 +362,13 @@
+ 					if ok {
+ 						return next(position)
+ 					}
+-					position.Y += delta
+-					if position.Y < -64 || position.Y >= 320 {
+-						return nil
+-					}
+-					ok, err = allowed(region, position)
+-					if err != nil {
+-						return err
+-					}
+-					if !ok {
+-						break
+-					}
+-				}
+-				ok, err = target(region, position)
+-				if err != nil {
+-					return err
+-				}
+-				if ok {
+-					return next(position)
+-				}
+-				return nil
+-			}
+-		}
+-	}
+-	return operations, nil
++					return nil
++				}
++			}
++		}
++	}
++	template.bindings = bindings
++	return template, nil
+ }
+ 
+ func walkPlacement(operations []placementOperation, random *WorldgenRandom, origin FeaturePosition,
+--- before/internal/worldgen/noise_chunk.go
++++ internal/worldgen/noise_chunk.go
+@@ -72,6 +72,7 @@
+ 	density := &DensityNode{Kind: "cache_all_in_cell", Children: map[string]*DensityNode{
+ 		"argument": settings.Router["final_density"],
+ 	}}
++	density.evaluation = prepareDensityEvaluation(density)
+ 	rootRandom := NewXoroshiro(generator.seed).ForkPositional()
+ 	aquifer := newNoiseAquifer(sampler, settings, rootRandom.FromHashOf("minecraft:aquifer").ForkPositional())
+ 	oreRandom := rootRandom.FromHashOf("minecraft:ore").ForkPositional()
+--- before/internal/worldgen/noise_chunk_density.go
++++ internal/worldgen/noise_chunk_density.go
+@@ -39,7 +39,7 @@
+ func (s *DensitySampler) sampleFlatCache(node *DensityNode, x, y, z int32) (float64, error) {
+ 	quartX, quartZ := floorCell(x, 4), floorCell(z, 4)
+ 	if quartX < s.chunk.minX || quartX > s.chunk.minX+16 || quartZ < s.chunk.minZ || quartZ > s.chunk.minZ+16 {
+-		return s.Sample(node.Children["argument"], x, y, z)
++		return s.Sample(node.argument(), x, y, z)
+ 	}
+ 	key := densityCacheKey{node: node, position: densityPosition{x: quartX, z: quartZ}}
+ 	if value, exists := s.chunk.flat[key]; exists {
+@@ -47,7 +47,7 @@
+ 	}
+ 	previous := s.chunk.singlePoint
+ 	s.chunk.singlePoint = true
+-	value, err := s.Sample(node.Children["argument"], quartX, 0, quartZ)
++	value, err := s.Sample(node.argument(), quartX, 0, quartZ)
+ 	s.chunk.singlePoint = previous
+ 	if err == nil {
+ 		s.chunk.flat[key] = value
+@@ -60,7 +60,7 @@
+ 	if value, exists := s.chunk.twoD[key]; exists {
+ 		return value, nil
+ 	}
+-	value, err := s.Sample(node.Children["argument"], x, y, z)
++	value, err := s.Sample(node.argument(), x, y, z)
+ 	if err == nil {
+ 		s.chunk.twoD[key] = value
+ 	}
+--- before/internal/worldgen/overworld.go
++++ internal/worldgen/overworld.go
+@@ -36,8 +36,9 @@
+ }
+ 
+ type decorationFeature struct {
+-	feature PlacedFeature
+-	place   func(*OverworldFeatureRegion, *WorldgenRandom, FeaturePosition) (bool, error)
++	feature   PlacedFeature
++	placement *placementTemplate
++	place     func(*OverworldFeatureRegion, *WorldgenRandom, FeaturePosition) (bool, error)
+ }
+ 
+ // OverworldGenerator is safe for concurrent generation. Cached terrain is
+@@ -111,7 +112,8 @@
+ 		default:
+ 			continue
+ 		}
+-		if _, err := bindPlacement(nil, placed, &feature, func(int32, int32, int32) (string, error) { return "", nil }); err != nil {
++		plan.placement, err = compilePlacementTemplate(placed, &feature)
++		if err != nil {
+ 			return nil, err
+ 		}
+ 		generator.plans[feature.Name] = plan
+@@ -240,8 +242,8 @@
+ 	if err != nil {
+ 		return nil, err
+ 	}
+-	// Feature writes copy only touched surface maps. Material/fluid arrays are
+-	// read-only during decoration; the returned target is fully copied below.
++	// Feature writes use sparse private overlays. The returned target alone is
++	// materialized and fully detached from all immutable terrain templates.
+ 	region.borrowed = make(map[featureChunkPosition]bool, len(chunks))
+ 	for position := range region.chunks {
+ 		region.borrowed[position] = true
+@@ -274,13 +276,19 @@
+ 			if err != nil {
+ 				return nil, err
+ 			}
++			decorationSeed := OverworldDecorationSeed(generator.seed, sx, sz)
+ 			for _, feature := range schedule {
+ 				plan, supported := generator.plans[feature.Name]
+ 				if !supported {
+ 					skipped[feature.Name] = true
+ 					continue
+ 				}
+-				if err := visitFeaturePositions(region, generator.seed, sx, sz, feature, biomeAtQuart,
++				operations, err := plan.placement.bind(region, biomeAtQuart)
++				if err != nil {
++					return nil, err
++				}
++				random := OverworldPlacedFeatureRandom(decorationSeed, feature)
++				if err := walkPlacement(operations, random, FeaturePosition{X: sx * 16, Z: sz * 16},
+ 					func(position FeaturePosition, random *WorldgenRandom) error {
+ 						_, err := plan.place(region, random, position)
+ 						return err
+@@ -290,7 +298,7 @@
+ 			}
+ 		}
+ 	}
+-	result := &GeneratedOverworldChunk{Terrain: cloneTerrain(region.chunks[featureChunkPosition{cx, cz}]), Biomes: bases[featureChunkPosition{cx, cz}].biomes}
++	result := &GeneratedOverworldChunk{Terrain: region.cloneChunk(cx, cz), Biomes: bases[featureChunkPosition{cx, cz}].biomes}
+ 	for name := range skipped {
+ 		result.SkippedFeatures = append(result.SkippedFeatures, name)
+ 	}
+--- before/internal/worldgen/surface_pass.go
++++ internal/worldgen/surface_pass.go
+@@ -173,7 +173,7 @@
+ 				if state.Name != "minecraft:stone" {
+ 					continue
+ 				}
+-				replacement, err := rules.Apply(context)
++				replacement, err := rules.applyRule(rules.rule, context)
+ 				if err != nil {
+ 					return err
+ 				}
+--- before/internal/worldgen/surface_rules.go
++++ internal/worldgen/surface_rules.go
+@@ -9,6 +9,17 @@
+ type SurfaceBlockState struct {
+ 	Name       string            `json:"Name"`
+ 	Properties map[string]string `json:"Properties,omitempty"`
++}
++
++func cloneSurfaceState(state SurfaceBlockState) SurfaceBlockState {
++	if state.Properties != nil {
++		properties := make(map[string]string, len(state.Properties))
++		for key, value := range state.Properties {
++			properties[key] = value
++		}
++		state.Properties = properties
++	}
++	return state
+ }
+ 
+ type SurfaceContext struct {
+@@ -214,20 +225,20 @@
+ }
+ 
+ func (sampler *SurfaceRuleSampler) Apply(context SurfaceContext) (*SurfaceBlockState, error) {
+-	return sampler.applyRule(sampler.rule, context)
++	state, err := sampler.applyRule(sampler.rule, context)
++	if state == nil || err != nil {
++		return nil, err
++	}
++	owned := cloneSurfaceState(*state)
++	return &owned, nil
+ }
+ 
+ func (sampler *SurfaceRuleSampler) applyRule(rule *surfaceRule, context SurfaceContext) (*SurfaceBlockState, error) {
+ 	switch rule.Type {
+ 	case "minecraft:block":
+-		state := SurfaceBlockState{Name: rule.ResultState.Name}
+-		if rule.ResultState.Properties != nil {
+-			state.Properties = make(map[string]string, len(rule.ResultState.Properties))
+-			for key, value := range rule.ResultState.Properties {
+-				state.Properties[key] = value
+-			}
+-		}
+-		return &state, nil
++		// Internal terrain passes only read these states. Detach at the public
++		// boundary rather than allocating the same properties for each block.
++		return rule.ResultState, nil
+ 	case "minecraft:sequence":
+ 		for _, child := range rule.Sequence {
+ 			state, err := sampler.applyRule(child, context)
+--- before/internal/light/engine.go
++++ internal/light/engine.go
+@@ -33,6 +33,16 @@
+ 	rules        *ruleTable
+ 	columns      map[Position]*column
+ 	revision     uint64
++	work         *relightWork
++}
++
++// Mutable scratch is owned under Engine.mu. It is never included in a
++// published Data snapshot, so later relighting cannot alter queued packets.
++type relightWork struct {
++	states               []uint16
++	sky, block           []byte
++	loaded               [48 * 48]bool
++	skyQueue, blockQueue [16][]int
+ }
+ 
+ func New(minY, height int, hasSky bool) (*Engine, error) {
+@@ -132,7 +142,7 @@
+ }
+ 
+ func packLayer(values []byte, width, layer, x0, z0 int) []byte {
+-	packed := make([]byte, 2048)
++	var packed [2048]byte
+ 	nonzero := false
+ 	for y := 0; y < 16; y++ {
+ 		for z := 0; z < 16; z++ {
+@@ -147,7 +157,7 @@
+ 	if !nonzero {
+ 		return nil
+ 	}
+-	return packed
++	return append([]byte(nil), packed[:]...)
+ }
+ 
+ // Changes can influence at most the immediately adjacent chunks: sideways
+@@ -158,8 +168,21 @@
+ 	plane := width * width
+ 	lightHeight := e.height + 32
+ 	minX, minZ := (center.X-1)*16, (center.Z-1)*16
+-	states := make([]uint16, plane*lightHeight)
+-	loaded := make([]bool, width*width)
++	work := e.work
++	if work == nil {
++		work = &relightWork{states: make([]uint16, plane*lightHeight), sky: make([]byte, plane*lightHeight), block: make([]byte, plane*lightHeight)}
++		e.work = work
++	} else {
++		clear(work.states)
++		clear(work.sky)
++		clear(work.block)
++		clear(work.loaded[:])
++		for i := range work.skyQueue {
++			work.skyQueue[i] = work.skyQueue[i][:0]
++			work.blockQueue[i] = work.blockQueue[i][:0]
++		}
++	}
++	states, loaded := work.states, work.loaded[:]
+ 	var columns [3][3]*column
+ 	for dx := 0; dx < 3; dx++ {
+ 		for dz := 0; dz < 3; dz++ {
+@@ -178,10 +201,10 @@
+ 			}
+ 		}
+ 	}
+-	sky, block := make([]byte, len(states)), make([]byte, len(states))
++	sky, block := work.sky, work.block
+ 	// Bucket queues process brightest nodes first, avoiding repeated visits to
+ 	// cells reached through competing light paths. Entries encode a grid index.
+-	var skyQueue, blockQueue [16][]int
++	skyQueue, blockQueue := &work.skyQueue, &work.blockQueue
+ 	if e.hasSky {
+ 		for z := 0; z < width; z++ {
+ 			for x := 0; x < width; x++ {
+@@ -257,9 +280,9 @@
+ 					}
+ 					attenuation := max(byte(1), e.rules.states[states[i]].Opacity)
+ 					for kind := 0; kind < 2; kind++ {
+-						layers, values, queue := neighbor.light.Sky, sky, &skyQueue
++						layers, values, queue := neighbor.light.Sky, sky, skyQueue
+ 						if kind == 1 {
+-							layers, values, queue = neighbor.light.Block, block, &blockQueue
++							layers, values, queue = neighbor.light.Block, block, blockQueue
+ 						}
+ 						if kind == 0 && !e.hasSky {
+ 							continue
+@@ -308,9 +331,9 @@
+ 		}
+ 	}
+ 	if e.hasSky {
+-		propagate(sky, &skyQueue)
+-	}
+-	propagate(block, &blockQueue)
++		propagate(sky, skyQueue)
++	}
++	propagate(block, blockQueue)
+ 	updates := make(map[Position]*Data)
+ 	e.revision++
+ 	for dx := 0; dx < 3; dx++ {
+--- /dev/null
++++ internal/anvil/store.go
+@@ -0,0 +1,41 @@
++package anvil
++
++import (
++	"atlas/internal/nbt"
++	"sync"
++)
++
++// Store serializes atomic region replacements with reads of their raw
++// records. Different regions can progress independently; readers of the same
++// region share a lock. Compression and NBT parsing run outside these locks.
++// The zero value is ready to use. Use one Store for a save directory.
++type Store struct {
++	locks [64]sync.RWMutex
++}
++
++func (s *Store) regionLock(cx, cz int32) *sync.RWMutex {
++	x, z := uint32(cx>>5), uint32(cz>>5)
++	return &s.locks[(x*0x9e3779b9^z*0x85ebca6b)%uint32(len(s.locks))]
++}
++
++func (s *Store) ReadChunk(dir string, cx, cz int32) (string, nbt.Tag, bool, error) {
++	lock := s.regionLock(cx, cz)
++	lock.RLock()
++	kind, compressed, exists, err := readChunkRecord(dir, cx, cz)
++	lock.RUnlock()
++	if err != nil || !exists {
++		return "", nbt.Tag{}, false, err
++	}
++	return decodeChunkRecord(kind, compressed, cx, cz)
++}
++
++func (s *Store) WriteChunk(dir string, cx, cz int32, name string, root nbt.Tag) error {
++	payload, err := encodeChunkRecord(name, root)
++	if err != nil {
++		return err
++	}
++	lock := s.regionLock(cx, cz)
++	lock.Lock()
++	defer lock.Unlock()
++	return writeChunkRecord(dir, cx, cz, payload)
++}
+--- /dev/null
++++ internal/anvil/store_test.go
+@@ -0,0 +1,81 @@
++package anvil
++
++import (
++	"atlas/internal/nbt"
++	"encoding/binary"
++	"os"
++	"sync"
++	"testing"
++)
++
++func TestStoreConcurrentRegionReadsAndReplacements(t *testing.T) {
++	dir := t.TempDir()
++	var store Store
++	root := func(x int32) nbt.Tag {
++		return nbt.Tag{Type: nbt.Compound, Value: nbt.Object{"xPos": {Type: nbt.Int, Value: x}}}
++	}
++	if err := store.WriteChunk(dir, -1, -1, "", root(-1)); err != nil {
++		t.Fatal(err)
++	}
++	var wg sync.WaitGroup
++	for i := int32(0); i < 24; i++ {
++		wg.Add(1)
++		go func(x int32) {
++			defer wg.Done()
++			// Several writers share each region; other writers cross its boundary.
++			x -= 12
++			for pass := 0; pass < 3; pass++ {
++				if err := store.WriteChunk(dir, x, -1, "", root(x)); err != nil {
++					t.Error(err)
++					return
++				}
++				_, got, exists, err := store.ReadChunk(dir, -1, -1)
++				object, _ := got.Object()
++				value, ok := object.Number("xPos")
++				if err != nil || !exists || !ok || value != -1 {
++					t.Errorf("concurrent read: exists=%v value=%d err=%v", exists, value, err)
++				}
++			}
++		}(i)
++	}
++	wg.Wait()
++	for x := int32(-12); x < 12; x++ {
++		_, got, exists, err := store.ReadChunk(dir, x, -1)
++		object, _ := got.Object()
++		value, ok := object.Number("xPos")
++		if err != nil || !exists || !ok || value != int64(x) {
++			t.Fatalf("write lost at %d,-1: value=%d exists=%v err=%v", x, value, exists, err)
++		}
++	}
++}
++
++func TestReadChunkRejectsInvalidRecordBounds(t *testing.T) {
++	for _, tc := range []struct {
++		name             string
++		location, length uint32
++		size             int
++	}{
++		{"header_sector", 1<<8 | 1, 1, 3 * sector},
++		{"zero_sectors", 2 << 8, 1, 3 * sector},
++		{"past_file", 4<<8 | 1, 1, 3 * sector},
++		{"zero_length", 2<<8 | 1, 0, 3 * sector},
++		{"past_allocation", 2<<8 | 1, sector, 3 * sector},
++		{"truncated_payload", 2<<8 | 1, 10, 2*sector + 6},
++	} {
++		t.Run(tc.name, func(t *testing.T) {
++			dir := t.TempDir()
++			data := make([]byte, tc.size)
++			binary.BigEndian.PutUint32(data[:4], tc.location)
++			if len(data) >= 2*sector+5 {
++				binary.BigEndian.PutUint32(data[2*sector:], tc.length)
++				data[2*sector+4] = 2
++			}
++			if err := os.WriteFile(regionPath(dir, 0, 0), data, 0644); err != nil {
++				t.Fatal(err)
++			}
++			if _, _, exists, err := ReadChunk(dir, 0, 0); err == nil || exists {
++				t.Fatalf("invalid chunk accepted: exists=%v err=%v", exists, err)
++			}
++		})
++	}
++}
+--- /dev/null
++++ internal/anvil/performance_test.go
+@@ -0,0 +1,42 @@
++package anvil
++
++import (
++	"atlas/internal/nbt"
++	"os"
++	"path/filepath"
++	"testing"
++)
++
++// A populated Java region makes whole-file reads visible. The source is read
++// only; every write benchmark uses its own temporary copy.
++func BenchmarkReadPopulatedRegion(b *testing.B) {
++	dir := filepath.Join("..", "..", "vanilla", "world", "region")
++	if reference := os.Getenv("ATLAS_BENCH_REGION"); reference != "" {
++		dir = reference
++	}
++	if _, err := os.Stat(regionPath(dir, 0, 0)); err != nil {
++		b.Skip("vanilla sample region unavailable")
++	}
++	b.ReportAllocs()
++	b.ResetTimer()
++	for n := 0; n < b.N; n++ {
++		if _, _, exists, err := ReadChunk(dir, 0, 0); err != nil || !exists {
++			b.Fatalf("chunk read: exists=%v err=%v", exists, err)
++		}
++	}
++}
++
++func BenchmarkWriteChunk(b *testing.B) {
++	dir := b.TempDir()
++	root := nbt.Tag{Type: nbt.Compound, Value: nbt.Object{
++		"DataVersion": {Type: nbt.Int, Value: int32(3955)},
++		"payload":     {Type: nbt.ByteArray, Value: make([]byte, 64<<10)},
++	}}
++	b.ReportAllocs()
++	b.ResetTimer()
++	for n := 0; n < b.N; n++ {
++		if err := WriteChunk(dir, 0, 0, "", root); err != nil {
++			b.Fatal(err)
++		}
++	}
++}
+--- /dev/null
++++ internal/world/packet_cache.go
+@@ -0,0 +1,57 @@
++package world
++
++import (
++	"atlas/internal/light"
++	"container/list"
++)
++
++const chunkPacketCacheBytes = 2 << 20
++const chunkPacketCacheEntries = 64
++
++type cachedChunkPacket struct {
++	chunk    *Chunk
++	revision uint64
++	lights   *light.Data
++	payload  []byte
++}
++
++// Owned by a region actor. Both the byte and entry limits are independent of
++// how much terrain has been explored. Queued packets retain immutable buffers
++// after eviction or an edit; a later request encodes the new revision.
++type chunkPacketCache struct {
++	entries map[*Chunk]*list.Element
++	recent  list.List
++	bytes   int
++}
++
++func (c *chunkPacketCache) packet(ch *Chunk) []byte {
++	if element := c.entries[ch]; element != nil {
++		entry := element.Value.(*cachedChunkPacket)
++		if entry.revision == ch.blockRevision && entry.lights == ch.lights {
++			c.recent.MoveToFront(element)
++			return entry.payload
++		}
++		c.remove(element)
++	}
++	payload := buildChunkDataPacket(ch.cx, ch.cz, ch)
++	if len(payload) > chunkPacketCacheBytes {
++		return payload
++	}
++	if c.entries == nil {
++		c.entries = make(map[*Chunk]*list.Element)
++	}
++	for c.bytes+len(payload) > chunkPacketCacheBytes || len(c.entries) >= chunkPacketCacheEntries {
++		c.remove(c.recent.Back())
++	}
++	entry := &cachedChunkPacket{chunk: ch, revision: ch.blockRevision, lights: ch.lights, payload: payload}
++	c.entries[ch] = c.recent.PushFront(entry)
++	c.bytes += len(payload)
++	return payload
++}
++
++func (c *chunkPacketCache) remove(element *list.Element) {
++	entry := element.Value.(*cachedChunkPacket)
++	delete(c.entries, entry.chunk)
++	c.bytes -= len(entry.payload)
++	c.recent.Remove(element)
++}
+--- /dev/null
++++ internal/world/packet_cache_test.go
+@@ -0,0 +1,57 @@
++package world
++
++import (
++	"atlas/internal/light"
++	"bytes"
++	"testing"
++)
++
++func TestCachedChunkPacketTracksBlocksHeightmapsAndLighting(t *testing.T) {
++	ch := NewChunk(-1, 0)
++	ch.lights = &light.Data{Sky: make([][]byte, NumSections+2), Block: make([][]byte, NumSections+2)}
++	var cache chunkPacketCache
++	first := cache.packet(ch)
++	saved := append([]byte(nil), first...)
++	if again := cache.packet(ch); &first[0] != &again[0] {
++		t.Fatal("unchanged chunk was encoded again")
++	}
++	for _, state := range []uint32{StateStone, StateAir} {
++		ch.SetBlock(15, 8, 75, state)
++		if got := cache.packet(ch); !bytes.Equal(got, buildChunkDataPacket(-1, 0, ch)) {
++			t.Fatal("cached blocks or heightmap are stale")
++		}
++	}
++	ch.lights = &light.Data{Sky: make([][]byte, NumSections+2), Block: make([][]byte, NumSections+2), Revision: 2}
++	ch.lights.Block[3] = bytes.Repeat([]byte{0x77}, 2048)
++	if got := cache.packet(ch); !bytes.Equal(got, buildChunkDataPacket(-1, 0, ch)) || bytes.Equal(got, first) {
++		t.Fatal("cached light data is stale")
++	}
++	if !bytes.Equal(first, saved) {
++		t.Fatal("a queued packet changed after edits")
++	}
++	for i := int32(0); i < 100; i++ {
++		other := NewChunk(i, 1)
++		other.lights = ch.lights
++		cache.packet(other)
++		if cache.bytes > chunkPacketCacheBytes || len(cache.entries) > chunkPacketCacheEntries {
++			t.Fatal("packet cache exceeded its bound")
++		}
++	}
++	if !bytes.Equal(cache.packet(ch), buildChunkDataPacket(-1, 0, ch)) {
++		t.Fatal("eviction lost current chunk data")
++	}
++}
++
++func TestLoadChunkReturnsOwnedPacketBytes(t *testing.T) {
++	w, _ := mechanicsWorld(t)
++	first, err := w.LoadChunk(0, 0)
++	if err != nil {
++		t.Fatal(err)
++	}
++	wanted := append([]byte(nil), first...)
++	clear(first)
++	again, err := w.LoadChunk(0, 0)
++	if err != nil || !bytes.Equal(again, wanted) {
++		t.Fatalf("caller poisoned cached packet: %v", err)
++	}
++}
+--- /dev/null
++++ internal/world/performance_test.go
+@@ -0,0 +1,62 @@
++package world
++
++import (
++	"context"
++	"path/filepath"
++	"testing"
++)
++
++func BenchmarkLoadedChunkPacket(b *testing.B) {
++	seed := int64(1234)
++	dir := filepath.Join(b.TempDir(), "world")
++	if err := CreateFlatWorld(dir, &seed); err != nil {
++		b.Fatal(err)
++	}
++	w, err := Open(noViewers{}, 4, dir)
++	if err != nil {
++		b.Fatal(err)
++	}
++	defer w.Close()
++	if _, err := w.LoadChunk(-1, -1); err != nil {
++		b.Fatal(err)
++	}
++	b.ReportAllocs()
++	b.ResetTimer()
++	for n := 0; n < b.N; n++ {
++		if _, err := w.LoadChunk(-1, -1); err != nil {
++			b.Fatal(err)
++		}
++	}
++	b.StopTimer()
++}
++
++func BenchmarkPrepareSavedSpawn(b *testing.B) {
++	seed := int64(1234)
++	dir := filepath.Join(b.TempDir(), "world")
++	if err := CreateFlatWorld(dir, &seed); err != nil {
++		b.Fatal(err)
++	}
++	w, err := Open(noViewers{}, 4, dir)
++	if err != nil {
++		b.Fatal(err)
++	}
++	if err := w.PrepareSpawn(context.Background(), 0, 0, 3, nil); err != nil {
++		b.Fatal(err)
++	}
++	if err := w.Close(); err != nil {
++		b.Fatal(err)
++	}
++	b.ReportAllocs()
++	b.ResetTimer()
++	for n := 0; n < b.N; n++ {
++		w, err := Open(noViewers{}, 4, dir)
++		if err != nil {
++			b.Fatal(err)
++		}
++		err = w.PrepareSpawn(context.Background(), 0, 0, 3, nil)
++		closeErr := w.Close()
++		if err != nil || closeErr != nil {
++			b.Fatalf("prepare=%v close=%v", err, closeErr)
++		}
++	}
++}
+--- /dev/null
++++ internal/worldgen/density_operands.go
+@@ -0,0 +1,56 @@
++package worldgen
++
++const (
++	densityArgument = iota
++	densityInput
++	densityLeft
++	densityRight
++	densityWhenIn
++	densityWhenOut
++	densityShiftX
++	densityShiftY
++	densityShiftZ
++)
++
++const (
++	densityValue = iota
++	densityMin
++	densityMax
++	densityMinInclusive
++	densityMaxExclusive
++	densityFromY
++	densityToY
++	densityFromValue
++	densityToValue
++	densityXZScale
++	densityYScale
++	densityXZFactor
++	densityYFactor
++	densitySmearScale
++)
++
++// Resolve string-keyed operands once while parsing an immutable expression
++// tree. Sampling millions of blocks then uses array loads, retaining the
++// original tree for diagnostics and the original arithmetic order.
++type densityEvaluation struct {
++	children [9]*DensityNode
++	numbers  [14]float64
++}
++
++func prepareDensityEvaluation(n *DensityNode) *densityEvaluation {
++	e := &densityEvaluation{}
++	for i, key := range [...]string{"argument", "input", "argument1", "argument2", "when_in_range", "when_out_of_range", "shift_x", "shift_y", "shift_z"} {
++		e.children[i] = n.Children[key]
++	}
++	for i, key := range [...]string{"value", "min", "max", "min_inclusive", "max_exclusive", "from_y", "to_y", "from_value", "to_value", "xz_scale", "y_scale", "xz_factor", "y_factor", "smear_scale_multiplier"} {
++		e.numbers[i] = n.Numbers[key]
++	}
++	return e
++}
++
++func (n *DensityNode) argument() *DensityNode {
++	if n.evaluation != nil {
++		return n.evaluation.children[densityArgument]
++	}
++	return n.Children["argument"]
++}
+--- /dev/null
++++ internal/worldgen/feature_overlay_test.go
+@@ -0,0 +1,59 @@
++package worldgen
++
++import (
++	"math/rand"
++	"reflect"
++	"testing"
++)
++
++func TestSparseDecorationMatchesPrivateChunkAcrossBorder(t *testing.T) {
++	left, right := newFlatForestRockChunk(-1, 0), newFlatForestRockChunk(0, 0)
++	region, _ := NewOverworldFeatureRegion(left, right)
++	region.borrowed = map[featureChunkPosition]bool{{-1, 0}: true, {0, 0}: true}
++	private, _ := NewOverworldFeatureRegion(cloneTerrain(left), cloneTerrain(right))
++	beforeLeft, beforeRight := cloneTerrain(left), cloneTerrain(right)
++	random := rand.New(rand.NewSource(767))
++	states := []SurfaceBlockState{{Name: "minecraft:air"}, {Name: "minecraft:water"}, {Name: "minecraft:stone"},
++		{Name: "minecraft:oak_leaves", Properties: map[string]string{"distance": "1", "persistent": "false", "waterlogged": "false"}}}
++	for i := 0; i < 200; i++ {
++		p := FeaturePosition{int32(random.Intn(4) - 2), int32(random.Intn(110) - 64), int32(random.Intn(16))}
++		state := states[random.Intn(len(states))]
++		for _, r := range []*OverworldFeatureRegion{region, private} {
++			if err := r.SetBlock(p, state); err != nil {
++				t.Fatal(err)
++			}
++			if i%5 == 0 {
++				if err := r.MarkPostProcessing(p); err != nil {
++					t.Fatal(err)
++				}
++			}
++		}
++		for _, kind := range []string{"OCEAN_FLOOR", "WORLD_SURFACE", "MOTION_BLOCKING"} {
++			got, err := region.HeightmapAt(kind, p.X, p.Z)
++			want, otherErr := private.HeightmapAt(kind, p.X, p.Z)
++			if err != nil || otherErr != nil || got != want {
++				t.Fatalf("%s overlay=%d private=%d errors=%v/%v", kind, got, want, err, otherErr)
++			}
++		}
++	}
++	for _, x := range []int32{-1, 0} {
++		got := region.cloneChunk(x, 0)
++		want := private.chunks[featureChunkPosition{x, 0}]
++		if !reflect.DeepEqual(got, want) {
++			t.Fatalf("sparse decoration changed chunk %d,0", x)
++		}
++		for _, state := range got.SurfaceBlocks {
++			if state.Properties != nil {
++				state.Properties["poison"] = "true"
++			}
++		}
++	}
++	if !reflect.DeepEqual(cloneTerrain(left), beforeLeft) || !reflect.DeepEqual(cloneTerrain(right), beforeRight) {
++		t.Fatal("decoration mutated borrowed terrain")
++	}
++	for _, state := range states {
++		if state.Properties["poison"] != "" {
++			t.Fatal("returned state properties alias a feature template")
++		}
++	}
++}

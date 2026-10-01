@@ -1,0 +1,26 @@
+== status ping ==
+  PASS  status response
+  PASS  status pong
+== login / config / play ==
+  PASS  login success
+  PASS  registry data (biome first, 64 entries, per-registry format)
+  PASS  configuration finish
+  PASS  registry data packets (11 registries)
+  PASS  play login packet
+  PASS  configured view distance
+  PASS  configured simulation distance
+  PASS  position sync
+  PASS  chunk stream
+  PASS  complete chunk batches
+  PASS  system chat
+  PASS  command tree
+  PASS  chat echo
+  PASS  block dig -> block change
+  PASS  /help
+  PASS  /where
+  PASS  /time set night
+  PASS  /weather rain
+  PASS  /setblock 0 74 0 stone
+  PASS  /tp 34 85 -17
+
+22/22 checks passed

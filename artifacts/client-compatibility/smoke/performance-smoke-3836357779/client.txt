@@ -1,0 +1,65 @@
+== status ping ==
+  PASS  status response
+  PASS  status pong
+== login / config / play ==
+  PASS  login success
+  PASS  registry data (biome first, 64 entries, per-registry format)
+  PASS  configuration finish
+  PASS  registry data packets (11 registries)
+  PASS  play login packet
+  PASS  player inventory content (46 slots)
+  PASS  level chunks load start before position/chunks
+  PASS  configured view distance
+  PASS  configured simulation distance
+  PASS  position sync
+  PASS  chunk stream
+  PASS  complete chunk batches
+  PASS  system chat
+  PASS  command tree
+  TCP join timing: load-start=3.1285ms first-chunk=4.1722ms received-25-chunks=458.8976ms
+  PASS  chat echo
+  PASS  /setblock 0 200 0 stone
+  PASS  /setblock 0 200 1 stone
+  PASS  /tp 0.5 201 0.5
+  PASS  block dig -> block change
+  PASS  block dig prediction ack
+  PASS  /help
+  PASS  /where
+  PASS  /tps
+  PASS  /mspt
+  PASS  /status
+  PASS  /sysinfo
+  PASS  /minecraft:time query daytime
+  PASS  /time add 0.5s
+  PASS  /help tp
+  PASS  /minecraft:setblock 3 200 0 minecraft:oak_log[axis=x]
+  PASS  /setblock 3 200 0 stone keep
+  PASS  /teleport ~ ~ ~
+  PASS  /save-all flush
+  PASS  creative placement + prediction ack
+  PASS  solid block overwrite rejected
+  PASS  placement inside player rejected
+  PASS  /setblock 10 200 0 stone
+  PASS  remote digging rejected
+  PASS  /setblock 0 201 1 stone
+  PASS  /setblock 0 202 1 stone
+  PASS  flying wall crossing corrected
+  PASS  /setblock 1 200 0 stone
+  PASS  /setblock 1 201 0 air
+  PASS  sand settles above support
+  PASS  /setblock 2 200 0 grass_block
+  PASS  double plant places both halves
+  PASS  support removal updates both halves
+  PASS  /time set night
+  PASS  /weather rain
+  PASS  /setblock 0 74 0 stone
+  PASS  /tp 34 85 -17
+  PASS  inventory update main
+  PASS  inventory update potion
+  PASS  inventory update food
+  PASS  inventory update helmet
+  PASS  inventory update offhand
+  PASS  inventory update hotbar
+  PASS  /where
+
+60/60 checks passed

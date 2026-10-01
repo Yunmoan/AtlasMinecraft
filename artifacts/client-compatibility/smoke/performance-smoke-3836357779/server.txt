@@ -1,0 +1,81 @@
+[19:00:03] [Server thread/INFO]:    _  _____ _        _    ____ 
+[19:00:03] [Server thread/INFO]:   / \|_   _| |      / \  / ___|
+[19:00:03] [Server thread/INFO]:  / _ \ | | | |     / _ \ \___ \
+[19:00:03] [Server thread/INFO]: / ___ \| | | |___ / ___ \ ___) |
+[19:00:03] [Server thread/INFO]: /_/   \_\_| |_____/_/   \_\____/
+[19:00:03] [Server thread/INFO]: Atlas Minecraft Java 1.21.1 server
+[19:00:03] [Server thread/INFO]: Build time: 2026-10-01T10:59:06Z
+[19:00:03] [Server thread/INFO]: Starting Minecraft server version 1.21.1
+[19:00:03] [Server thread/INFO]: Loading properties
+[19:00:03] [Server thread/INFO]: Default game type: CREATIVE
+[19:00:03] [Server thread/INFO]: Preparing level "world"
+[19:00:03] [Server thread/INFO]: World loaded: world (seed 1234, age 0, daytime 6000, weather clear)
+[19:00:03] [Server thread/INFO]: World generator (path: E:\AtlasMinecraft\artifacts\client-compatibility\smoke\performance-smoke-3836357779\world, mode: Minecraft 1.21.1 flat layers (features and structures disabled))
+[19:00:03] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld (radius: 0, workers: 1)
+[19:00:03] [Server thread/INFO]: Preparing spawn area (completed: 0, total: 1, percent: 0)
+[19:00:03] [Server thread/INFO]: Preparing spawn area (completed: 1, total: 1, percent: 100)
+[19:00:03] [Server thread/INFO]: Spawn area ready (chunks: 1, elapsed: 24ms)
+[19:00:03] [Server thread/INFO]: listening on 127.0.0.1:2407 (protocol 767, online mode false)
+[19:00:04] [Server thread/INFO]: Console issued server command: /tps
+[19:00:04] [Server thread/INFO]: TPS (1m/5m/15m): 19.94 / 19.94 / 19.94 (target: 20; observed: 1.003s)
+[19:00:04] [Server thread/INFO]: Scope: world-clock loop; generation and player handlers run separately.
+[19:00:04] [Server thread/INFO]: Console issued server command: /mspt
+[19:00:04] [Server thread/INFO]: MSPT work (last 1m, avg/P95/max): 0.000 / 0.000 / 0.000 ms; >50ms: 0/20
+[19:00:04] [Server thread/INFO]: Loop gap max: 50.820 ms; last tick age: 3ms; autosaves: 0, last/max: 0.000 / 0.000 ms
+[19:00:04] [Server thread/INFO]: Scope: world-clock loop; generation and player handlers run separately.
+[19:00:04] [Server thread/INFO]: Console issued server command: /status
+[19:00:04] [Server thread/INFO]: Atlas status: uptime 1s; players 0/20; goroutines 8
+[19:00:04] [Server thread/INFO]: TPS (1m/5m/15m): 19.93 / 19.93 / 19.93 (target: 20; observed: 1.003s)
+[19:00:04] [Server thread/INFO]: MSPT work (last 1m, avg/P95/max): 0.000 / 0.000 / 0.000 ms; >50ms: 0/20
+[19:00:04] [Server thread/INFO]: Loop gap max: 50.820 ms; last tick age: 3ms; autosaves: 0, last/max: 0.000 / 0.000 ms
+[19:00:04] [Server thread/INFO]: Process CPU: 0.0% of one core over 1.003s; logical CPUs: 32; Go parallelism: 32
+[19:00:04] [Server thread/INFO]: Memory: heap live 23.4 MiB; heap in use 25.5 MiB; Go used/reserved 38.0 / 38.3 MiB; resident working set 43.4 MiB
+[19:00:04] [Server thread/INFO]: GC: 5 collections; pause last/total 0.000 / 1.046 ms
+[19:00:04] [Server thread/INFO]: Runtime: go1.27.1 windows/amd64; view/simulation distance: 2/2
+[19:00:04] [Server thread/INFO]: World: cached chunks 1; region actors 1; generation active/workers 0/1; queued jobs 0; mailbox messages 0
+[19:00:04] [Server thread/INFO]: Scope: world-clock loop; generation and player handlers run separately.
+[19:00:04] [Server thread/INFO]: Console issued server command: /sysinfo
+[19:00:04] [Server thread/INFO]: Atlas status: uptime 1s; players 0/20; goroutines 8
+[19:00:04] [Server thread/INFO]: TPS (1m/5m/15m): 19.92 / 19.92 / 19.92 (target: 20; observed: 1.004s)
+[19:00:04] [Server thread/INFO]: MSPT work (last 1m, avg/P95/max): 0.000 / 0.000 / 0.000 ms; >50ms: 0/20
+[19:00:04] [Server thread/INFO]: Loop gap max: 50.820 ms; last tick age: 4ms; autosaves: 0, last/max: 0.000 / 0.000 ms
+[19:00:04] [Server thread/INFO]: Process CPU: 0.0% of one core over 1.003s; logical CPUs: 32; Go parallelism: 32
+[19:00:04] [Server thread/INFO]: Memory: heap live 23.4 MiB; heap in use 25.5 MiB; Go used/reserved 38.0 / 38.3 MiB; resident working set 43.5 MiB
+[19:00:04] [Server thread/INFO]: GC: 5 collections; pause last/total 0.000 / 1.046 ms
+[19:00:04] [Server thread/INFO]: Runtime: go1.27.1 windows/amd64; view/simulation distance: 2/2
+[19:00:04] [Server thread/INFO]: World: cached chunks 1; region actors 1; generation active/workers 0/1; queued jobs 0; mailbox messages 0
+[19:00:04] [Server thread/INFO]: Scope: world-clock loop; generation and player handlers run separately.
+[19:00:04] [Server thread/INFO]: login start: TestBot (offline UUID 30fecbe1-2271-3418-8553-d3ded0e95f56)
+[19:00:04] [Server thread/INFO]: player joined: TestBot (eid 1)
+[19:00:05] [Server thread/INFO]: <TestBot> hello from atlas-test
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 0 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 1 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /tp 0.5 201 0.5
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /help
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /where
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /tps
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /mspt
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /status
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /sysinfo
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /minecraft:time query daytime
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /time add 0.5s
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /help tp
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /minecraft:setblock 3 200 0 minecraft:oak_log[axis=x]
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 3 200 0 stone keep
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /teleport ~ ~ ~
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /save-all flush
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 10 200 0 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 0 201 1 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 0 202 1 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 1 200 0 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 1 201 0 air
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 1 210 0 112
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 2 200 0 grass_block
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /time set night
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /weather rain
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /setblock 0 74 0 stone
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /tp 34 85 -17
+[19:00:05] [Server thread/INFO]: TestBot issued server command: /where
+[19:00:05] [Server thread/INFO]: Stopping server
+[19:00:05] [Server thread/INFO]: player left: TestBot
+[19:00:05] [Server thread/INFO]: server stopped cleanly

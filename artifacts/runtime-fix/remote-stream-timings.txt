@@ -1,0 +1,60 @@
+=== RUN   TestRemoteChunkStreamingAtReportedCoordinates
+    remote_stream_test.go:69: pass 0 first chunk [625044 624992] after 830.5394ms
+    remote_stream_test.go:75: pass 0 immediate 3x3 delivered after 1.4113923s
+    remote_stream_test.go:84: pass 0 all 49 chunks delivered after 4.5331592s
+    remote_stream_test.go:69: pass 1 first chunk [625044 624993] after 13.0998ms
+    remote_stream_test.go:75: pass 1 immediate 3x3 delivered after 321.8291ms
+    remote_stream_test.go:84: pass 1 all 49 chunks delivered after 327.5893ms
+--- PASS: TestRemoteChunkStreamingAtReportedCoordinates (7.38s)
+=== RUN   TestRemoteChunkStreamingAtReportedCoordinates
+    remote_stream_test.go:69: pass 0 first chunk [625044 624991] after 1.0696542s
+    remote_stream_test.go:75: pass 0 immediate 3x3 delivered after 1.8313465s
+    remote_stream_test.go:84: pass 0 all 49 chunks delivered after 4.7572012s
+    remote_stream_test.go:69: pass 1 first chunk [625045 624993] after 8.502ms
+    remote_stream_test.go:75: pass 1 immediate 3x3 delivered after 319.4999ms
+    remote_stream_test.go:84: pass 1 all 49 chunks delivered after 321.0288ms
+--- PASS: TestRemoteChunkStreamingAtReportedCoordinates (8.30s)
+PASS
+ok  	atlas/internal/world	15.953s
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/cold
+2026/10/01 15:57:29 INFO login start: ProbeB (offline UUID 0d3214da-0cab-3a46-8ffd-470d2bef9d55) component=server
+2026/10/01 15:57:29 INFO player joined: ProbeB (eid 1) component=server
+2026/10/01 15:57:29 INFO ProbeB issued server command: /tp 10000722 89 9999902
+    movement_protocol_test.go:329: first destination chunk received over TCP after 2.4148064s
+    movement_protocol_test.go:335: immediate 3x3 received over TCP after 2.4185606s
+    movement_protocol_test.go:339: all 45 requested view chunks received over TCP after 5.4660227s
+2026/10/01 15:57:35 INFO player left: ProbeB component=server
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/restart
+2026/10/01 15:57:35 INFO login start: ProbeB (offline UUID 0d3214da-0cab-3a46-8ffd-470d2bef9d55) component=server
+2026/10/01 15:57:35 INFO player joined: ProbeB (eid 1) component=server
+2026/10/01 15:57:35 INFO ProbeB issued server command: /tp 10000722 89 9999902
+    movement_protocol_test.go:329: first destination chunk received over TCP after 113.7197ms
+    movement_protocol_test.go:335: immediate 3x3 received over TCP after 116.8668ms
+    movement_protocol_test.go:339: all 45 requested view chunks received over TCP after 372.1523ms
+2026/10/01 15:57:35 INFO player left: ProbeB component=server
+--- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates (10.56s)
+    --- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/cold (8.09s)
+    --- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/restart (2.46s)
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/cold
+2026/10/01 15:57:40 INFO login start: ProbeB (offline UUID 0d3214da-0cab-3a46-8ffd-470d2bef9d55) component=server
+2026/10/01 15:57:40 INFO player joined: ProbeB (eid 1) component=server
+2026/10/01 15:57:40 INFO ProbeB issued server command: /tp 10000722 89 9999902
+    movement_protocol_test.go:329: first destination chunk received over TCP after 2.47964s
+    movement_protocol_test.go:335: immediate 3x3 received over TCP after 2.4833134s
+    movement_protocol_test.go:339: all 45 requested view chunks received over TCP after 5.6556186s
+2026/10/01 15:57:46 INFO player left: ProbeB component=server
+=== RUN   TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/restart
+2026/10/01 15:57:46 INFO login start: ProbeB (offline UUID 0d3214da-0cab-3a46-8ffd-470d2bef9d55) component=server
+2026/10/01 15:57:46 INFO player joined: ProbeB (eid 1) component=server
+2026/10/01 15:57:46 INFO ProbeB issued server command: /tp 10000722 89 9999902
+    movement_protocol_test.go:329: first destination chunk received over TCP after 88.0378ms
+    movement_protocol_test.go:335: immediate 3x3 received over TCP after 91.8869ms
+    movement_protocol_test.go:339: all 45 requested view chunks received over TCP after 386.2942ms
+2026/10/01 15:57:46 INFO player left: ProbeB component=server
+--- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates (11.49s)
+    --- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/cold (8.90s)
+    --- PASS: TestNormalWorldRemoteTCPStreamingAtReportedCoordinates/restart (2.59s)
+PASS
+ok  	atlas/internal/server	22.292s

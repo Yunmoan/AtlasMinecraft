@@ -1,0 +1,22 @@
+{
+  "repository": "PaperMC/Paper-archive",
+  "commit": "3cb8529bdbeeec9ff51df2c94e93dbe7e41bb811",
+  "paths": [
+    "patches/api/0004-Code-Generation.patch",
+    "patches/api/0169-Add-Heightmap-API.patch",
+    "patches/api/0322-Expose-vanilla-BiomeProvider-from-WorldInfo.patch",
+    "patches/api/0339-Add-getComputedBiome-API.patch",
+    "patches/api/0358-Add-NamespacedKey-biome-methods.patch",
+    "patches/removed/1.21/0994-Rewrite-chunk-system.patch",
+    "patches/server/0135-Do-not-submit-profile-lookups-to-worldgen-threads.patch",
+    "patches/server/0345-Don-t-fire-BlockFade-on-worldgen-threads.patch",
+    "patches/server/0383-Don-t-check-chunk-for-portal-on-world-gen-entity-add.patch",
+    "patches/server/0551-Optimize-Biome-Mob-Lookups-for-Mob-Spawning.patch",
+    "patches/server/0615-Prevent-softlocked-end-exit-portal-generation.patch",
+    "patches/server/0646-Expose-vanilla-BiomeProvider-from-WorldInfo.patch",
+    "patches/server/0675-Fix-swamp-hut-cat-generation-deadlock.patch",
+    "patches/server/0677-Implement-getComputedBiome-API.patch",
+    "patches/server/0732-Add-NamespacedKey-biome-methods.patch",
+    "patches/server/0907-Don-t-fire-sync-events-during-worldgen.patch"
+  ]
+}

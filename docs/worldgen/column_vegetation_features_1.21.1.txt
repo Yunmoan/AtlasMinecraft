@@ -1,0 +1,14 @@
+patch_cactus configured
+patch_sugar_cane configured
+patch_waterlily configured
+patch_waterlily 57
+patch_sugar_cane_desert 65
+patch_sugar_cane_badlands 66
+patch_sugar_cane_swamp 67
+patch_sugar_cane 71
+patch_cactus_desert 74
+patch_cactus_decorated 75
+huge_brown_mushroom configured
+huge_red_mushroom configured
+mushroom_island_vegetation configured
+mushroom_island_vegetation 68

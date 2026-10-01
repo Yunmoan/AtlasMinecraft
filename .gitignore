@@ -1,0 +1,59 @@
+# ===== Go =====
+# Compiled binaries
+*.exe
+*.exe~
+*.test
+*.out
+
+# Coverage / profiling artifacts
+*.prof
+*.pprof
+*.cpu
+*.mem
+
+# Go workspace files are local-only
+go.work
+go.work.sum
+
+# Dependency directory (uncomment if you do NOT vendor)
+# vendor/
+
+# ===== Minecraft: Mojang EULA — never commit Mojang's proprietary code =====
+# Official server jar(s) and the extracted/running vanilla server
+# (server.jar, server-inner.jar, libraries/, versions/, META-INF/)
+/jar/
+/vanilla/
+
+# Safety net: this is a from-scratch, stdlib-only project — no legitimate
+# reason for any jar to be tracked
+*.jar
+
+# ===== Minecraft: world saves & runtime state =====
+# World saves (level.dat, region/, playerdata/, entities/, DIM-1/, poi/, ...)
+/world/
+/world_*/
+/new-world/
+/world-copy/
+/flat-world/
+
+# Logs, pids, crash reports
+logs/
+crash-reports/
+*.log
+*.pid
+
+# Auto-generated player / server registries
+usercache.json
+ops.json
+banned-ips.json
+banned-players.json
+# whitelist.json is often hand-curated, so it stays tracked on purpose
+# eula.txt is just the runtime acceptance marker
+eula.txt
+
+# ===== OS / editor junk =====
+Thumbs.db
+Desktop.ini
+.idea/
+*.swp
+# .vscode/

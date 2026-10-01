@@ -1,0 +1,272 @@
+﻿Compiled from "SourceFile"
+public class fzn {
+  private final geb a;
+
+  private final fzf b;
+
+  private final gex c;
+
+  private fzn$a d;
+
+  public fzn(geb, fzf, gex);
+    Code:
+       0: aload_0
+       1: invokespecial #20                 // Method java/lang/Object."<init>":()V
+       4: aload_0
+       5: getstatic     #22                 // Field fzn$a.a:Lfzn$a;
+       8: putfield      #24                 // Field d:Lfzn$a;
+      11: aload_0
+      12: aload_1
+      13: putfield      #26                 // Field a:Lgeb;
+      16: aload_0
+      17: aload_2
+      18: putfield      #28                 // Field b:Lfzf;
+      21: aload_0
+      22: aload_3
+      23: putfield      #30                 // Field c:Lgex;
+      26: return
+
+  public void a();
+    Code:
+       0: aload_0
+       1: getfield      #24                 // Field d:Lfzn$a;
+       4: invokevirtual #39                 // Method fzn$a.ordinal:()I
+       7: tableswitch   { // 0 to 2
+
+                     0: 32
+
+                     1: 35
+
+                     2: 32
+               default: 97
+          }
+      32: goto          97
+      35: aload_0
+      36: getfield      #26                 // Field a:Lgeb;
+      39: invokevirtual #45                 // Method geb.do:()Ljd;
+      42: astore_1
+      43: aload_0
+      44: getfield      #28                 // Field b:Lfzf;
+      47: aload_1
+      48: invokevirtual #50                 // Method jd.v:()I
+      51: invokevirtual #55                 // Method fzf.d:(I)Z
+      54: istore_2
+      55: iload_2
+      56: ifne          90
+      59: aload_0
+      60: getfield      #30                 // Field c:Lgex;
+      63: aload_1
+      64: invokevirtual #60                 // Method gex.b:(Ljd;)Z
+      67: ifne          90
+      70: aload_0
+      71: getfield      #26                 // Field a:Lgeb;
+      74: invokevirtual #64                 // Method geb.R_:()Z
+      77: ifne          90
+      80: aload_0
+      81: getfield      #26                 // Field a:Lgeb;
+      84: invokevirtual #67                 // Method geb.bE:()Z
+      87: ifne          97
+      90: aload_0
+      91: getstatic     #69                 // Field fzn$a.c:Lfzn$a;
+      94: putfield      #24                 // Field d:Lfzn$a;
+      97: return
+
+  public boolean b();
+    Code:
+       0: aload_0
+       1: getfield      #24                 // Field d:Lfzn$a;
+       4: getstatic     #69                 // Field fzn$a.c:Lfzn$a;
+       7: if_acmpne     14
+      10: iconst_1
+      11: goto          15
+      14: iconst_0
+      15: ireturn
+
+  public void c();
+    Code:
+       0: aload_0
+       1: getfield      #24                 // Field d:Lfzn$a;
+       4: getstatic     #22                 // Field fzn$a.a:Lfzn$a;
+       7: if_acmpne     17
+      10: aload_0
+      11: getstatic     #73                 // Field fzn$a.b:Lfzn$a;
+      14: putfield      #24                 // Field d:Lfzn$a;
+      17: return
+}
+Compiled from "SourceFile"
+public class fob extends fod {
+  private static final wz a;
+
+  private static final long b;
+
+  private final long c;
+
+  private final java.util.function.BooleanSupplier r;
+
+  private final fob$a s;
+
+  private gql u;
+
+  public fob(java.util.function.BooleanSupplier, fob$a);
+    Code:
+       0: aload_0
+       1: getstatic     #27                 // Field fgg.a:Lwz;
+       4: invokespecial #30                 // Method fod."<init>":(Lwz;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #32                 // Field r:Ljava/util/function/BooleanSupplier;
+      12: aload_0
+      13: aload_2
+      14: putfield      #34                 // Field s:Lfob$a;
+      17: aload_0
+      18: invokestatic  #40                 // Method java/lang/System.currentTimeMillis:()J
+      21: putfield      #42                 // Field c:J
+      24: return
+
+  public boolean aJ_();
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  protected boolean aS_();
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  public void a(fhz, int, int, float);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: iload_2
+       3: iload_3
+       4: fload         4
+       6: invokespecial #52                 // Method fod.a:(Lfhz;IIF)V
+       9: aload_1
+      10: aload_0
+      11: getfield      #56                 // Field o:Lfhx;
+      14: getstatic     #57                 // Field a:Lwz;
+      17: aload_0
+      18: getfield      #61                 // Field m:I
+      21: iconst_2
+      22: idiv
+      23: aload_0
+      24: getfield      #64                 // Field n:I
+      27: iconst_2
+      28: idiv
+      29: bipush        50
+      31: isub
+      32: ldc           #65                 // int 16777215
+      34: invokevirtual #70                 // Method fhz.a:(Lfhx;Lwz;III)V
+      37: return
+
+  public void b(fhz, int, int, float);
+    Code:
+       0: aload_0
+       1: getfield      #34                 // Field s:Lfob$a;
+       4: invokevirtual #78                 // Method fob$a.ordinal:()I
+       7: tableswitch   { // 0 to 2
+
+                     0: 53
+
+                     1: 76
+
+                     2: 32
+               default: 94
+          }
+      32: aload_0
+      33: aload_1
+      34: fload         4
+      36: invokevirtual #81                 // Method a:(Lfhz;F)V
+      39: aload_0
+      40: fload         4
+      42: invokevirtual #84                 // Method a:(F)V
+      45: aload_0
+      46: aload_1
+      47: invokevirtual #87                 // Method a:(Lfhz;)V
+      50: goto          94
+      53: aload_1
+      54: iconst_0
+      55: iconst_0
+      56: bipush        -90
+      58: aload_1
+      59: invokevirtual #89                 // Method fhz.a:()I
+      62: aload_1
+      63: invokevirtual #91                 // Method fhz.b:()I
+      66: aload_0
+      67: invokevirtual #94                 // Method m:()Lgql;
+      70: invokevirtual #97                 // Method fhz.a:(IIIIILgql;)V
+      73: goto          94
+      76: aload_1
+      77: invokestatic  #102                // Method gfh.u:()Lgfh;
+      80: iconst_0
+      81: iconst_0
+      82: aload_0
+      83: getfield      #61                 // Field m:I
+      86: aload_0
+      87: getfield      #64                 // Field n:I
+      90: iconst_0
+      91: invokevirtual #105                // Method fhz.b:(Lgfh;IIIII)V
+      94: return
+
+  private gql m();
+    Code:
+       0: aload_0
+       1: getfield      #107                // Field u:Lgql;
+       4: ifnull        12
+       7: aload_0
+       8: getfield      #107                // Field u:Lgql;
+      11: areturn
+      12: aload_0
+      13: aload_0
+      14: getfield      #111                // Field l:Lfgo;
+      17: invokevirtual #117                // Method fgo.ao:()Lgft;
+      20: invokevirtual #122                // Method gft.a:()Lgfs;
+      23: getstatic     #128                // Field dga.ed:Ldfy;
+      26: invokevirtual #133                // Method dfy.o:()Ldtc;
+      29: invokevirtual #138                // Method gfs.a:(Ldtc;)Lgql;
+      32: putfield      #107                // Field u:Lgql;
+      35: aload_0
+      36: getfield      #107                // Field u:Lgql;
+      39: areturn
+
+  public void e();
+    Code:
+       0: aload_0
+       1: getfield      #32                 // Field r:Ljava/util/function/BooleanSupplier;
+       4: invokeinterface #145,  1          // InterfaceMethod java/util/function/BooleanSupplier.getAsBoolean:()Z
+       9: ifne          27
+      12: invokestatic  #40                 // Method java/lang/System.currentTimeMillis:()J
+      15: aload_0
+      16: getfield      #42                 // Field c:J
+      19: ldc2_w        #12                 // long 30000l
+      22: ladd
+      23: lcmp
+      24: ifle          31
+      27: aload_0
+      28: invokevirtual #148                // Method d:()V
+      31: return
+
+  public void d();
+    Code:
+       0: aload_0
+       1: getfield      #111                // Field l:Lfgo;
+       4: invokevirtual #152                // Method fgo.aV:()Lfgg;
+       7: ldc           #154                // String narrator.ready_to_play
+       9: invokestatic  #159                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+      12: invokevirtual #161                // Method fgg.c:(Lwz;)V
+      15: aload_0
+      16: invokespecial #162                // Method fod.d:()V
+      19: return
+
+  public boolean k();
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  static {};
+    Code:
+       0: ldc           #166                // String multiplayer.downloadingTerrain
+       2: invokestatic  #159                // InterfaceMethod wz.c:(Ljava/lang/String;)Lxn;
+       5: putstatic     #57                 // Field a:Lwz;
+       8: return
+}

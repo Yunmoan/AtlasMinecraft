@@ -1,0 +1,5 @@
+Extracted from the completed full race run in race-final.txt.
+ok  	atlas/internal/anvil	1.423s
+ok  	atlas/internal/light	2.312s
+ok  	atlas/internal/world	94.898s
+ok  	atlas/internal/worldgen	156.306s

@@ -1,0 +1,48 @@
+[14:05:11] [Server thread/INFO]:    _  _____ _        _    ____ 
+[14:05:11] [Server thread/INFO]:   / \|_   _| |      / \  / ___|
+[14:05:11] [Server thread/INFO]:  / _ \ | | | |     / _ \ \___ \
+[14:05:11] [Server thread/INFO]: / ___ \| | | |___ / ___ \ ___) |
+[14:05:11] [Server thread/INFO]: /_/   \_\_| |_____/_/   \_\____/
+[14:05:11] [Server thread/INFO]: Atlas Minecraft Java 1.21.1 server
+[14:05:11] [Server thread/INFO]: Build time: 2026-10-01T06:04:29Z
+[14:05:11] [Server thread/INFO]: Starting Minecraft server version 1.21.1
+[14:05:11] [Server thread/INFO]: Loading properties
+[14:05:11] [Server thread/INFO]: Default game type: CREATIVE
+[14:05:11] [Server thread/INFO]: Preparing level "world"
+[14:05:11] [Server thread/INFO]: World loaded: world (seed 1234, age 0, daytime 6000, weather clear)
+[14:05:11] [Server thread/INFO]: World generator (path: E:\AtlasMinecraft\artifacts\worldgen-smoke\normal-smoke-147815750\world, mode: Minecraft 1.21.1 Overworld (pure Go terrain, caves, ores, forest rocks, blue ice, clay/gravel disks, supported trees and vegetation; incomplete decoration, no structures))
+[14:05:11] [Server thread/WARN]: vanilla generation is incomplete (reason: noise, biomes, surface, caves and supported decoration/trees/vegetation are generated; structures, decorated/special trees and remaining features are not yet implemented)
+[14:05:11] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld (radius: 3, workers: 4)
+[14:05:11] [Server thread/INFO]: Preparing spawn area (completed: 0, total: 49, percent: 0)
+[14:05:14] [Server thread/INFO]: Preparing spawn area (completed: 1, total: 49, percent: 2)
+[14:05:15] [Server thread/INFO]: Preparing spawn area (completed: 6, total: 49, percent: 12)
+[14:05:16] [Server thread/INFO]: Preparing spawn area (completed: 14, total: 49, percent: 28)
+[14:05:18] [Server thread/INFO]: Preparing spawn area (completed: 26, total: 49, percent: 53)
+[14:05:19] [Server thread/INFO]: Preparing spawn area (completed: 38, total: 49, percent: 77)
+[14:05:19] [Server thread/INFO]: Preparing spawn area (completed: 49, total: 49, percent: 100)
+[14:05:19] [Server thread/INFO]: Spawn area ready (chunks: 49, elapsed: 8.027s)
+[14:05:19] [Server thread/INFO]: listening on 127.0.0.1:3527 (protocol 767, online mode false)
+[14:05:19] [Server thread/INFO]: login start: TestBot (offline UUID 30fecbe1-2271-3418-8553-d3ded0e95f56)
+[14:05:19] [Server thread/INFO]: player joined: TestBot (eid 1)
+[14:05:19] [Server thread/INFO]: <TestBot> hello from atlas-test
+[14:05:19] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 0 stone
+[14:05:19] [Server thread/INFO]: TestBot issued server command: /setblock 0 200 1 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /tp 0.5 201 0.5
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /help
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /where
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 10 200 0 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 0 201 1 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 0 202 1 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 1 200 0 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 1 201 0 air
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 1 210 0 112
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 2 200 0 grass_block
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /time set night
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /weather rain
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /setblock 0 74 0 stone
+[14:05:20] [Server thread/INFO]: TestBot issued server command: /tp 34 85 -17
+[14:05:20] [Server thread/INFO]: Console issued server command: /save
+[14:05:20] [Server thread/INFO]: player left: TestBot
+[14:05:20] [Server thread/INFO]: World saved.
+[14:05:20] [Server thread/INFO]: Stopping server
+[14:05:20] [Server thread/INFO]: server stopped cleanly
