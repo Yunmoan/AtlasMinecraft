@@ -24,7 +24,7 @@ func sendToViewers(h *hub.Hub, x, z int32, id int32, payload []byte, except *pla
 func (s *Server) sendTracked(subject *player.Player, id int32, payload []byte) {
 	cx, cz := subject.ChunkPos()
 	s.Hub.Others(subject, func(viewer *player.Player) {
-		if viewer.PlayReady() && viewer.IsVisible(subject.EID) && viewer.IsChunkSent(cx, cz) {
+		if viewer.Dimension() == subject.Dimension() && viewer.PlayReady() && viewer.IsVisible(subject.EID) && viewer.IsChunkSent(cx, cz) {
 			viewer.SendPacket(id, payload)
 		}
 	})

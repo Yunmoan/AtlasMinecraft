@@ -66,6 +66,21 @@ func (generator *OverworldNoiseGenerator) ApplySurface(result *NoiseChunkResult,
 	}
 	density := NewNoiseChunkDensitySampler(generator.seed, generator.settings, result.X, result.Z)
 	aquifer := newNoiseAquifer(density, generator.settings, PositionalRandom{})
+	if result.SurfaceBlocks == nil {
+		// Every underground stone column is rewritten by the original
+		// deepslate rule. Forecast this dense part from the actual noise
+		// input, avoiding repeated growth of a zero-capacity sparse map.
+		capacity := 0
+		belowZero := min(result.Height, max(int32(0), -result.MinY)) * 256
+		for _, material := range result.Blocks[:belowZero] {
+			if material == NoiseStone {
+				capacity++
+			}
+		}
+		if capacity > 0 {
+			result.SurfaceBlocks = make(map[int]SurfaceBlockState, capacity)
+		}
+	}
 	var heights [16][16]int32
 	for x := int32(0); x < 16; x++ {
 		for z := int32(0); z < 16; z++ {
@@ -170,7 +185,7 @@ func (generator *OverworldNoiseGenerator) ApplySurface(result *NoiseChunkResult,
 					Cold: cold, Steep: steep(),
 				}
 				stoneAbove++
-				if state.Name != "minecraft:stone" {
+				if state.Name != generator.settings.DefaultBlock.Name {
 					continue
 				}
 				replacement, err := rules.applyRule(rules.rule, context)
@@ -264,7 +279,7 @@ func (generator *OverworldNoiseGenerator) applyFrozenOceanColumn(result *NoiseCh
 		bottom = float64(generator.settings.SeaLevel) - iceHeight - 7
 		top = iceHeight + float64(generator.settings.SeaLevel)
 	}
-	random := rules.random.At(blockX, 0, blockZ)
+	random := rules.randomAt(blockX, 0, blockZ)
 	snowLimit := 2 + random.NextIntBound(4)
 	snowHeight := generator.settings.SeaLevel + 18 + random.NextIntBound(10)
 	snowCount := int32(0)

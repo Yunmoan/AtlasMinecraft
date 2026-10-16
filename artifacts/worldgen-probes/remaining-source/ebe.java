@@ -2,41 +2,10 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ayo
- *  ayw
  *  com.google.common.collect.ImmutableSet
  *  com.mojang.serialization.Codec
  *  com.mojang.serialization.MapCodec
- *  dcd
- *  ddw
- *  dga
- *  dtc
- *  dts
- *  duf
- *  dux
- *  duy
- *  dyk
- *  dyr$b
- *  dyr$e
- *  dzv
- *  eav
- *  eax
- *  eaz
- *  eba
- *  ebc
- *  ebd
- *  ebe$a
- *  epd
- *  epe
- *  epf
  *  javax.annotation.Nullable
- *  jd
- *  jd$a
- *  ji
- *  jm
- *  jz
- *  kh
- *  lt
  *  org.apache.commons.lang3.mutable.MutableBoolean
  */
 import com.google.common.collect.ImmutableSet;
@@ -48,9 +17,9 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 public abstract class ebe<C extends eax> {
-    public static final ebe<eba> a = ebe.a("cave", new ebb((Codec<eba>)eba.a));
+    public static final ebe<eba> a = ebe.a("cave", new ebb(eba.a));
     public static final ebe<eba> b = ebe.a("nether_cave", new ebd(eba.a));
-    public static final ebe<eav> c = ebe.a("canyon", new eaw((Codec<eav>)eav.a));
+    public static final ebe<eav> c = ebe.a("canyon", new eaw(eav.a));
     protected static final dtc d = dga.a.o();
     protected static final dtc e = dga.nc.o();
     protected static final epe f = epf.c.g();
@@ -59,7 +28,7 @@ public abstract class ebe<C extends eax> {
     private final MapCodec<ebc<C>> i;
 
     private static <C extends eax, F extends ebe<C>> F a(String $$0, F $$1) {
-        return (F)((ebe)jz.a((jz)lt.N, (String)$$0, $$1));
+        return (F)jz.a(lt.N, $$0, $$1);
     }
 
     public ebe(Codec<C> $$0) {
@@ -67,7 +36,7 @@ public abstract class ebe<C extends eax> {
     }
 
     public ebc<C> a(C $$0) {
-        return new ebc(this, $$0);
+        return new ebc<C>(this, $$0);
     }
 
     public MapCodec<ebc<C>> c() {
@@ -88,13 +57,13 @@ public abstract class ebe<C extends eax> {
         }
         int $$16 = $$12.d();
         int $$17 = $$12.e();
-        int $$18 = Math.max(ayo.a((double)($$5 - $$8)) - $$16 - 1, 0);
-        int $$19 = Math.min(ayo.a((double)($$5 + $$8)) - $$16, 15);
-        int $$20 = Math.max(ayo.a((double)($$6 - $$9)) - 1, $$0.a() + 1);
+        int $$18 = Math.max(ayo.a($$5 - $$8) - $$16 - 1, 0);
+        int $$19 = Math.min(ayo.a($$5 + $$8) - $$16, 15);
+        int $$20 = Math.max(ayo.a($$6 - $$9) - 1, $$0.a() + 1);
         int $$21 = $$2.y() ? 0 : 7;
-        int $$22 = Math.min(ayo.a((double)($$6 + $$9)) + 1, $$0.a() + $$0.b() - 1 - $$21);
-        int $$23 = Math.max(ayo.a((double)($$7 - $$8)) - $$17 - 1, 0);
-        int $$24 = Math.min(ayo.a((double)($$7 + $$8)) - $$17, 15);
+        int $$22 = Math.min(ayo.a($$6 + $$9) + 1, $$0.a() + $$0.b() - 1 - $$21);
+        int $$23 = Math.max(ayo.a($$7 - $$8) - $$17 - 1, 0);
+        int $$24 = Math.min(ayo.a($$7 + $$8) - $$17, 15);
         boolean $$25 = false;
         jd.a $$26 = new jd.a();
         jd.a $$27 = new jd.a();
@@ -119,28 +88,28 @@ public abstract class ebe<C extends eax> {
     }
 
     protected boolean a(eaz $$0, C $$1, duy $$22, Function<jd, jm<ddw>> $$3, dux $$4, jd.a $$5, jd.a $$6, dyk $$7, MutableBoolean $$8) {
-        dtc $$9 = $$22.a_((jd)$$5);
+        dtc $$9 = $$22.a_($$5);
         if ($$9.a(dga.i) || $$9.a(dga.fl)) {
             $$8.setTrue();
         }
         if (!this.a($$1, $$9) && !ebe.b($$1)) {
             return false;
         }
-        dtc $$10 = this.a($$0, $$1, (jd)$$5, $$7);
+        dtc $$10 = this.a($$0, $$1, $$5, $$7);
         if ($$10 == null) {
             return false;
         }
-        $$22.a((jd)$$5, $$10, false);
+        $$22.a($$5, $$10, false);
         if ($$7.a() && !$$10.u().c()) {
-            $$22.e((jd)$$5);
+            $$22.e($$5);
         }
         if ($$8.isTrue()) {
             $$6.a((kh)$$5, ji.a);
-            if ($$22.a_((jd)$$6).a(dga.j)) {
-                $$0.a($$3, $$22, (jd)$$6, !$$10.u().c()).ifPresent($$2 -> {
-                    $$22.a((jd)$$6, $$2, false);
+            if ($$22.a_($$6).a(dga.j)) {
+                $$0.a($$3, $$22, $$6, !$$10.u().c()).ifPresent($$2 -> {
+                    $$22.a($$6, (dtc)$$2, false);
                     if (!$$2.u().c()) {
-                        $$22.e((jd)$$6);
+                        $$22.e($$6);
                     }
                 });
             }
@@ -150,10 +119,10 @@ public abstract class ebe<C extends eax> {
 
     @Nullable
     private dtc a(eaz $$0, C $$1, jd $$2, dyk $$3) {
-        if ($$2.v() <= ((eax)$$1).g.a((dzv)$$0)) {
+        if ($$2.v() <= ((eax)$$1).g.a($$0)) {
             return g.g();
         }
-        dtc $$4 = $$3.a((dyr.b)new dyr.e($$2.u(), $$2.v(), $$2.w()), 0.0);
+        dtc $$4 = $$3.a(new dyr.e($$2.u(), $$2.v(), $$2.w()), 0.0);
         if ($$4 == null) {
             return ebe.b($$1) ? ((eax)$$1).h.e() : null;
         }
@@ -166,8 +135,8 @@ public abstract class ebe<C extends eax> {
         }
         if ($$1.a(dga.G)) {
             dtc $$2 = $$0.h.c();
-            if ($$2.b((duf)dts.C)) {
-                return (dtc)$$2.a((duf)dts.C, (Comparable)Boolean.valueOf(true));
+            if ($$2.b(dts.C)) {
+                return (dtc)$$2.a(dts.C, true);
             }
             return $$2;
         }
@@ -197,5 +166,9 @@ public abstract class ebe<C extends eax> {
 
     private static boolean b(eax $$0) {
         return $$0.h.a();
+    }
+
+    public static interface a {
+        public boolean shouldSkip(eaz var1, double var2, double var4, double var6, int var8);
     }
 }

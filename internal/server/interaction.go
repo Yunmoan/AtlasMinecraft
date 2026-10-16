@@ -2,6 +2,7 @@ package server
 
 import (
 	"atlas/internal/blockrules"
+	"atlas/internal/item"
 	"atlas/internal/player"
 	"atlas/internal/proto"
 	"atlas/internal/world"
@@ -35,7 +36,7 @@ func canReachBlock(p *player.Player, target world.BlockPosition) bool {
 }
 
 func (s *Server) resendBlock(p *player.Player, position world.BlockPosition) {
-	states, err := s.World.ReadLoadedBlocks([]world.BlockPosition{position})
+	states, err := s.PlayerWorld(p).ReadLoadedBlocks([]world.BlockPosition{position})
 	if err != nil {
 		return
 	}
@@ -88,7 +89,7 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 		s.resendBlock(p, target)
 		s.resendBlock(p, world.BlockPosition{X: target.X, Y: target.Y + 1, Z: target.Z})
 	}()
-	if hand < 0 || hand > 1 || !canReachBlock(p, clicked) || y < world.MinY || y >= world.MaxY {
+	if hand < 0 || hand > 1 || !canReachBlock(p, clicked) || y < s.PlayerWorld(p).MinBuildHeight() || y >= s.PlayerWorld(p).MaxBuildHeight() {
 		return
 	}
 	for _, value := range cursor {
@@ -96,7 +97,7 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 			return
 		}
 	}
-	read, err := s.World.ReadLoadedBlocks([]world.BlockPosition{clicked})
+	read, err := s.PlayerWorld(p).ReadLoadedBlocks([]world.BlockPosition{clicked})
 	if err != nil {
 		return
 	}
@@ -111,6 +112,11 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 	}
 	if !p.Crouching() || held.Empty() {
 		if s.useBlock(p, clicked, read[0], clickedState) {
+			return
+		}
+	}
+	if name, ok := item.Name(held.ID); ok && !held.Empty() && (name == "minecraft:flint_and_steel" || name == "minecraft:fire_charge") {
+		if activated, err := s.PlayerWorld(p).IgniteNetherPortal(target.X, target.Y, target.Z); activated && err == nil {
 			return
 		}
 	}
@@ -135,10 +141,10 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 	if clickedRules.Replaceable || mergeSlab {
 		target = clicked
 	}
-	if target.Y < world.MinY || target.Y >= world.MaxY {
+	if target.Y < s.PlayerWorld(p).MinBuildHeight() || target.Y >= s.PlayerWorld(p).MaxBuildHeight() {
 		return
 	}
-	read, err = s.World.ReadLoadedBlocks([]world.BlockPosition{target})
+	read, err = s.PlayerWorld(p).ReadLoadedBlocks([]world.BlockPosition{target})
 	if err != nil {
 		return
 	}
@@ -261,7 +267,7 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 		properties["half"] = "lower"
 	}
 	if worldgen.SupportedPlant(state.Name) {
-		below, err := s.World.ReadLoadedBlocks([]world.BlockPosition{{X: target.X, Y: target.Y - 1, Z: target.Z}})
+		below, err := s.PlayerWorld(p).ReadLoadedBlocks([]world.BlockPosition{{X: target.X, Y: target.Y - 1, Z: target.Z}})
 		if err != nil {
 			return
 		}
@@ -283,7 +289,7 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 	if err != nil {
 		return
 	}
-	if supported, e := s.World.CanSupportBlock(target, id); e != nil || !supported {
+	if supported, e := s.PlayerWorld(p).CanSupportBlock(target, id); e != nil || !supported {
 		return
 	}
 	s.entityMu.Lock()
@@ -305,7 +311,7 @@ func (s *Server) handlePlace(p *player.Player, payload []byte) {
 	if blocked {
 		return
 	}
-	if err := s.World.TryPlaceBlock(target, expected, id, upper); err != nil {
+	if err := s.PlayerWorld(p).TryPlaceBlock(target, expected, id, upper); err != nil {
 		s.Dbg("placement rejected for %s: %v", p.Name, err)
 	}
 }

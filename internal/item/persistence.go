@@ -295,6 +295,16 @@ func componentNBT(name string, value any) (nbt.Tag, bool) {
 		return nbt.Tag{}, false
 	}
 	switch name {
+	case "instrument":
+		id, ok := v["id"].(int32)
+		if !ok {
+			return nbt.Tag{}, false
+		}
+		name, ok := registryName("instrument", id)
+		if !ok {
+			return nbt.Tag{}, false
+		}
+		return text(name), true
 	case "potion_contents", "food", "suspicious_stew_effects":
 		return consumableNBT(name, v)
 	case "enchantments", "stored_enchantments":
@@ -429,6 +439,16 @@ func componentBytes(name string, tag nbt.Tag) ([]byte, error) {
 			return nil, errors.New("invalid sound")
 		}
 		w.String(v)
+	case "instrument":
+		name, ok := tag.Text()
+		if !ok {
+			return nil, errors.New("only named original instruments are supported")
+		}
+		id, ok := registryID("instrument", name)
+		if !ok {
+			return nil, fmt.Errorf("unknown instrument %s", name)
+		}
+		w.VarInt(id + 1)
 	case "lore":
 		lines, ok := tag.Elements()
 		if !ok {

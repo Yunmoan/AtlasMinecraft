@@ -2,12 +2,6 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ab
- *  ad
- *  akq
- *  arb
- *  ayo
- *  ayw
  *  com.google.common.annotations.VisibleForTesting
  *  com.google.common.base.Suppliers
  *  com.google.common.collect.Sets
@@ -15,57 +9,7 @@
  *  com.mojang.datafixers.kinds.Applicative
  *  com.mojang.serialization.MapCodec
  *  com.mojang.serialization.codecs.RecordCodecBuilder
- *  dcd
- *  dcy
- *  ddh
- *  ddi
- *  ddl
- *  ddq
- *  ddw
- *  ddx
- *  ddy
- *  ddz
- *  dea
- *  dga
- *  dtc
- *  dux
- *  duy
- *  duz
- *  dvj
- *  dvs
- *  dwy
- *  dyk
- *  dyk$a
- *  dyk$b
- *  dyl
- *  dym
- *  dyr$b
- *  dyr$e
- *  dys$b
- *  dys$c
- *  dyu$a
- *  dyy
- *  dyy$a
- *  dyz
- *  dzc
- *  dzd
- *  dze
- *  dzf
- *  dzg
- *  dzm
- *  dzn
- *  dzv
- *  dzx
- *  eaa
- *  eaz
- *  ebc
  *  javax.annotation.Nullable
- *  jd
- *  jd$a
- *  jm
- *  jx
- *  jz
- *  lu
  *  org.apache.commons.lang3.mutable.MutableObject
  */
 import com.google.common.annotations.VisibleForTesting;
@@ -111,23 +55,25 @@ extends duz {
         };
     }
 
+    @Override
     public CompletableFuture<duy> a(dzm $$0, eaa $$1, ddq $$2, duy $$3) {
-        return CompletableFuture.supplyAsync(ad.a((String)"init_biomes", () -> {
+        return CompletableFuture.supplyAsync(ad.a("init_biomes", () -> {
             this.b($$1, $$0, $$2, $$3);
             return $$3;
         }), ad.g());
     }
 
     private void b(eaa $$0, dzm $$1, ddq $$2, duy $$32) {
-        dzc $$4 = $$32.a((T $$3) -> this.a((duy)$$3, $$2, $$0, $$1));
-        ddz $$5 = dym.a((ddz)$$0.a((ddz)this.b), (duy)$$32);
-        $$32.a($$5, $$4.a($$1.a(), ((dzd)this.e.a()).k()));
+        dzc $$4 = $$32.a((duy $$3) -> this.a((duy)$$3, $$2, $$0, $$1));
+        ddz $$5 = dym.a($$0.a(this.b), $$32);
+        $$32.a($$5, $$4.a($$1.a(), this.e.a().k()));
     }
 
     private dzc a(duy $$0, ddq $$1, eaa $$2, dzm $$3) {
-        return dzc.a((duy)$$0, (dzm)$$3, (dys.c)dyl.a((ddq)$$1, (dcd)$$0.f()), (dzd)((dzd)this.e.a()), (dyk.a)this.f.get(), (eaa)$$2);
+        return dzc.a($$0, $$3, dyl.a($$1, $$0.f()), this.e.a(), this.f.get(), $$2);
     }
 
+    @Override
     protected MapCodec<? extends duz> b() {
         return c;
     }
@@ -140,31 +86,34 @@ extends duz {
         return this.e.a($$0);
     }
 
+    @Override
     public int a(int $$0, int $$1, dyy.a $$2, dcy $$3, dzm $$4) {
         return this.a($$3, $$4, $$0, $$1, null, $$2.e()).orElse($$3.I_());
     }
 
+    @Override
     public ddi a(int $$0, int $$1, dcy $$2, dzm $$3) {
         MutableObject $$4 = new MutableObject();
         this.a($$2, $$3, $$0, $$1, (MutableObject<ddi>)$$4, null);
         return (ddi)$$4.getValue();
     }
 
+    @Override
     public void a(List<String> $$0, dzm $$1, jd $$2) {
         DecimalFormat $$3 = new DecimalFormat("0.000");
         dze $$4 = $$1.a();
         dyr.e $$5 = new dyr.e($$2.u(), $$2.v(), $$2.w());
-        double $$6 = $$4.j().a((dyr.b)$$5);
-        $$0.add("NoiseRouter T: " + $$3.format($$4.e().a((dyr.b)$$5)) + " V: " + $$3.format($$4.f().a((dyr.b)$$5)) + " C: " + $$3.format($$4.g().a((dyr.b)$$5)) + " E: " + $$3.format($$4.h().a((dyr.b)$$5)) + " D: " + $$3.format($$4.i().a((dyr.b)$$5)) + " W: " + $$3.format($$6) + " PV: " + $$3.format(dzf.a((float)((float)$$6))) + " AS: " + $$3.format($$4.k().a((dyr.b)$$5)) + " N: " + $$3.format($$4.l().a((dyr.b)$$5)));
+        double $$6 = $$4.j().a($$5);
+        $$0.add("NoiseRouter T: " + $$3.format($$4.e().a($$5)) + " V: " + $$3.format($$4.f().a($$5)) + " C: " + $$3.format($$4.g().a($$5)) + " E: " + $$3.format($$4.h().a($$5)) + " D: " + $$3.format($$4.i().a($$5)) + " W: " + $$3.format($$6) + " PV: " + $$3.format(dzf.a((float)$$6)) + " AS: " + $$3.format($$4.k().a($$5)) + " N: " + $$3.format($$4.l().a($$5)));
     }
 
     private OptionalInt a(dcy $$0, dzm $$1, int $$2, int $$3, @Nullable MutableObject<ddi> $$4, @Nullable Predicate<dtc> $$5) {
         dtc[] $$12;
-        dzg $$6 = ((dzd)this.e.a()).f().a($$0);
+        dzg $$6 = this.e.a().f().a($$0);
         int $$7 = $$6.a();
         int $$8 = $$6.c();
-        int $$9 = ayo.a((int)$$8, (int)$$7);
-        int $$10 = ayo.a((int)$$6.d(), (int)$$7);
+        int $$9 = ayo.a($$8, $$7);
+        int $$10 = ayo.a($$6.d(), $$7);
         if ($$10 <= 0) {
             return OptionalInt.empty();
         }
@@ -183,7 +132,7 @@ extends duz {
         int $$19 = $$15 * $$13;
         double $$20 = (double)$$16 / (double)$$13;
         double $$21 = (double)$$17 / (double)$$13;
-        dzc $$22 = new dzc(1, $$1, $$18, $$19, $$6, (dys.c)dys.b.a, (dzd)this.e.a(), this.f.get(), eaa.a());
+        dzc $$22 = new dzc(1, $$1, $$18, $$19, $$6, dys.b.a, this.e.a(), this.f.get(), eaa.a());
         $$22.f();
         $$22.b(0);
         for (int $$23 = $$10 - 1; $$23 >= 0; --$$23) {
@@ -196,7 +145,7 @@ extends duz {
                 $$22.b($$2, $$20);
                 $$22.c($$3, $$21);
                 dtc $$27 = $$22.e();
-                dtc dtc2 = $$28 = $$27 == null ? ((dzd)this.e.a()).g() : $$27;
+                dtc dtc2 = $$28 = $$27 == null ? this.e.a().g() : $$27;
                 if ($$12 != null) {
                     int $$29 = $$23 * $$7 + $$24;
                     $$12[$$29] = $$28;
@@ -210,42 +159,44 @@ extends duz {
         return OptionalInt.empty();
     }
 
+    @Override
     public void a(arb $$0, ddq $$1, dzm $$2, duy $$3) {
-        if (ab.a((dcd)$$3.f())) {
+        if (ab.a($$3.f())) {
             return;
         }
-        dzv $$4 = new dzv((duz)this, (dcy)$$0);
-        this.a($$3, $$4, $$2, $$1, $$0.F_(), (jz<ddw>)$$0.H_().d(lu.aF), eaa.a((arb)$$0));
+        dzv $$4 = new dzv(this, $$0);
+        this.a($$3, $$4, $$2, $$1, $$0.F_(), $$0.H_().d(lu.aF), eaa.a($$0));
     }
 
     @VisibleForTesting
     public void a(duy $$0, dzv $$1, dzm $$2, ddq $$32, ddy $$4, jz<ddw> $$5, eaa $$6) {
-        dzc $$7 = $$0.a((T $$3) -> this.a((duy)$$3, $$32, $$6, $$2));
-        dzd $$8 = (dzd)this.e.a();
+        dzc $$7 = $$0.a((duy $$3) -> this.a((duy)$$3, $$32, $$6, $$2));
+        dzd $$8 = this.e.a();
         $$2.c().a($$2, $$4, $$5, $$8.n(), $$1, $$0, $$7, $$8.j());
     }
 
+    @Override
     public void a(arb $$0, long $$12, dzm $$22, ddy $$32, ddq $$4, duy $$5, dyu.a $$6) {
-        ddy $$7 = $$32.a(($$1, $$2, $$3) -> this.b.getNoiseBiome($$1, $$2, $$3, $$22.b()));
-        dzx $$8 = new dzx((ayw)new dyz(dzn.a()));
+        ddy $$7 = $$32.a((int $$1, int $$2, int $$3) -> this.b.getNoiseBiome($$1, $$2, $$3, $$22.b()));
+        dzx $$8 = new dzx(new dyz(dzn.a()));
         int $$9 = 8;
         dcd $$10 = $$5.f();
-        dzc $$11 = $$5.a((T $$3) -> this.a((duy)$$3, $$4, eaa.a((arb)$$0), $$22));
+        dzc $$11 = $$5.a((duy $$3) -> this.a((duy)$$3, $$4, eaa.a($$0), $$22));
         dyk $$122 = $$11.i();
-        eaz $$13 = new eaz(this, $$0.H_(), $$5.z(), $$11, $$22, ((dzd)this.e.a()).j());
+        eaz $$13 = new eaz(this, $$0.H_(), $$5.z(), $$11, $$22, this.e.a().j());
         dux $$14 = ((dvs)$$5).b($$6);
         for (int $$15 = -8; $$15 <= 8; ++$$15) {
             for (int $$16 = -8; $$16 <= 8; ++$$16) {
                 dcd $$17 = new dcd($$10.e + $$15, $$10.f + $$16);
                 duy $$18 = $$0.a($$17.e, $$17.f);
-                ddx $$19 = $$18.a(() -> this.a(this.b.getNoiseBiome(jx.a((int)$$17.d()), 0, jx.a((int)$$17.e()), $$22.b())));
-                Iterable $$20 = $$19.a($$6);
+                ddx $$19 = $$18.a(() -> this.a(this.b.getNoiseBiome(jx.a($$17.d()), 0, jx.a($$17.e()), $$22.b())));
+                Iterable<jm<ebc<?>>> $$20 = $$19.a($$6);
                 int $$21 = 0;
-                for (jm $$222 : $$20) {
-                    ebc $$23 = (ebc)$$222.a();
+                for (jm<ebc<?>> $$222 : $$20) {
+                    ebc<?> $$23 = $$222.a();
                     $$8.c($$12 + (long)$$21, $$17.e, $$17.f);
-                    if ($$23.a((ayw)$$8)) {
-                        $$23.a($$13, $$5, arg_0 -> ((ddy)$$7).a(arg_0), (ayw)$$8, $$122, $$17, $$14);
+                    if ($$23.a($$8)) {
+                        $$23.a($$13, $$5, $$7::a, $$8, $$122, $$17, $$14);
                     }
                     ++$$21;
                 }
@@ -253,15 +204,16 @@ extends duz {
         }
     }
 
+    @Override
     public CompletableFuture<duy> a(eaa $$0, dzm $$1, ddq $$2, duy $$3) {
-        dzg $$4 = ((dzd)this.e.a()).f().a($$3.z());
+        dzg $$4 = this.e.a().f().a($$3.z());
         int $$5 = $$4.c();
-        int $$6 = ayo.a((int)$$5, (int)$$4.a());
-        int $$7 = ayo.a((int)$$4.d(), (int)$$4.a());
+        int $$6 = ayo.a($$5, $$4.a());
+        int $$7 = ayo.a($$4.d(), $$4.a());
         if ($$7 <= 0) {
             return CompletableFuture.completedFuture($$3);
         }
-        return CompletableFuture.supplyAsync(ad.a((String)"wgen_fill_noise", () -> {
+        return CompletableFuture.supplyAsync(ad.a("wgen_fill_noise", () -> {
             int $$8 = $$3.e($$7 * $$4.a() - 1 + $$5);
             int $$9 = $$3.e($$5);
             HashSet $$10 = Sets.newHashSet();
@@ -283,7 +235,7 @@ extends duz {
     }
 
     private duy a(eaa $$0, ddq $$1, dzm $$2, duy $$32, int $$4, int $$5) {
-        dzc $$6 = $$32.a((T $$3) -> this.a((duy)$$3, $$1, $$0, $$2));
+        dzc $$6 = $$32.a((duy $$3) -> this.a((duy)$$3, $$1, $$0, $$2));
         dyy $$7 = $$32.a(dyy.a.c);
         dyy $$8 = $$32.a(dyy.a.a);
         dcd $$9 = $$32.f();
@@ -325,15 +277,15 @@ extends duz {
                                 $$6.c($$33, $$35);
                                 dtc $$36 = $$6.e();
                                 if ($$36 == null) {
-                                    $$36 = ((dzd)this.e.a()).g();
+                                    $$36 = this.e.a().g();
                                 }
-                                if (($$36 = this.a($$6, $$29, $$24, $$33, $$36)) == d || ab.a((dcd)$$32.f())) continue;
+                                if (($$36 = this.a($$6, $$29, $$24, $$33, $$36)) == d || ab.a($$32.f())) continue;
                                 $$21.a($$30, $$25, $$34, $$36, false);
                                 $$7.a($$30, $$24, $$34, $$36);
                                 $$8.a($$30, $$24, $$34, $$36);
                                 if (!$$12.a() || $$36.u().c()) continue;
                                 $$13.d($$29, $$24, $$33);
-                                $$32.e((jd)$$13);
+                                $$32.e($$13);
                             }
                         }
                     }
@@ -349,26 +301,30 @@ extends duz {
         return $$4;
     }
 
+    @Override
     public int e() {
-        return ((dzd)this.e.a()).f().d();
+        return this.e.a().f().d();
     }
 
+    @Override
     public int f() {
-        return ((dzd)this.e.a()).l();
+        return this.e.a().l();
     }
 
+    @Override
     public int g() {
-        return ((dzd)this.e.a()).f().c();
+        return this.e.a().f().c();
     }
 
+    @Override
     public void a(arb $$0) {
-        if (((dzd)this.e.a()).a()) {
+        if (this.e.a().a()) {
             return;
         }
         dcd $$1 = $$0.a();
-        jm $$2 = $$0.t($$1.l().h($$0.am() - 1));
-        dzx $$3 = new dzx((ayw)new dyz(dzn.a()));
+        jm<ddw> $$2 = $$0.t($$1.l().h($$0.am() - 1));
+        dzx $$3 = new dzx(new dyz(dzn.a()));
         $$3.a($$0.C(), $$1.d(), $$1.e());
-        ddh.a((ddl)$$0, (jm)$$2, (dcd)$$1, (ayw)$$3);
+        ddh.a($$0, $$2, $$1, $$3);
     }
 }

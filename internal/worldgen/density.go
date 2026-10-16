@@ -48,6 +48,8 @@ type DensitySettings struct {
 	Aquifers   bool
 	OreVeins   bool
 	Legacy     bool
+	DefaultBlock SurfaceBlockState
+	DefaultFluid SurfaceBlockState
 }
 
 type densityCompiler struct {
@@ -91,6 +93,8 @@ func LoadDensitySettings(name string) (*DensitySettings, error) {
 		Aquifers bool                       `json:"aquifers_enabled"`
 		OreVeins bool                       `json:"ore_veins_enabled"`
 		Legacy   bool                       `json:"legacy_random_source"`
+		DefaultBlock SurfaceBlockState       `json:"default_block"`
+		DefaultFluid SurfaceBlockState       `json:"default_fluid"`
 		Noise    struct {
 			MinY       int32 `json:"min_y"`
 			Height     int32 `json:"height"`
@@ -110,6 +114,7 @@ func LoadDensitySettings(name string) (*DensitySettings, error) {
 	result := &DensitySettings{Name: name, Router: make(map[string]*DensityNode), Raw: append([]byte(nil), raw...), CellWidth: settings.Noise.Horizontal * 4, CellHeight: settings.Noise.Vertical * 4}
 	result.MinY, result.Height, result.SeaLevel = settings.Noise.MinY, settings.Noise.Height, settings.SeaLevel
 	result.Aquifers, result.OreVeins, result.Legacy = settings.Aquifers, settings.OreVeins, settings.Legacy
+	result.DefaultBlock, result.DefaultFluid = settings.DefaultBlock, settings.DefaultFluid
 	for field, expression := range settings.Router {
 		node, err := c.parse(expression, name+"/noise_router/"+field)
 		if err != nil {

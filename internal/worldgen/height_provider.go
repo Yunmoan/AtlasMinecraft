@@ -6,9 +6,16 @@ import (
 )
 
 func decodeFeatureHeightProvider(raw json.RawMessage) (featureIntProvider, error) {
+	return decodeFeatureHeightProviderForBounds(raw, -64, 384)
+}
+
+func decodeFeatureHeightProviderForBounds(raw json.RawMessage, minY, generationDepth int32) (featureIntProvider, error) {
+	if generationDepth <= 0 {
+		return nil, fmt.Errorf("height provider requires positive generation depth")
+	}
 	var anchor heightAnchor
 	if json.Unmarshal(raw, &anchor) == nil && (anchor.Absolute != nil || anchor.AboveBottom != nil || anchor.BelowTop != nil) {
-		value, err := anchor.resolve(-64, 384)
+		value, err := anchor.resolve(minY, generationDepth)
 		return func(*WorldgenRandom) int32 { return value }, err
 	}
 	var config struct {
@@ -23,14 +30,14 @@ func decodeFeatureHeightProvider(raw json.RawMessage) (featureIntProvider, error
 		return nil, err
 	}
 	if config.Type == "minecraft:constant" {
-		value, err := config.Value.resolve(-64, 384)
+		value, err := config.Value.resolve(minY, generationDepth)
 		return func(*WorldgenRandom) int32 { return value }, err
 	}
-	lower, err := config.Min.resolve(-64, 384)
+	lower, err := config.Min.resolve(minY, generationDepth)
 	if err != nil {
 		return nil, err
 	}
-	upper, err := config.Max.resolve(-64, 384)
+	upper, err := config.Max.resolve(minY, generationDepth)
 	if err != nil {
 		return nil, err
 	}

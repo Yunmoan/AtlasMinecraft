@@ -126,7 +126,7 @@ func main() {
 
 	h := hub.New()
 	slog.Info(fmt.Sprintf("Preparing level %q", *worldDir))
-	w, err := world.Open(h, *genWorkers, *worldDir)
+	w, err := world.Open(hub.DimensionView{Hub: h, Dimension: "minecraft:overworld"}, *genWorkers, *worldDir)
 	if err != nil {
 		slog.Error("world load failed", "error", err)
 		os.Exit(1)
@@ -164,7 +164,8 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	slog.Info("Spawn area ready", "chunks", (2*(*spawnRadius)+1)*(2*(*spawnRadius)+1), "elapsed", time.Since(prepareStart).Round(time.Millisecond))
+	spawnX, spawnY, spawnZ, _ := w.SpawnPoint()
+	slog.Info("Spawn area ready", "chunks", (2*(*spawnRadius)+1)*(2*(*spawnRadius)+1), "x", spawnX, "y", spawnY, "z", spawnZ, "elapsed", time.Since(prepareStart).Round(time.Millisecond))
 	s := server.New(server.Config{
 		Addr:               *addr,
 		Motd:               *motd,
@@ -176,6 +177,23 @@ func main() {
 		TracePackets:       *tracePackets,
 		Operators:          operators,
 	}, h, w)
+	for _, dimension := range []string{"minecraft:the_nether", "minecraft:the_end"} {
+		dimensionWorld, err := world.OpenDimension(hub.DimensionView{Hub: h, Dimension: dimension}, *genWorkers, *worldDir, dimension)
+		if err != nil {
+			slog.Error("dimension load failed", "dimension", dimension, "error", err)
+			s.Close()
+			for _, opened := range s.Worlds() {
+				_ = opened.Close()
+			}
+			os.Exit(1)
+		}
+		if err := s.AddWorld(dimensionWorld); err != nil {
+			_ = dimensionWorld.Close()
+			slog.Error("dimension registration failed", "error", err)
+			os.Exit(1)
+		}
+		slog.Info("Dimension ready", "dimension", dimension, "mode", dimensionWorld.GenerationMode())
+	}
 
 	go runWorldClock(ctx, s)
 	go func() {
@@ -205,9 +223,11 @@ func main() {
 	}
 	s.Close()
 	stop()
-	if err := w.Close(); err != nil {
-		slog.Error("world save failed", "error", err)
-		os.Exit(1)
+	for _, opened := range s.Worlds() {
+		if err := opened.Close(); err != nil {
+			slog.Error("world save failed", "dimension", opened.DimensionName(), "error", err)
+			os.Exit(1)
+		}
 	}
 	if serveErr != nil {
 		os.Exit(1)
@@ -247,16 +267,24 @@ func runWorldClock(ctx context.Context, s *server.Server) {
 			ticks := int64(elapsed / (50 * time.Millisecond))
 			if ticks > 0 {
 				s.World.AdvanceTime(ticks)
+				s.TickPortals(ticks)
 				lastTick = lastTick.Add(time.Duration(ticks) * 50 * time.Millisecond)
 			}
 			s.RecordTick(started)
 		case <-save.C:
 			started := time.Now()
 			s.SavePlayers()
-			if err := s.World.Save(); err != nil {
+			if err := s.SaveWorlds(); err != nil {
 				slog.Error("periodic world save failed", "error", err)
 			} else {
 				slog.Debug("world metadata saved", "component", "world")
+			}
+			for _, dimensionWorld := range s.Worlds() {
+				if count, err := dimensionWorld.UnloadIdle(time.Minute); err != nil {
+					slog.Error("idle chunk unload failed", "dimension", dimensionWorld.DimensionName(), "error", err)
+				} else if count > 0 {
+					slog.Debug("idle chunks unloaded", "dimension", dimensionWorld.DimensionName(), "chunks", count)
+				}
 			}
 			s.RecordAutosave(started)
 		case <-ctx.Done():

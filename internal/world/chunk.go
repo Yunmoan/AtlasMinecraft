@@ -5,6 +5,7 @@ import (
 	"atlas/internal/nbt"
 	"atlas/internal/proto"
 	"atlas/internal/registry"
+	"time"
 )
 
 const (
@@ -184,22 +185,32 @@ func (s *Section) grow() {
 type Chunk struct {
 	cx, cz        int32
 	heights       [256]int16 // motion-blocking top, absolute Y of first air above ground
-	sect          [NumSections]*Section
-	biomes        [NumSections][64]int32
+	sect          []*Section
+	biomes        [][64]int32
 	anvilName     string
 	anvilRoot     nbt.Tag
+	entities      []WorldEntity
 	fromAnvil     bool
 	dirty         bool
-	dirtySections [NumSections]bool
+	dirtySections []bool
+	minY, maxY    int32
+	hasSky        bool
 	lights        *light.Data
 	lightStale    bool
 	blockRevision uint64
+	lastAccess    time.Time // region actor only; lighting changes do not keep it alive
 }
 
 func NewChunk(cx, cz int32) *Chunk {
-	c := &Chunk{cx: cx, cz: cz}
+	return newChunkBounds(cx, cz, MinY, MaxY, true)
+}
+
+func newChunkBounds(cx, cz, minY, maxY int32, hasSky bool) *Chunk {
+	count := int((maxY - minY) / 16)
+	c := &Chunk{cx: cx, cz: cz, minY: minY, maxY: maxY, hasSky: hasSky,
+		sect: make([]*Section, count), biomes: make([][64]int32, count), dirtySections: make([]bool, count)}
 	for i := range c.heights {
-		c.heights[i] = MinY
+		c.heights[i] = int16(minY)
 	}
 	for si := range c.biomes {
 		for i := range c.biomes[si] {
@@ -211,17 +222,22 @@ func NewChunk(cx, cz int32) *Chunk {
 
 func sectionOf(y int32) int { return int((y - MinY) >> 4) }
 
+func (c *Chunk) sectionOf(y int32) int { return int((y - c.minY) >> 4) }
+func (c *Chunk) MinBuildHeight() int32 { return c.minY }
+func (c *Chunk) MaxBuildHeight() int32 { return c.maxY }
+
 func localIndexOf(lx, ly, lz int) int {
 	return (ly&0xF)<<8 | lz<<4 | lx
 }
 
 // SetBlock writes a state at chunk-local x/z (0..15) and absolute y.
 func (c *Chunk) SetBlock(lx, lz int, y int32, state uint32) {
-	si := sectionOf(y)
-	if si < 0 || si >= NumSections {
+	si := c.sectionOf(y)
+	if si < 0 || si >= len(c.sect) {
 		return
 	}
-	if c.GetBlock(lx, lz, y) == state {
+	old := c.GetBlock(lx, lz, y)
+	if old == state {
 		return
 	}
 	sec := c.sect[si]
@@ -233,6 +249,7 @@ func (c *Chunk) SetBlock(lx, lz int, y int32, state uint32) {
 		c.sect[si] = sec
 	}
 	sec.set(localIndexOf(lx, int(y), lz), state)
+	c.removeReplacedBlockEntity(lx, lz, y, old, state)
 	c.blockRevision++
 	c.dirty = true
 	c.dirtySections[si] = true
@@ -245,7 +262,7 @@ func (c *Chunk) SetBlock(lx, lz int, y int32, state uint32) {
 	} else if int32(*hi) == y+1 {
 		// scan down for the new top
 		ny := y
-		for ny > MinY && isAir(c.GetBlock(lx, lz, ny-1)) {
+		for ny > c.minY && isAir(c.GetBlock(lx, lz, ny-1)) {
 			ny--
 		}
 		*hi = int16(ny)
@@ -254,8 +271,8 @@ func (c *Chunk) SetBlock(lx, lz int, y int32, state uint32) {
 
 // GetBlock reads a state at chunk-local x/z and absolute y.
 func (c *Chunk) GetBlock(lx, lz int, y int32) uint32 {
-	si := sectionOf(y)
-	if si < 0 || si >= NumSections {
+	si := c.sectionOf(y)
+	if si < 0 || si >= len(c.sect) {
 		return StateAir
 	}
 	sec := c.sect[si]
@@ -277,7 +294,7 @@ func (c *Chunk) Height(lx, lz int) int32 { return int32(c.heights[lz<<4|lx]) }
 // varint shifts every subsequent section and corrupts the client's world.
 func (c *Chunk) EncodeSections() []byte {
 	w := proto.NewWriterCap(8192)
-	for si := 0; si < NumSections; si++ {
+	for si := range c.sect {
 		sec := c.sect[si]
 		if sec == nil || sec.nonAir == 0 {
 			// uniform air section

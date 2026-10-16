@@ -2,19 +2,9 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ayw
- *  bpw
  *  com.mojang.datafixers.kinds.Applicative
  *  com.mojang.serialization.MapCodec
  *  com.mojang.serialization.codecs.RecordCodecBuilder
- *  com.mojang.serialization.codecs.RecordCodecBuilder$Instance
- *  ddc
- *  efe
- *  efu
- *  efu$a
- *  efu$b
- *  efv
- *  jd
  */
 import com.mojang.datafixers.kinds.Applicative;
 import com.mojang.serialization.MapCodec;
@@ -22,16 +12,18 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 public class efs
 extends efu {
-    public static final MapCodec<efs> a = RecordCodecBuilder.mapCodec($$0 -> efs.b((RecordCodecBuilder.Instance)$$0).apply((Applicative)$$0, efs::new));
+    public static final MapCodec<efs> a = RecordCodecBuilder.mapCodec($$0 -> efs.b($$0).apply((Applicative)$$0, efs::new));
 
     public efs(bpw $$0, bpw $$1) {
         super($$0, $$1);
     }
 
+    @Override
     protected efv<?> a() {
         return efv.i;
     }
 
+    @Override
     protected void a(ddc $$0, efu.b $$1, ayw $$2, efe $$3, int $$4, efu.a $$5, int $$6, int $$7, int $$8) {
         jd $$9 = $$5.a().b($$8);
         boolean $$10 = $$5.c();
@@ -48,10 +40,12 @@ extends efu {
         }
     }
 
+    @Override
     public int a(ayw $$0, int $$1, efe $$2) {
         return 4;
     }
 
+    @Override
     protected boolean b(ayw $$0, int $$1, int $$2, int $$3, int $$4, boolean $$5) {
         if (!($$2 != 0 || !$$5 || $$1 != -$$4 && $$1 < $$4 || $$3 != -$$4 && $$3 < $$4)) {
             return true;
@@ -59,6 +53,7 @@ extends efu {
         return super.b($$0, $$1, $$2, $$3, $$4, $$5);
     }
 
+    @Override
     protected boolean a(ayw $$0, int $$1, int $$2, int $$3, int $$4, boolean $$5) {
         if ($$2 == -1 && !$$5) {
             return $$1 == $$4 && $$3 == $$4;

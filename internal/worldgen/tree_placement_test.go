@@ -205,8 +205,8 @@ func TestTreePlanCoverage(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"trees_plains", "trees_birch", "trees_birch_and_oak", "trees_swamp", "trees_old_growth_spruce_taiga"} {
-		if _, exists := generator.plans["minecraft:"+name]; exists {
-			t.Fatalf("unsupported decorated tree plan %s enabled", name)
+		if _, exists := generator.plans["minecraft:"+name]; !exists {
+			t.Fatalf("validated decorated tree plan %s missing", name)
 		}
 	}
 }

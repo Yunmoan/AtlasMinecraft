@@ -15,5 +15,5 @@ with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
                 else:
                     result.add(value)
             return sorted(result)
-        data = {name: resolve(name) for name in ("replaceable_by_trees", "logs", "leaves")}
+        data = {name: resolve(name) for name in ("replaceable_by_trees", "logs", "leaves", "dirt", "mangrove_roots_can_grow_through", "mangrove_logs_can_grow_through")}
 (ROOT / "internal/worldgen/tree_tags.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

@@ -87,24 +87,57 @@ accounts, set `online-mode=true` in `server.properties` before starting Atlas.
 - New normal and structure-free flat worlds are created as Java 1.21.1 `level.dat` and
   Anvil saves. The older Atlas hills, `level.json`, and `blocks.log` paths are removed.
 - Pure Go 1.21.1 Overworld noise, biome, surface, and carving stages are checked
-  against the supplied JAR, including 12 full carved chunks. Feature ordering,
+  against the supplied JAR, including 12 original and 45 mountain, plateau and
+  cave chunks. Feature ordering,
   seeds, definitions, selected placement candidates, ore veins, forest rocks,
   blue ice, and exact motion-blocking/ocean-floor heights are also JAR-checked.
   Normal-world creation and missing-chunk generation now run these stages
   and supported decoration (ores, forest rocks, blue ice, clay/gravel disks,
-  selected undecorated trees, grass/ferns, double plants, flowers, dead bushes,
+  all built-in Overworld tree configurations, grass/ferns, double plants, flowers, dead bushes,
   berry bushes, pumpkins, cactus, sugar cane, waterlilies and huge mushrooms).
+  Generation version 12 also includes springs and freezing, dripstone/lush cave
+  features and sculk patches/veins, small mushrooms, geodes, lava lakes, rooted azalea, ocean
+  vegetation/coral, icebergs, bamboo/podzol, melons, block piles, desert wells
+  and monster rooms. Generated
+  chest, spawner, suspicious-sand, beehive and sculk NBT is saved and included in chunk packets;
+  spawner mob ticking remains incomplete. Single-chest menus support authoritative
+  item transfer and persistence; village/outpost loot tables are supported with
+  nonzero saved loot seeds. Other container types and loot tables remain incomplete.
   Vegetation includes the original weighted and noise-based providers,
   checked against 4,208 configured/placed JAR cases. Sand/grass disks include
-  rule providers and postprocessing, checked against 96 JAR cases. Trees are enabled in taiga, grove, snowy plains,
-  windswept hills/forest, wooded badlands, rivers and oceans where their complete
-  selector graphs are supported. Structures, decorated/special trees, remaining
-  features, and other dimensions are incomplete;
-  the complete decorated world is not yet equivalent to vanilla.
+  rule providers and postprocessing, checked against 96 JAR cases. All 31 tree configurations,
+  including giant, cherry and mangrove trees and six decorators, have official vectors.
+  Desert pyramids, jungle temples, swamp huts, igloos, buried treasure,
+  six Overworld ruined-portal variants, shipwrecks, ocean ruins, mineshafts,
+  trail ruins, trial chambers, ancient cities, pillager outposts, all five village variants and strongholds have actual
+  starts, blocks, block entities, loot seeds and saved references. Supported
+  structure NPCs and 18 initial animal types are generated and persisted separately from terrain.
+  Remaining structure families and neighboring decoration/light-stage ordering
+  are incomplete. 151 of 151 top-level Overworld
+  placed-feature plans are enabled; this is implementation coverage, not a
+  percentage of vanilla world equivalence. The complete decorated world is
+  not yet equivalent to vanilla.
+- Pure Go Nether and End generation runs through biomes, noise, surface,
+  Nether caves and all 37/37 Nether and 5/5 End feature plans. Nether fortresses,
+  Nether fossils, Nether ruined portals and Bastions join the actual chunk/save pipeline.
+  End cities include loot chests, Shulkers and Elytra item frames. Generated
+  bubble columns and cross-tree leaf distances settle after decoration.
+  Remaining Overworld structure families and general generation ticks remain incomplete. Players can
+  switch dimensions and retain their dimension, position, inventory and edits
+  across logout/restart. Generated End crystals and supported structure NPCs
+  are saved in independent dimension entity regions and sent after terrain.
+  Existing armor stands support equipment exchange, shared viewer updates and
+  Anvil persistence. Placement, destruction, AI, physics and damage remain incomplete.
+- Flint and steel/fire charges activate valid Nether portal frames. Player
+  contact uses the original creative delay and cooldown, 8:1 coordinates,
+  existing portal search, exit creation, relative position and collision checks.
+  Overworld End portals rebuild the original End arrival platform. End return,
+  gateway travel, frame-break cleanup and the dragon fight remain incomplete.
 - 20 ticks/second world clock and weather controls (clear, rain, thunder)
 - Client command tree, chat commands, and console commands: `help`, `list`,
   `where`, `tps`, `mspt`, `status` (`sysinfo`), `seed`, `op`, `deop`, `time`,
-  `weather`, `tp`, `setblock`, `save`
+  `weather`, `tp`, `setblock`, `save`, and `execute in <dimension> run tp|setblock`
+  (the latter supports this subset, rather than the complete execute dispatcher)
 - Typed vanilla command arguments, server-side player name completion, and
   namespaced vanilla aliases for supported commands. Help entries can be
   clicked to insert a command; messages support named and RGB text colors.
@@ -139,18 +172,33 @@ The seed is saved in `level.dat`. The new flat preset uses the stock four
 layers, plains biome, and disabled structures/features. Existing Java worlds
 keep their saved seed. The default `minecraft:normal` now creates a noise world
 with biomes, surface, caves, ores and supported decoration. New normal saves
-explicitly disable structures (`generate_features=false`). `AtlasWorldgen`
-metadata records incomplete coverage and each generated chunk lists skipped
-placed features. Spawn currently uses column (0,0), not vanilla's spawn search.
-Ordinary and fancy oak, birch, spruce and pine tree primitives are JAR-checked.
-Forest/plains tree distributions that require beehives, giant trees or other
-unimplemented decorators remain skipped; they are not replaced with different
-tree distributions. Generation version 4 includes the supported vegetation and disks in new chunks;
+enable supported structures (`generate_features=true`); existing saves retain
+their own flag and full chunks. `AtlasWorldgen` metadata records incomplete
+coverage and generated chunks list skipped generation stages. New normal worlds use vanilla's initial spawn search: creation runs the
+climate-based search (`Climate$SpawnFinder`, JAR-verified) to choose the spawn
+chunk, and the first boot loads chunks on demand in the 11x11 vanilla spiral
+to find a safe column before players can join. Atlas also checks standing-player
+clearance, the build ceiling, fluids and damaging blocks. A blank seed makes
+new worlds vary; a fixed seed reproduces the same initial spawn. The result is
+saved in `level.dat` and retained across restarts. `/setworldspawn` can move it at runtime
+and new players join exactly at the stored spawn point (or their saved
+position, if any).
+All 31 built-in tree configurations and their sapling predicates are JAR-checked.
+Beehive candidate shuffles use an independent random salt saved in `level.dat`,
+then a stable key for each tree invocation, preserving neighbor replay and restart
+consistency. This random source differs from vanilla's process-global shuffle.
+Generation version 12 includes the decoration and supported structures in new chunks;
 existing full chunks keep their saved blocks.
 
 Before opening the listening socket, Atlas loads and saves a square of chunks
 around spawn, nearest first. `spawn-preload-radius=3` prepares 49 chunks; the
-supported radius is 0..16 chunks and 0 prepares only the center. This preparation
+supported radius is 0..16 chunks and 0 preloads only the final spawn chunk.
+The safety search for new normal saves is independent of that radius; it runs the spawn
+column scan (motion-blocking/world-surface/ocean-floor classification plus the
+per-state collision and fluid vectors) with the extra clearance and hazard checks
+and stores the first safe position. If the search finds no safe column, startup
+fails with the initial-spawn marker unfinished, instead of accepting an unchecked
+height. The configured preload square is centered on the final spawn. This preparation
 also runs on existing saves, loading their existing chunks without regenerating
 them. The radius is independent of view/simulation distance and does not enable
 spawn tickets or entity ticking. Startup logs show progress and elapsed time.
@@ -163,34 +211,48 @@ decoration overlays and actor-level duplicate-request coalescing; shutdown joins
 active generation before returning. Interrupting startup cancels preparation;
 already generated chunks remain available on the next start.
 
-Chunk reads fetch only the target Anvil record. Region reads/replacements use
+After each 30-second autosave, chunks unused for one minute outside player views
+and their one-chunk border are saved and unloaded, releasing their lighting and
+packet caches. Pending requests and recent direct accesses retain chunks. A save
+failure retains the chunk. Region actors and the bounded terrain base cache are
+retained, and Go/Windows memory counters may fall later than the cache counts.
+
+Chunk reads fetch only the target Anvil record. Region replacements stream
+unchanged records through a fixed buffer rather than copying the entire file.
+Region reads/replacements use
 bounded per-region locks; decompression, NBT parsing and compression run outside
 those locks. Compression writers and lighting work arrays are reused. Each
 region actor caches up to 64 encoded chunk packets and 2 MiB, refreshing them
 when blocks or lighting change. Generation precompiles density operands and
 feature placement plans, uses compact aquifer grids and sparse decoration
-overlays, and materializes only the final requested chunk. Generation version
-4 and the checked output hashes are preserved. Measurements and validation:
-[chunk loading and generation performance](artifacts/chunk-performance-v2/validation.md).
+overlays, and materializes only the final requested chunk. Version-10 output
+hashes include generated block entities and are checked sequentially and in
+parallel. Current generation additions, coverage and validation:
+[world generation version 12](artifacts/worldgen-v12-validation.md).
+Earlier memory replay, interoperability and binary validation:
+[world generation version 5](artifacts/worldgen-v5-validation.md).
+Earlier measurements: [chunk loading and generation performance](artifacts/chunk-performance-v2/validation.md).
+Current measurements: [world generation optimization and cold-start validation](artifacts/worldgen-probes/performance-v8.md).
 
 Gameplay currently remains creative-only. Vertical player motion is still
 driven by the vanilla client; server movement validation checks block collisions.
 The collision table was extracted at the origin with an empty collision context;
 position/entity-dependent shapes (such as bamboo offsets, powder snow and
 scaffolding) still require dedicated rules. Beds, remaining block interactions,
-fluids, redstone/piston motion, random ticks, mobs, drops, container menus,
+fluids, redstone/piston motion, random ticks, mobs, drops, remaining container menus,
 crafting and survival are incomplete.
-Latest verification: [inventory and interactions](artifacts/inventory-interaction-fix/validation.md).
+Latest verification: [world generation and gameplay version 12](artifacts/worldgen-v12-validation.md).
 
 For an existing Java 1.21.1 save, pass a **copy** of the save directory to
 `-world`. Atlas reads `level.dat`, existing overworld `region/*.mca` chunks,
-and `playerdata/*.dat`. It writes changed chunk NBT, time/weather, and player
-position/rotation/flight/inventory back to those vanilla files, retaining unmodified NBT
+and `playerdata/*.dat`. It writes changed chunk NBT, time/weather, the world
+spawn point, and player
+position/rotation/flight/inventory/spawn-point back to those vanilla files, retaining unmodified NBT
 tags and keeping a `.dat_old` copy before replacing `level.dat` or player data.
-Other dimensions, entities, inventory behavior, and world mechanics are not
-yet fully implemented.
-Missing chunks using the built-in Overworld noise/biome presets are generated
-in Go. Other noise presets, custom enabled datapacks, unfinished existing chunks,
+The stock Nether/End folders and independent entity regions are supported;
+entity behavior, remaining inventory behavior and world mechanics are incomplete.
+Missing chunks using built-in Overworld/Nether/End noise and biome presets are
+generated in Go. Other noise presets, custom enabled datapacks, unfinished existing chunks,
 and flat worlds with enabled structures/features are not generated. Existing
 full chunks are preserved, and decoration uses private neighboring terrain so
 new chunks cannot overwrite saved player edits. The supplied `jar/server.jar`
@@ -215,6 +277,8 @@ Public in-game commands are `/help`, `/list`, and `/where`. Names passed to
 /tp <destination player>
 /tp <player> <destination player>
 /tp [player] <x> <y> <z>
+/setworldspawn [x y z [angle]]
+/spawnpoint [player] [x y z [angle]]
 /setblock <x> <y> <z> <block[state=value]|1.21.1_state_id> [replace|keep]
 /save
 /save-all [flush]
@@ -243,7 +307,17 @@ requests intact; `/tp 1000000000 ~ 1000000000` exceeds the vanilla X/Z bounds.
 `/setblock` accepts all known 1.21.1 names and properties, such as
 `minecraft:oak_log[axis=x]`, plus numeric state IDs. `keep` only writes to air;
 `replace` is the default. `/time query` accepts `daytime`, `gametime`, and
-`day`; numeric set/add values accept `t`, `s`, and `d` units. This remains a
+`day`; numeric set/add values accept `t`, `s`, and `d` units.
+`/setworldspawn` and `/spawnpoint` follow vanilla 1.21.1 defaults: an omitted
+position uses the sender's block position (origin on console; `/spawnpoint`
+defaults to the sender, not the target), and an omitted angle is 0. Angles
+accept a plain degree value or `~`/`~-5` relative to the sender's yaw and wrap
+to [-180, 180). `/setworldspawn` persists `SpawnX/SpawnY/SpawnZ/SpawnAngle` in
+`level.dat`, broadcasts the new spawn position to every player in play, and
+prepares the surrounding chunks like vanilla's spawn ticket. New players join
+exactly at that stored point. `/spawnpoint` writes the vanilla
+`SpawnX/SpawnY/SpawnZ/SpawnAngle/SpawnForced/SpawnDimension` playerdata tags
+for later respawn handling. This remains a
 supported subset of vanilla commands/selector syntax; full selector filters,
 multi-target teleport, teleport facing arguments, weather duration and
 `setblock destroy` are not implemented.
@@ -283,7 +357,8 @@ autosave last/maximum duration. Its work time excludes timer waits and saves;
 saves still affect loop gaps and TPS.
 
 `/status` adds uptime, online players, goroutines, Go version/platform,
-CPU count/parallelism, heap and Go-managed memory, GC pauses, and cached chunks,
+CPU count/parallelism, allocated heap and Go-managed memory, GC pauses, the live
+heap at the last collection and next GC goal, and cached chunks/light columns,
 region actors, active generation workers, queued chunk jobs and actor mailbox
 depths. On Windows it also reads native process CPU and resident working set;
 other platforms currently report those two fields as unavailable. CPU is
@@ -383,8 +458,8 @@ This is not a full vanilla world simulation yet. The provided JAR is a
 - [ ] Complete entity interactions, containers/crafting/drops, survival and health/hunger
 - [ ] Exact Java 1.21.1 noise worldgen, biome placement, caves, features,
       and structures (pure Go; required before claiming generated chunks match)
-- [ ] Complete vanilla save support: Nether/End, entity regions, block entities
-      in client packets, light and heightmap updates, and writing external
+- [ ] Complete vanilla save support beyond stock three-dimension chunks,
+      supported entities and block entities: remaining block/entity behavior and writing external
       Anvil `.mcc` chunks (LZ4 region reads are supported)
 - [ ] Random ticks / redstone; entity AI; automatic weather cycle
 - [ ] Persistent regions, region-file I/O off the actor thread

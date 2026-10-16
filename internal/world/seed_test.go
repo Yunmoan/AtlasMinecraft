@@ -104,8 +104,8 @@ func TestNormalWorldMetadataUsesVanillaNoisePreset(t *testing.T) {
 	if save.normal == nil {
 		t.Fatal("normal preset has no generator")
 	}
-	if structures, _ := settings.Number("generate_features"); structures != 0 {
-		t.Fatal("unimplemented structures were advertised")
+	if structures, _ := settings.Number("generate_features"); structures != 1 {
+		t.Fatal("new normal world's supported structures were disabled")
 	}
 	if marker, ok := data.Object("AtlasWorldgen"); !ok {
 		t.Fatal("missing generation coverage marker")

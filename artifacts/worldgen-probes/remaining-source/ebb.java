@@ -2,23 +2,7 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ayo
- *  ayw
  *  com.mojang.serialization.Codec
- *  dcd
- *  ddw
- *  dux
- *  duy
- *  dyk
- *  dzv
- *  eax
- *  eaz
- *  eba
- *  ebe
- *  ebe$a
- *  jd
- *  jm
- *  kf
  */
 import com.mojang.serialization.Codec;
 import java.util.function.Function;
@@ -29,16 +13,18 @@ extends ebe<eba> {
         super($$0);
     }
 
+    @Override
     public boolean a(eba $$0, ayw $$1) {
         return $$1.i() <= $$0.l;
     }
 
+    @Override
     public boolean a(eaz $$0, eba $$12, duy $$22, Function<jd, jm<ddw>> $$32, ayw $$42, dyk $$52, dcd $$6, dux $$7) {
-        int $$8 = kf.c((int)(this.d() * 2 - 1));
+        int $$8 = kf.c(this.d() * 2 - 1);
         int $$9 = $$42.a($$42.a($$42.a(this.a()) + 1) + 1);
         for (int $$10 = 0; $$10 < $$9; ++$$10) {
             double $$11 = $$6.a($$42.a(16));
-            double $$122 = $$12.e.a($$42, (dzv)$$0);
+            double $$122 = $$12.e.a($$42, $$0);
             double $$13 = $$6.b($$42.a(16));
             double $$14 = $$12.b.a($$42);
             double $$15 = $$12.c.a($$42);
@@ -80,24 +66,24 @@ extends ebe<eba> {
     }
 
     protected void a(eaz $$0, eba $$1, duy $$2, Function<jd, jm<ddw>> $$3, dyk $$4, double $$5, double $$6, double $$7, float $$8, double $$9, dux $$10, ebe.a $$11) {
-        double $$12 = 1.5 + (double)(ayo.a((float)1.5707964f) * $$8);
+        double $$12 = 1.5 + (double)(ayo.a(1.5707964f) * $$8);
         double $$13 = $$12 * $$9;
-        this.a($$0, (eax)$$1, $$2, $$3, $$4, $$5 + 1.0, $$6, $$7, $$12, $$13, $$10, $$11);
+        this.a($$0, $$1, $$2, $$3, $$4, $$5 + 1.0, $$6, $$7, $$12, $$13, $$10, $$11);
     }
 
     protected void a(eaz $$0, eba $$1, duy $$2, Function<jd, jm<ddw>> $$3, long $$4, dyk $$5, double $$6, double $$7, double $$8, double $$9, double $$10, float $$11, float $$12, float $$13, int $$14, int $$15, double $$16, dux $$17, ebe.a $$18) {
-        ayw $$19 = ayw.a((long)$$4);
+        ayw $$19 = ayw.a($$4);
         int $$20 = $$19.a($$15 / 2) + $$15 / 4;
         boolean $$21 = $$19.a(6) == 0;
         float $$22 = 0.0f;
         float $$23 = 0.0f;
         for (int $$24 = $$14; $$24 < $$15; ++$$24) {
-            double $$25 = 1.5 + (double)(ayo.a((float)((float)Math.PI * (float)$$24 / (float)$$15)) * $$11);
+            double $$25 = 1.5 + (double)(ayo.a((float)Math.PI * (float)$$24 / (float)$$15) * $$11);
             double $$26 = $$25 * $$16;
-            float $$27 = ayo.b((float)$$13);
-            $$6 += (double)(ayo.b((float)$$12) * $$27);
-            $$7 += (double)ayo.a((float)$$13);
-            $$8 += (double)(ayo.a((float)$$12) * $$27);
+            float $$27 = ayo.b($$13);
+            $$6 += (double)(ayo.b($$12) * $$27);
+            $$7 += (double)ayo.a($$13);
+            $$8 += (double)(ayo.a($$12) * $$27);
             $$13 *= $$21 ? 0.92f : 0.7f;
             $$13 += $$23 * 0.1f;
             $$12 += $$22 * 0.1f;
@@ -111,10 +97,10 @@ extends ebe<eba> {
                 return;
             }
             if ($$19.a(4) == 0) continue;
-            if (!ebb.a((dcd)$$2.f(), (double)$$6, (double)$$8, (int)$$24, (int)$$15, (float)$$11)) {
+            if (!ebb.a($$2.f(), $$6, $$8, $$24, $$15, $$11)) {
                 return;
             }
-            this.a($$0, (eax)$$1, $$2, $$3, $$5, $$6, $$7, $$8, $$25 * $$9, $$26 * $$10, $$17, $$18);
+            this.a($$0, $$1, $$2, $$3, $$5, $$6, $$7, $$8, $$25 * $$9, $$26 * $$10, $$17, $$18);
         }
     }
 

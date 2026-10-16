@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -38,6 +39,7 @@ type World struct {
 	lightErr      error
 	loadedChunks  atomic.Int64
 	activeJobs    atomic.Int64
+	dimension     dimensionSettings
 }
 
 var ErrWorldClosed = errors.New("world is closed")
@@ -79,13 +81,23 @@ func newWorld(hub HubView, genWorkers int, store *Store, meta worldMeta) *World 
 		workers:    genWorkers,
 		done:       make(chan struct{}),
 	}
+	w.dimension, _ = builtinDimension("minecraft:overworld")
 	if store != nil {
+		w.dimension = store.vanilla.dimension
 		w.seed = store.vanilla.seed
 		w.loadChunk = store.vanilla.loadChunk
+		if store.vanilla.normal != nil {
+			store.vanilla.normal.SetTerrainWorkers(genWorkers)
+			store.vanilla.normal.SetStructureDayTimeSource(func() int64 { _, day := w.Time(); return day })
+			store.vanilla.normal.SetStructureGameTimeSource(func() int64 { age, _ := w.Time(); return age })
+		}
+		if store.vanilla.dimensionGenerator != nil {
+			store.vanilla.dimensionGenerator.SetTerrainWorkers(genWorkers)
+		}
 	} else {
 		w.loadChunk = func(int32, int32) (*Chunk, error) { return nil, ErrVanillaGenerationUnavailable }
 	}
-	w.lighting, w.lightErr = light.New(MinY, WorldHeight, true)
+	w.lighting, w.lightErr = light.New(int(w.dimension.minY), int(w.dimension.maxY-w.dimension.minY), w.dimension.hasSky)
 	for i := 0; i < genWorkers; i++ {
 		w.wg.Add(1)
 		go w.genWorker()
@@ -211,11 +223,36 @@ func (w *World) SurfaceY(x, z int32) (int32, error) {
 	}
 }
 
+// SpawnXZ returns the shared world spawn column. New players without saved
+// data join there; /setworldspawn can move it at runtime.
 func (w *World) SpawnXZ() (int32, int32) {
-	if w.store != nil {
-		return w.store.vanilla.spawnX, w.store.vanilla.spawnZ
+	x, _, z, _ := w.SpawnPoint()
+	return x, z
+}
+
+// SpawnPoint returns the shared world spawn block and its facing angle. The
+// Y coordinate is the player's feet position.
+func (w *World) SpawnPoint() (int32, int32, int32, float32) {
+	if w.store == nil {
+		return 0, 0, 0, 0
 	}
-	return 0, 0
+	return w.store.vanilla.spawnPoint()
+}
+
+// SetSpawn moves the shared world spawn and persists it in level.dat. It
+// reports whether the stored point changed so callers can skip redundant
+// spawn-position broadcasts.
+func (w *World) SetSpawn(x, y, z int32, angle float32) (bool, error) {
+	if w.store == nil {
+		return false, errors.New("no Java Edition save is loaded")
+	}
+	if x < -30000000 || x >= 30000000 || z < -30000000 || z >= 30000000 {
+		return false, errors.New("X/Z must be >= -30000000 and < 30000000")
+	}
+	if y < w.MinBuildHeight() || y >= w.MaxBuildHeight() {
+		return false, fmt.Errorf("Y must be >= %d and < %d", w.MinBuildHeight(), w.MaxBuildHeight())
+	}
+	return w.store.vanilla.setSpawn(x, y, z, angle)
 }
 
 func (w *World) Seed() int64 { return w.seed }
@@ -239,8 +276,24 @@ func (w *World) GenerationWarning() string {
 	}
 	flat := w.store.vanilla.flat
 	if flat == nil {
+		if w.store.vanilla.dimensionGenerator != nil {
+			structures := "structure generation is disabled in this save"
+			if w.store.vanilla.dimensionGenerator.StructuresEnabled() {
+				structures = "remaining structures are incomplete"
+				if w.DimensionName() == "minecraft:the_nether" {
+					structures = "fortresses, Nether fossils, ruined portals and Bastions are generated"
+				} else if w.DimensionName() == "minecraft:the_end" {
+					structures = "End cities with chests, Shulkers and Elytra item frames are generated"
+				}
+			}
+			return "dimension terrain, surface, biomes, Nether caves and all dimension feature plans are generated (Nether 37/37, End 5/5); " + structures + "; entities, dragon fight, neighboring decoration ordering and generation-time lighting/ticks remain incomplete"
+		}
 		if w.store.vanilla.normal != nil {
-			return "noise, biomes, surface, caves and supported decoration/trees/vegetation are generated; structures, decorated/special trees and remaining features are not yet implemented"
+			structures := "supported pyramids, swamp huts, igloos, buried treasure, shipwrecks, ocean ruins, mineshafts, trail ruins, trial chambers, ancient cities and six ruined-portal variants are generated"
+			if !w.store.vanilla.normal.StructuresEnabled() {
+				structures = "structure generation is disabled in this save"
+			}
+			return "noise, biomes, surface, caves, all 151 Overworld feature plans and 18 initial animal types are generated; " + structures + "; remaining structures, entity behavior, neighboring decoration ordering and generation-time lighting/ticks remain incomplete; beehives use persisted independent randomness"
 		}
 		return "missing noise-world chunks cannot be generated exactly"
 	}
@@ -257,8 +310,24 @@ func (w *World) GenerationMode() string {
 	}
 	flat := w.store.vanilla.flat
 	if flat == nil {
+		if w.store.vanilla.dimensionGenerator != nil {
+			features := "5/5 End placed features"
+			structures := "structure generation disabled"
+			if w.store.vanilla.dimensionGenerator.StructuresEnabled() {
+				structures = "remaining structures incomplete"
+			}
+			if w.DimensionName() == "minecraft:the_nether" {
+				features = "37/37 Nether placed features"
+				if w.store.vanilla.dimensionGenerator.StructuresEnabled() {
+					structures = "fortresses, fossils, ruined portals and Bastions"
+				}
+			} else if w.DimensionName() == "minecraft:the_end" && w.store.vanilla.dimensionGenerator.StructuresEnabled() {
+				structures = "End cities, chests, Shulkers and Elytra item frames"
+			}
+			return fmt.Sprintf("Minecraft 1.21.1 %s (pure Go terrain, surface, biomes, Nether caves and %s; %s; entities/ticks incomplete)", w.DimensionName(), features, structures)
+		}
 		if w.store.vanilla.normal != nil {
-			return "Minecraft 1.21.1 Overworld (pure Go terrain, caves, ores, forest rocks, blue ice, clay/gravel disks, supported trees and vegetation; incomplete decoration, no structures)"
+			return "Minecraft 1.21.1 Overworld (pure Go terrain, caves, 151/151 feature plans and supported structures; remaining structure families and generation stages incomplete)"
 		}
 		return "Minecraft 1.21.1 noise save (existing chunks only)"
 	}
@@ -293,7 +362,7 @@ func (w *World) SpawnChunk(p PacketSink, cx, cz int32, mark func(cx, cz int32)) 
 // SetBlock posts a block edit; the owning region applies it and broadcasts
 // the change to every viewer of that position.
 func (w *World) SetBlock(x, y, z int32, state uint32) error {
-	if y < MinY || y >= MaxY {
+	if y < w.MinBuildHeight() || y >= w.MaxBuildHeight() {
 		return errors.New("block Y outside world bounds")
 	}
 	if state > MaxBlockState {
@@ -358,6 +427,15 @@ func (w *World) SavePlayer(uuid [16]byte, p PlayerPosition) error {
 		return nil
 	}
 	return w.store.SavePlayer(uuid, p)
+}
+
+// SetPlayerSpawn persists a player's personal respawn point as the vanilla
+// SpawnX/SpawnY/SpawnZ/SpawnAngle/SpawnForced/SpawnDimension tags.
+func (w *World) SetPlayerSpawn(uuid [16]byte, x, y, z int32, angle float32) error {
+	if w.store == nil {
+		return errors.New("no Java Edition save is loaded")
+	}
+	return w.store.SavePlayerSpawn(uuid, x, y, z, angle)
 }
 
 func (w *World) SetWeather(weather string) error {
@@ -436,7 +514,7 @@ func buildChunkDataPacket(cx, cz int32, ch *Chunk) []byte {
 	w.I32(cx).I32(cz)
 	w.Raw(ch.HeightmapNBT())
 	w.VarInt(int32(len(data))).Raw(data)
-	w.VarInt(0) // block entities
+	writeChunkBlockEntities(w, ch)
 
 	lighting := ch.lights
 	if lighting == nil {

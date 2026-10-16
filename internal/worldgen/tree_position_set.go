@@ -88,13 +88,11 @@ func (set *javaPositionSet) pop() FeaturePosition {
 		}
 		position := bucket[0]
 		set.buckets[i] = bucket[1:]
-		// TreeFeature's pending sets are small. For a tree bin, rebuild its
-		// remaining iteration order after removal before another insertion.
+		// TreeFeature removes through a fresh iterator. HashMap's iterator
+		// removal balances the lookup tree without moving its root to the
+		// front or reverting a small tree bin to a list.
 		if set.trees[i] != nil {
-			set.trees[i] = nil
-			if len(set.buckets[i]) > 6 {
-				set.treeify(i)
-			}
+			set.removeTreePosition(i, position)
 		}
 		set.size--
 		return position

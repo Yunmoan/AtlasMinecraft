@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -50,7 +51,7 @@ func TestNewChunkAnvilBiomePaletteRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reloaded.biomes != chunk.biomes {
+	if !reflect.DeepEqual(reloaded.biomes, chunk.biomes) {
 		t.Fatal("quart biomes changed during Anvil round trip")
 	}
 }
@@ -263,7 +264,7 @@ func TestFlatBlocksAndBiomesAgainstVanillaGenerator(t *testing.T) {
 			}
 		}
 	}
-	if generated.biomes != actual.biomes {
+	if !reflect.DeepEqual(generated.biomes, actual.biomes) {
 		t.Fatal("generated biome cells differ from vanilla")
 	}
 }

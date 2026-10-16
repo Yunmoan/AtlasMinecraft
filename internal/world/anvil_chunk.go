@@ -9,6 +9,10 @@ import (
 )
 
 func chunkFromAnvil(name string, root nbt.Tag, cx, cz int32) (*Chunk, error) {
+	return chunkFromAnvilBounds(name, root, cx, cz, MinY, MaxY, true)
+}
+
+func chunkFromAnvilBounds(name string, root nbt.Tag, cx, cz, minY, maxY int32, hasSky bool) (*Chunk, error) {
 	o, ok := root.Object()
 	if !ok {
 		return nil, errors.New("chunk root is not compound")
@@ -29,7 +33,7 @@ func chunkFromAnvil(name string, root nbt.Tag, cx, cz int32) (*Chunk, error) {
 	if !ok {
 		return nil, errors.New("chunk sections missing")
 	}
-	c := NewChunk(cx, cz)
+	c := newChunkBounds(cx, cz, minY, maxY, hasSky)
 	for _, section := range sections {
 		so, ok := section.Object()
 		if !ok {
@@ -39,8 +43,8 @@ func chunkFromAnvil(name string, root nbt.Tag, cx, cz int32) (*Chunk, error) {
 		if !ok {
 			return nil, errors.New("section Y missing")
 		}
-		si := int(y) - int(MinY>>4)
-		if si < 0 || si >= NumSections {
+		si := int(y) - int(c.minY>>4)
+		if si < 0 || si >= len(c.sect) {
 			continue
 		}
 		if blockStates, ok := so.Object("block_states"); ok {
@@ -122,7 +126,7 @@ func chunkFromAnvil(name string, root nbt.Tag, cx, cz int32) (*Chunk, error) {
 		return nil, err
 	}
 	c.lights = lighting
-	c.dirtySections = [NumSections]bool{}
+	clear(c.dirtySections)
 	return c, nil
 }
 
@@ -162,12 +166,12 @@ func (c *Chunk) updateAnvilBlocks() (string, nbt.Tag, error) {
 	}
 	root, _ := c.anvilRoot.Object()
 	sections, _ := root["sections"].Elements()
-	seen := [NumSections]bool{}
+	seen := make([]bool, len(c.sect))
 	for _, section := range sections {
 		so, _ := section.Object()
 		y, _ := so.Number("Y")
-		si := int(y) - int(MinY>>4)
-		if si < 0 || si >= NumSections {
+		si := int(y) - int(c.minY>>4)
+		if si < 0 || si >= len(c.sect) {
 			continue
 		}
 		seen[si] = true
@@ -189,7 +193,7 @@ func (c *Chunk) updateAnvilBlocks() (string, nbt.Tag, error) {
 			continue
 		}
 		states := make([]uint32, 4096)
-		y := MinY + int32(si)*16
+		y := c.minY + int32(si)*16
 		for i := range states {
 			states[i] = c.GetBlock(i&15, (i>>4)&15, y+int32(i>>8))
 		}
@@ -294,9 +298,9 @@ func encodeAnvilBiomes(biomes [64]int32) (nbt.Object, error) {
 }
 
 func (c *Chunk) initializeAnvilRoot() error {
-	sections := make([]nbt.Tag, 0, NumSections)
-	for si := 0; si < NumSections; si++ {
-		y := MinY + int32(si)*16
+	sections := make([]nbt.Tag, 0, len(c.sect))
+	for si := range c.sect {
+		y := c.minY + int32(si)*16
 		states := make([]uint32, 4096)
 		for i := range states {
 			states[i] = c.GetBlock(i&15, (i>>4)&15, y+int32(i>>8))
@@ -320,7 +324,7 @@ func (c *Chunk) initializeAnvilRoot() error {
 	root := nbt.Object{
 		"DataVersion": {Type: nbt.Int, Value: int32(3955)},
 		"xPos":        {Type: nbt.Int, Value: c.cx}, "zPos": {Type: nbt.Int, Value: c.cz},
-		"yPos":           {Type: nbt.Int, Value: int32(MinY / 16)},
+		"yPos":           {Type: nbt.Int, Value: c.minY / 16},
 		"Status":         {Type: nbt.String, Value: "minecraft:full"},
 		"LastUpdate":     {Type: nbt.Long, Value: int64(0)},
 		"InhabitedTime":  {Type: nbt.Long, Value: int64(0)},

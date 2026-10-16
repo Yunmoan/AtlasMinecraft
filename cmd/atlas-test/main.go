@@ -28,6 +28,19 @@ var expectSimulation = flag.Int("expect-simulation", 0, "expected play login sim
 var changeView = flag.Int("change-view", 0, "change client view distance in play and check the update packet")
 var digY = flag.Int("dig-y", -61, "ground Y for the block-dig check (default flat-world surface)")
 var expectSavedItems = flag.Bool("expect-saved-items", false, "verify the inventory sample written by a previous operator smoke run")
+var dimensionSmoke = flag.Bool("dimension-smoke", false, "test real three-dimension login, teleport, chunk isolation, and reconnect")
+var dimensionResume = flag.Bool("dimension-resume", false, "verify dimension state and edits saved by a previous dimension smoke run")
+var dimensionEntities = flag.Bool("dimension-entities", false, "also verify generated End crystal packets and reconnect identity")
+var structureEntities = flag.Bool("structure-entities", false, "also verify seed 1234 swamp-hut and igloo entity packets")
+var initialAnimals = flag.Bool("initial-animals", false, "also verify seed 1234 original chunk-generation animal packets")
+var armorStandSmoke = flag.Bool("armor-stand-smoke", false, "test two TCP clients exchanging fixture armor-stand equipment, saving and reconnecting")
+var armorStandResume = flag.Bool("armor-stand-resume", false, "verify armor-stand equipment and player inventory after server restart")
+var chestSmoke = flag.Bool("chest-smoke", false, "test native single chest original loot and authoritative transfer (requires -ops TestBot)")
+var chestResume = flag.Bool("chest-resume", false, "verify the chest and player inventory persisted by a previous chest smoke")
+var chestPosition = flag.String("chest-position", "", "native chest block position as x,y,z")
+var chestLootTable = flag.String("chest-loot-table", "", "original generated chest LootTable resource name")
+var chestLootSeed = flag.Int64("chest-loot-seed", 0, "original generated chest nonzero LootTableSeed")
+var chestState = flag.String("chest-state", "chest-smoke-state.json", "path to persist or verify the chest smoke expectation")
 
 var (
 	failures int
@@ -73,7 +86,15 @@ func readWithTimeout(fc *proto.FramedConn, d time.Duration) (int32, []byte, erro
 func main() {
 	flag.Parse()
 	testStatus()
-	testLoginAndPlay()
+	if *chestSmoke || *chestResume {
+		testChestTCP()
+	} else if *armorStandSmoke || *armorStandResume {
+		testArmorStandTCP()
+	} else if *dimensionSmoke {
+		testDimensions()
+	} else {
+		testLoginAndPlay()
+	}
 	fmt.Printf("\n%d/%d checks passed\n", checks-failures, checks)
 	if failures > 0 {
 		os.Exit(1)

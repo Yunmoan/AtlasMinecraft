@@ -25,8 +25,12 @@ type VanillaSave struct {
 	root                   nbt.Tag
 	seed                   int64
 	spawnX, spawnY, spawnZ int32
+	spawnAngle             float32
 	flat                   *flatSettings
 	normal                 *worldgen.OverworldGenerator
+	dimensionGenerator     *worldgen.DimensionGenerator
+	dimension              dimensionSettings
+	regionDir              string
 }
 
 type flatLayer struct {
@@ -42,6 +46,14 @@ type flatSettings struct {
 var ErrVanillaGenerationUnavailable = errors.New("exact vanilla world generation is unavailable")
 
 func openVanilla(dir string) (*VanillaSave, error) {
+	return openVanillaDimension(dir, "minecraft:overworld")
+}
+
+func openVanillaDimension(dir, dimensionName string) (*VanillaSave, error) {
+	dimension, err := builtinDimension(dimensionName)
+	if err != nil {
+		return nil, err
+	}
 	data, err := readGzip(filepath.Join(dir, "level.dat"))
 	if err != nil {
 		return nil, err
@@ -59,7 +71,7 @@ func openVanilla(dir string) (*VanillaSave, error) {
 	if !ok || version != 3955 {
 		return nil, fmt.Errorf("unsupported level.dat DataVersion %d (requires 1.21.1/3955)", version)
 	}
-	s := &VanillaSave{dir: dir, name: name, root: root}
+	s := &VanillaSave{dir: dir, name: name, root: root, dimension: dimension, regionDir: filepath.Join(dir, dimension.regionSubdir, "region")}
 	settings, ok := level.Object("WorldGenSettings")
 	if !ok {
 		return nil, errors.New("WorldGenSettings missing")
@@ -68,18 +80,34 @@ func openVanilla(dir string) (*VanillaSave, error) {
 	x, _ := level.Number("SpawnX")
 	y, _ := level.Number("SpawnY")
 	z, _ := level.Number("SpawnZ")
+	if tag, ok := level["SpawnAngle"]; ok {
+		if angle, ok := tag.Value.(float32); ok {
+			s.spawnAngle = angle
+		}
+	}
 	s.spawnX, s.spawnY, s.spawnZ = int32(x), int32(y), int32(z)
 	dims, ok := settings.Object("dimensions")
 	if !ok {
 		return nil, errors.New("world dimensions missing")
 	}
-	overworld, ok := dims.Object("minecraft:overworld")
+	overworld, ok := dims.Object(dimension.name)
 	if !ok {
-		return nil, errors.New("overworld generator missing")
+		return nil, fmt.Errorf("%s generator missing", dimension.name)
 	}
 	gen, ok := overworld.Object("generator")
 	if !ok {
 		return nil, errors.New("overworld generator data missing")
+	}
+	if dimension.name != "minecraft:overworld" {
+		kind, _ := gen.Text("type")
+		if kind == "minecraft:noise" && supportsDimensionGenerator(gen, dimension) && usesBuiltinDatapacks(level) {
+			generateStructures, _ := settings.Number("generate_features")
+			s.dimensionGenerator, err = worldgen.NewDimensionGeneratorWithOptions(s.seed, dimension.generator, worldgen.DimensionGeneratorOptions{GenerateStructures: generateStructures != 0})
+			if err != nil {
+				return nil, fmt.Errorf("initialize %s generator: %w", dimension.name, err)
+			}
+		}
+		return s, nil
 	}
 	if kind, _ := gen.Text("type"); kind == "minecraft:flat" {
 		flat, err := parseFlatSettings(gen)
@@ -88,9 +116,19 @@ func openVanilla(dir string) (*VanillaSave, error) {
 		}
 		s.flat = flat
 	} else if kind == "minecraft:noise" && supportsNormalGenerator(gen) && usesBuiltinDatapacks(level) {
-		s.normal, err = worldgen.NewOverworldGenerator(s.seed)
+		salt, changed, saltErr := savedBeehiveShuffleSalt(level)
+		if saltErr != nil {
+			return nil, fmt.Errorf("initialize independent tree randomness: %w", saltErr)
+		}
+		generateStructures, _ := settings.Number("generate_features")
+		s.normal, err = worldgen.NewOverworldGeneratorWithOptions(s.seed, worldgen.OverworldGeneratorOptions{BeehiveShuffleSalt: salt, GenerateStructures: generateStructures != 0})
 		if err != nil {
 			return nil, fmt.Errorf("initialize overworld generator: %w", err)
+		}
+		if changed {
+			if err := writeGzipNBTAtomic(filepath.Join(dir, "level.dat"), s.name, s.root); err != nil {
+				return nil, fmt.Errorf("persist independent tree randomness: %w", err)
+			}
 		}
 	}
 	return s, nil
@@ -172,8 +210,110 @@ func parseFlatSettings(generator nbt.Object) (*flatSettings, error) {
 	return f, nil
 }
 
+// spawnPoint returns the shared world spawn. setSpawn may replace it at any
+// time, so the fields are read under the save mutex.
+func (v *VanillaSave) spawnPoint() (int32, int32, int32, float32) {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	return v.spawnX, v.spawnY, v.spawnZ, v.spawnAngle
+}
+
+// spawnUninitialized reports whether this save still waits for its initial
+// spawn scan: Atlas-created noise worlds carry an AtlasWorldgen marker with
+// SpawnReady=0 until the boot-time scan has refined the spawn point. Imported
+// and already-initialized saves never report uninitialized.
+func (v *VanillaSave) spawnUninitialized() bool {
+	if v.dimension.name != "minecraft:overworld" {
+		return false
+	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	levelRoot, _ := v.root.Object()
+	level, _ := levelRoot.Object("Data")
+	marker, ok := level.Object("AtlasWorldgen")
+	if !ok {
+		return false
+	}
+	ready, ok := marker.Number("SpawnReady")
+	return ok && ready == 0
+}
+
+// initializeSpawn stores the scanned initial spawn (with vanilla's zero
+// facing angle) and completes the AtlasWorldgen SpawnReady marker. Unlike
+// setSpawn it always writes, even when the position matches the placeholder.
+func (v *VanillaSave) initializeSpawn(x, y, z int32) error {
+	if v.dimension.name != "minecraft:overworld" {
+		return errors.New("shared world spawn is owned by the overworld")
+	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	v.spawnX, v.spawnY, v.spawnZ, v.spawnAngle = x, y, z, 0
+	if err := v.writeSpawnLocked(); err != nil {
+		return err
+	}
+	return v.markSpawnReadyLocked()
+}
+
+func (v *VanillaSave) writeSpawnLocked() error {
+	if v.dimension.name != "minecraft:overworld" {
+		return errors.New("shared world spawn is owned by the overworld")
+	}
+	levelRoot, _ := v.root.Object()
+	level, _ := levelRoot.Object("Data")
+	level["SpawnX"] = nbt.Tag{Type: nbt.Int, Value: v.spawnX}
+	level["SpawnY"] = nbt.Tag{Type: nbt.Int, Value: v.spawnY}
+	level["SpawnZ"] = nbt.Tag{Type: nbt.Int, Value: v.spawnZ}
+	level["SpawnAngle"] = nbt.Tag{Type: nbt.Float, Value: v.spawnAngle}
+	return writeGzipNBTAtomic(filepath.Join(v.dir, "level.dat"), v.name, v.root)
+}
+
+func (v *VanillaSave) markSpawnReadyLocked() error {
+	levelRoot, _ := v.root.Object()
+	level, _ := levelRoot.Object("Data")
+	marker, ok := level.Object("AtlasWorldgen")
+	if !ok {
+		return nil
+	}
+	if ready, _ := marker.Number("SpawnReady"); ready == 1 {
+		return nil
+	}
+	marker["SpawnReady"] = nbt.Tag{Type: nbt.Byte, Value: int8(1)}
+	return writeGzipNBTAtomic(filepath.Join(v.dir, "level.dat"), v.name, v.root)
+}
+
+// setSpawn stores an explicit shared world spawn in memory and level.dat,
+// reporting whether the stored point changed. An explicit spawn also completes
+// the AtlasWorldgen SpawnReady marker so the initial spawn scan can no longer
+// override the chosen position.
+func (v *VanillaSave) setSpawn(x, y, z int32, angle float32) (bool, error) {
+	if v.dimension.name != "minecraft:overworld" {
+		return false, errors.New("shared world spawn is owned by the overworld")
+	}
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	if x == v.spawnX && y == v.spawnY && z == v.spawnZ && angle == v.spawnAngle {
+		return false, v.markSpawnReadyLocked()
+	}
+	v.spawnX, v.spawnY, v.spawnZ, v.spawnAngle = x, y, z, angle
+	if err := v.writeSpawnLocked(); err != nil {
+		return true, err
+	}
+	return true, v.markSpawnReadyLocked()
+}
+
 func (v *VanillaSave) loadChunk(cx, cz int32) (*Chunk, error) {
-	name, root, exists, err := v.regions.ReadChunk(filepath.Join(v.dir, "region"), cx, cz)
+	chunk, err := v.loadBlockChunk(cx, cz)
+	if err != nil {
+		return nil, err
+	}
+	if err = v.loadAndRealizeEntities(chunk); err != nil {
+		return nil, fmt.Errorf("load entities for %d,%d: %w", cx, cz, err)
+	}
+	return chunk, nil
+}
+
+func (v *VanillaSave) loadBlockChunk(cx, cz int32) (*Chunk, error) {
+	name, root, exists, err := v.regions.ReadChunk(v.regionDir, cx, cz)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +322,17 @@ func (v *VanillaSave) loadChunk(cx, cz int32) (*Chunk, error) {
 		if status, _ := object.Text("Status"); status != "minecraft:full" && status != "full" {
 			return nil, fmt.Errorf("%w: existing chunk %d,%d is unfinished (%s)", ErrVanillaGenerationUnavailable, cx, cz, status)
 		}
-		return chunkFromAnvil(name, root, cx, cz)
+		return chunkFromAnvilBounds(name, root, cx, cz, v.dimension.minY, v.dimension.maxY, v.dimension.hasSky)
+	}
+	if v.dimensionGenerator != nil {
+		chunk, err := v.generateDimension(cx, cz)
+		if err != nil {
+			return nil, err
+		}
+		if err := v.persistChunk(chunk); err != nil {
+			return nil, err
+		}
+		return chunk, nil
 	}
 	if v.normal != nil {
 		chunk, err := v.generateNormal(cx, cz)
@@ -217,26 +367,13 @@ func (v *VanillaSave) persistChunk(chunk *Chunk) error {
 	if err != nil {
 		return err
 	}
-	if err := v.regions.WriteChunk(filepath.Join(v.dir, "region"), chunk.cx, chunk.cz, name, root); err != nil {
+	if err := v.regions.WriteChunk(v.regionDir, chunk.cx, chunk.cz, name, root); err != nil {
 		return err
 	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
-	levelRoot, _ := v.root.Object()
-	level, _ := levelRoot.Object("Data")
-	if marker, ok := level.Object("AtlasWorldgen"); ok && chunk.cx == v.spawnX>>4 && chunk.cz == v.spawnZ>>4 {
-		if ready, _ := marker.Number("SpawnReady"); ready == 0 {
-			previousY, previousReady := level["SpawnY"], marker["SpawnReady"]
-			level["SpawnY"] = nbt.Tag{Type: nbt.Int, Value: chunk.Height(int(v.spawnX&15), int(v.spawnZ&15))}
-			marker["SpawnReady"] = nbt.Tag{Type: nbt.Byte, Value: int8(1)}
-			if err := writeGzipNBTAtomic(filepath.Join(v.dir, "level.dat"), v.name, v.root); err != nil {
-				level["SpawnY"], marker["SpawnReady"] = previousY, previousReady
-				return err
-			}
-		}
-	}
 	chunk.dirty = false
-	chunk.dirtySections = [NumSections]bool{}
+	clear(chunk.dirtySections)
 	return nil
 }
 
@@ -259,7 +396,7 @@ func (v *VanillaSave) generateFlat(cx, cz int32) (*Chunk, error) {
 		}
 	}
 	c.dirty = false
-	c.dirtySections = [NumSections]bool{}
+	clear(c.dirtySections)
 	if err := c.initializeAnvilRoot(); err != nil {
 		return nil, err
 	}
@@ -286,6 +423,9 @@ func (v *VanillaSave) loadMeta() (worldMeta, error) {
 }
 
 func (v *VanillaSave) saveMeta(m worldMeta) error {
+	if v.dimension.name != "minecraft:overworld" {
+		return nil
+	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	o, _ := v.root.Object()

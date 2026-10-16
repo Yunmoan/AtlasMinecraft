@@ -25,6 +25,17 @@ func featurePlantSurvives(world FeatureBlockWorld, p FeaturePosition, state Surf
 		return false, err
 	}
 	switch state.Name {
+	case "minecraft:fire":
+		return featureFireSurvives(world, p, below)
+	case "minecraft:soul_fire":
+		return below.Name == "minecraft:soul_sand" || below.Name == "minecraft:soul_soil", nil
+	case "minecraft:crimson_roots", "minecraft:warped_roots", "minecraft:crimson_fungus", "minecraft:warped_fungus", "minecraft:nether_sprouts":
+		return featureNetherPlantSurvives(state.Name, below), nil
+	case "minecraft:brown_mushroom", "minecraft:red_mushroom":
+		return featureMushroomSurvives(world, p, below)
+	case "minecraft:seagrass":
+		e := featureEditor{world: world}
+		return oceanSupport(&e, p, false), e.err
 	case "minecraft:hanging_roots":
 		above, err := world.BlockAt(treeOffset(p, 0, 1, 0))
 		if err != nil {
@@ -100,13 +111,19 @@ func featurePlantSurvives(world FeatureBlockWorld, p FeaturePosition, state Surf
 			}
 		}
 		return false, nil
-	case "minecraft:oak_sapling", "minecraft:birch_sapling", "minecraft:spruce_sapling":
-		return forestRockDirt[below.Name] || below.Name == "minecraft:farmland", nil
+	case "minecraft:oak_sapling", "minecraft:birch_sapling", "minecraft:spruce_sapling", "minecraft:acacia_sapling", "minecraft:jungle_sapling", "minecraft:dark_oak_sapling", "minecraft:cherry_sapling":
+		return PlantGroundSurvives(state.Name, below.Name), nil
+	case "minecraft:mangrove_propagule":
+		if state.Properties["hanging"] == "true" {
+			above, err := world.BlockAt(treeOffset(p, 0, 1, 0))
+			return above.Name == "minecraft:mangrove_leaves", err
+		}
+		return PlantGroundSurvives(state.Name, below.Name) || below.Name == "minecraft:clay", nil
 	default:
 		if SupportedPlant(state.Name) {
 			return PlantGroundSurvives(state.Name, below.Name), nil
 		}
-		if state.Name == "minecraft:pumpkin" {
+		if state.Name == "minecraft:pumpkin" || state.Name == "minecraft:melon" {
 			return true, nil
 		}
 		return false, fmt.Errorf("unsupported survival check for %s", state.Name)

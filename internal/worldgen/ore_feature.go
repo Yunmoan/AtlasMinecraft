@@ -33,6 +33,10 @@ func LoadOreConfiguration(name string) (OreConfiguration, error) {
 	if definition.Type != "minecraft:ore" {
 		return OreConfiguration{}, fmt.Errorf("configured feature %s is %s, not minecraft:ore", name, definition.Type)
 	}
+	return decodeOreConfiguration(name, definition)
+}
+
+func decodeOreConfiguration(name string, definition ConfiguredFeatureDefinition) (OreConfiguration, error) {
 	var raw struct {
 		Size         int32   `json:"size"`
 		DiscardOnAir float32 `json:"discard_chance_on_air_exposure"`

@@ -32,8 +32,10 @@ func (v *VanillaSave) loadPlayer(uuid [16]byte) (PlayerPosition, bool, error) {
 	if version, ok := o.Number("DataVersion"); !ok || version != 3955 {
 		return PlayerPosition{}, false, fmt.Errorf("unsupported player DataVersion %d", version)
 	}
-	if dimension, ok := o.Text("Dimension"); ok && dimension != "minecraft:overworld" {
-		return PlayerPosition{}, false, fmt.Errorf("player is in unsupported dimension %q", dimension)
+	dimensionName, _ := o.Text("Dimension")
+	dimension, err := playerDimension(dimensionName)
+	if err != nil {
+		return PlayerPosition{}, false, err
 	}
 	pos, ok := o["Pos"].Elements()
 	if !ok || len(pos) != 3 || pos[0].Type != nbt.Double || pos[1].Type != nbt.Double || pos[2].Type != nbt.Double {
@@ -46,10 +48,17 @@ func (v *VanillaSave) loadPlayer(uuid [16]byte) (PlayerPosition, bool, error) {
 	p := PlayerPosition{
 		X: pos[0].Value.(float64), Y: pos[1].Value.(float64), Z: pos[2].Value.(float64),
 		Yaw: rotation[0].Value.(float32), Pitch: rotation[1].Value.(float32),
+		Dimension: dimension.name,
 	}
 	if abilities, ok := o.Object("abilities"); ok {
 		flying, _ := abilities.Number("flying")
 		p.Flying = flying != 0
+	}
+	if cooldown, ok := o.Number("PortalCooldown"); ok {
+		if cooldown < 0 || cooldown > 2147483647 {
+			return PlayerPosition{}, false, errors.New("invalid player portal cooldown")
+		}
+		p.PortalCooldown = int32(cooldown)
 	}
 	if !validPlayerPosition(p) {
 		return PlayerPosition{}, false, errors.New("invalid vanilla player position")
@@ -59,6 +68,47 @@ func (v *VanillaSave) loadPlayer(uuid [16]byte) (PlayerPosition, bool, error) {
 
 func (v *VanillaSave) savePlayer(uuid [16]byte, p PlayerPosition) error {
 	return v.savePlayerState(uuid, p, nil)
+}
+
+// setPlayerSpawn writes the vanilla personal respawn point tags into the
+// player's .dat, preserving any other stored state. /spawnpoint forces the
+// point (SpawnForced=1), as vanilla's SetSpawnCommand does.
+func (v *VanillaSave) setPlayerSpawn(uuid [16]byte, x, y, z int32, angle float32) error {
+	v.mu.Lock()
+	defer v.mu.Unlock()
+	path := v.playerPath(uuid)
+	name := ""
+	root := nbt.Tag{Type: nbt.Compound, Value: nbt.Object{
+		"DataVersion": {Type: nbt.Int, Value: int32(3955)},
+		"Dimension":   {Type: nbt.String, Value: v.dimension.name},
+	}}
+	if data, err := readGzip(path); err == nil {
+		name, root, err = nbt.Parse(data)
+		if err != nil {
+			return err
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	o, _ := root.Object()
+	if version, ok := o.Number("DataVersion"); !ok || version != 3955 {
+		return fmt.Errorf("refusing to overwrite player DataVersion %d", version)
+	}
+	if dimension, _ := o.Text("Dimension"); dimension != "" {
+		if _, err := playerDimension(dimension); err != nil {
+			return err
+		}
+	}
+	o["SpawnX"] = nbt.Tag{Type: nbt.Int, Value: x}
+	o["SpawnY"] = nbt.Tag{Type: nbt.Int, Value: y}
+	o["SpawnZ"] = nbt.Tag{Type: nbt.Int, Value: z}
+	o["SpawnAngle"] = nbt.Tag{Type: nbt.Float, Value: angle}
+	o["SpawnForced"] = nbt.Tag{Type: nbt.Byte, Value: int8(1)}
+	o["SpawnDimension"] = nbt.Tag{Type: nbt.String, Value: v.dimension.name}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return writeGzipNBTAtomic(path, name, root)
 }
 
 func (v *VanillaSave) loadInventory(uuid [16]byte) (item.Inventory, error) {
@@ -80,6 +130,10 @@ func (v *VanillaSave) loadInventory(uuid [16]byte) (item.Inventory, error) {
 }
 
 func (v *VanillaSave) savePlayerState(uuid [16]byte, p PlayerPosition, inventory *item.Inventory) error {
+	destination, err := playerDimension(p.Dimension)
+	if err != nil {
+		return err
+	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	path := v.playerPath(uuid)
@@ -100,9 +154,13 @@ func (v *VanillaSave) savePlayerState(uuid [16]byte, p PlayerPosition, inventory
 	if version, ok := o.Number("DataVersion"); !ok || version != 3955 {
 		return fmt.Errorf("refusing to overwrite player DataVersion %d", version)
 	}
-	if dimension, ok := o.Text("Dimension"); ok && dimension != "minecraft:overworld" {
-		return fmt.Errorf("refusing to overwrite player in unsupported dimension %q", dimension)
+	if dimension, _ := o.Text("Dimension"); dimension != "" {
+		if _, err := playerDimension(dimension); err != nil {
+			return err
+		}
 	}
+	o["Dimension"] = nbt.Tag{Type: nbt.String, Value: destination.name}
+	o["PortalCooldown"] = nbt.Tag{Type: nbt.Int, Value: p.PortalCooldown}
 	o["Pos"] = nbt.Tag{Type: nbt.List, ListType: nbt.Double, Value: []nbt.Tag{
 		{Type: nbt.Double, Value: p.X}, {Type: nbt.Double, Value: p.Y}, {Type: nbt.Double, Value: p.Z},
 	}}

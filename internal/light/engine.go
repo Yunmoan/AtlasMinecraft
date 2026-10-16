@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 type Position struct{ X, Z int32 }
@@ -34,6 +35,7 @@ type Engine struct {
 	columns      map[Position]*column
 	revision     uint64
 	work         *relightWork
+	columnCount  atomic.Int64
 }
 
 // Mutable scratch is owned under Engine.mu. It is never included in a
@@ -63,6 +65,61 @@ func (e *Engine) Snapshot(p Position) *Data {
 		return c.light
 	}
 	return nil
+}
+
+// Uninstall persists the latest immutable light snapshot before releasing its
+// dense block column. The callback must not call back into Engine or actors.
+// A failed save retains the column. Neighbor snapshots remain valid for their
+// unchanged blocks and are reconciled when the neighborhood is loaded again.
+func (e *Engine) Uninstall(p Position, persist func(*Data) error) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	c := e.columns[p]
+	if c == nil {
+		return persist(nil)
+	}
+	if err := persist(c.light); err != nil {
+		return err
+	}
+	delete(e.columns, p)
+	e.columnCount.Add(-1)
+	return nil
+}
+
+func (e *Engine) LoadedColumns() int {
+	return int(e.columnCount.Load())
+}
+
+// InitializeArea installs a fresh 3x3 generation neighborhood and solves its
+// lighting once. SPAWN needs one complete neighborhood, so solving eight
+// intermediate, incomplete neighborhoods provides no useful snapshots.
+func (e *Engine) InitializeArea(center Position, states map[Position][]uint16) (map[Position]*Data, error) {
+	if _, ok := states[center]; !ok {
+		return nil, fmt.Errorf("initial light area missing center")
+	}
+	for position, values := range states {
+		if position.X < center.X-1 || position.X > center.X+1 || position.Z < center.Z-1 || position.Z > center.Z+1 {
+			return nil, fmt.Errorf("initial light column outside 3x3 area")
+		}
+		if len(values) != e.height*256 {
+			return nil, fmt.Errorf("incomplete chunk light snapshot")
+		}
+		for _, state := range values {
+			if int(state) >= len(e.rules.states) {
+				return nil, fmt.Errorf("unknown light block state %d", state)
+			}
+		}
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if len(e.columns) != 0 {
+		return nil, fmt.Errorf("initial light area requires a fresh engine")
+	}
+	for position, values := range states {
+		e.columns[position] = &column{states: append([]uint16(nil), values...)}
+	}
+	e.columnCount.Store(int64(len(states)))
+	return e.relight(center), nil
 }
 
 func (e *Engine) Install(p Position, states []uint16, imported *Data) (map[Position]*Data, error) {
@@ -96,6 +153,7 @@ func (e *Engine) Install(p Position, states []uint16, imported *Data) (map[Posit
 		return nil, nil
 	}
 	e.columns[p] = &column{states: append([]uint16(nil), states...), light: imported, trusted: imported != nil && (imported.Complete || imported.Preserved)}
+	e.columnCount.Add(1)
 	return e.relight(p), nil
 }
 
@@ -116,8 +174,17 @@ func (e *Engine) Edit(p Position, changes []Change) (map[Position]*Data, error) 
 			return nil, fmt.Errorf("invalid light block edit")
 		}
 	}
+	relight := false
 	for _, change := range changes {
-		c.states[(change.Y-e.minY)*256+change.Z*16+change.X] = change.State
+		index := (change.Y-e.minY)*256 + change.Z*16 + change.X
+		// The original table includes emission, opacity and all six directional
+		// occlusion shapes. Equal rules cannot change either light channel;
+		// still retain the new block state for later edits and neighboring solves.
+		relight = relight || e.rules.states[c.states[index]] != e.rules.states[change.State]
+		c.states[index] = change.State
+	}
+	if !relight {
+		return nil, nil
 	}
 	for dx := int32(-1); dx <= 1; dx++ {
 		for dz := int32(-1); dz <= 1; dz++ {

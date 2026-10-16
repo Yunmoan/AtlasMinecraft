@@ -2,15 +2,8 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ayw
  *  com.mojang.serialization.Codec
  *  com.mojang.serialization.MapCodec
- *  dov
- *  dtt
- *  eha
- *  eha$a
- *  ehb
- *  jd
  */
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -20,6 +13,7 @@ extends eha {
     public static final MapCodec<egz> a = Codec.floatRange((float)0.0f, (float)1.0f).fieldOf("probability").xmap(egz::new, $$0 -> Float.valueOf($$0.b));
     private final float b;
 
+    @Override
     protected ehb<?> a() {
         return ehb.b;
     }
@@ -28,6 +22,7 @@ extends eha {
         this.b = $$0;
     }
 
+    @Override
     public void a(eha.a $$0) {
         ayw $$1 = $$0.b();
         $$0.d().forEach($$2 -> {

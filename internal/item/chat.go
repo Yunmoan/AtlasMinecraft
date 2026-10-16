@@ -43,6 +43,12 @@ func savedChatComponent(tag nbt.Tag) (nbt.Tag, error) {
 	}
 	return chatNBT(component)
 }
+
+// SavedTextComponent decodes the JSON text representation used by Java save
+// files, including container CustomName, into the protocol's NBT component.
+func SavedTextComponent(value string) (nbt.Tag, error) {
+	return savedChatComponent(text(value))
+}
 func chatNBT(value any) (nbt.Tag, error) {
 	switch v := value.(type) {
 	case string:

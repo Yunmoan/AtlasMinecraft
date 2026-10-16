@@ -40,12 +40,16 @@ func doorHinge(facing string, x, z float32) string {
 
 func (s *Server) useBlock(p *player.Player, pos world.BlockPosition, id uint32, state world.BlockState) bool {
 	properties := state.Properties
+	interactionWorld := s.PlayerWorld(p)
 	switch {
+	case state.Name == "minecraft:chest" || state.Name == "minecraft:trapped_chest":
+		s.openChest(p, pos)
+		return true
 	case world.IsDoor(state.Name):
 		if state.Name == "minecraft:iron_door" {
 			return true
 		}
-		if err := s.World.UpdateDoor(pos, id, properties["open"] != "true"); err != nil {
+		if err := interactionWorld.UpdateDoor(pos, id, properties["open"] != "true"); err != nil {
 			s.Dbg("door interaction rejected: %v", err)
 		}
 		return true
@@ -60,7 +64,7 @@ func (s *Server) useBlock(p *player.Player, pos world.BlockPosition, id uint32, 
 		}
 		updated, err := world.BlockStateID(state.Name, properties)
 		if err == nil {
-			err = s.World.TryPlaceBlock(pos, id, updated, nil)
+			err = interactionWorld.TryPlaceBlock(pos, id, updated, nil)
 		}
 		if err != nil {
 			s.Dbg("openable block interaction rejected: %v", err)
@@ -77,7 +81,7 @@ func (s *Server) useBlock(p *player.Player, pos world.BlockPosition, id uint32, 
 		}
 		updated, err := world.BlockStateID(state.Name, properties)
 		if err == nil {
-			err = s.World.TryPlaceBlock(pos, id, updated, nil)
+			err = interactionWorld.TryPlaceBlock(pos, id, updated, nil)
 		}
 		if err != nil {
 			s.Dbg("switch interaction rejected: %v", err)
@@ -95,7 +99,7 @@ func (s *Server) useBlock(p *player.Player, pos world.BlockPosition, id uint32, 
 				properties["powered"] = "false"
 				released, e := world.BlockStateID(state.Name, properties)
 				if e == nil {
-					_ = s.World.TryPlaceBlock(pos, updated, released, nil)
+					_ = interactionWorld.TryPlaceBlock(pos, updated, released, nil)
 				}
 			}()
 		}

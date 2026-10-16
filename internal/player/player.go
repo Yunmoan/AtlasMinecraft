@@ -66,6 +66,11 @@ type Player struct {
 	visible         map[int32]struct{}    // EIDs spawned client-side for this player
 	sentChunks      map[[2]int32]struct{} // chunk packets already delivered
 	requestedChunks map[[2]int32]struct{}
+	dimension       string
+	worldEpoch      uint64
+	portalCooldown  int32
+	portalDuration  int32
+	portalChecking  bool
 }
 
 // New creates a player with sane defaults (creative mode, view distance 8).

@@ -4,6 +4,32 @@
 the supplied `jar/server.jar`. The JAR is used only to build and verify test
 vectors. It is not used when Atlas runs.
 
+Generation version 12 adds stronghold ring starts, all twelve piece types and
+normal chunk/Anvil integration. It also adds existing armor-stand equipment
+interaction and single-chest menus, and fixes dynamic-light packet ordering.
+See [the version-12 validation report](../../artifacts/worldgen-v12-validation.md)
+for independent references, final binary checks and remaining coverage boundaries.
+
+Generation version 11 added pillager outposts and desert, plains, savanna, snowy
+and taiga villages to normal Overworld generation. This includes terrain
+projection, processors, village feature elements, containers and template actors.
+Camel placement uses its precise entity position for biome and Anvil ownership,
+and the world age for pose finalization. Structure actor gameplay remains incomplete.
+See [the version-11 validation report](../../artifacts/worldgen-v11-validation.md).
+
+Generation version 10 added End City starts, templates, loot chests, Shulkers and
+Elytra item frames to normal End generation. It also settles generated bubble
+columns and leaf distances after decoration. Nether and End cold terrain halos
+share a bounded worker budget, while decoration retains its existing order.
+See [the version-10 validation report](../../artifacts/worldgen-v10-validation.md).
+
+Version 9 fixed biome-boundary decoration admission: the placement
+filter uses the seeded block-position BiomeManager selection before testing
+feature membership. Its 18,432 native-JAR boundary cases include river/ocean,
+Nether and End transitions. River and ocean noise, surface and carver regression
+coverage is documented in [river_ocean_regression.md](river_ocean_regression.md).
+Existing saved chunks retain their terrain and generation version.
+
 Mojang's official 1.21.1 server mappings identify these classes in the
 bundled server JAR:
 
@@ -55,8 +81,16 @@ replacement, and surface repair. `GenerateCarved` combines those three stages;
 the JAR probe compares 12 natural-biome carved chunks, including per-carver
 mask counts and all block states. The probes load the built-in replaceable
 block tag from the JAR; Atlas embeds its 1.21.1 members and never reads the JAR
-at runtime. These checks cover the selected seeds/chunks, not every seed or
-world location.
+at runtime. `terrain_cases_1.21.1.txt` adds 45 mountain, plateau and cave chunks,
+with independent noise, surface and carving JAR vectors in `terrain_*_1.21.1.txt`.
+These checks cover the selected seeds/chunks, not every seed or world location.
+
+Paper's archived 1.21.1 branch is pinned at
+`3cb8529bdbeeec9ff51df2c94e93dbe7e41bb811` under
+`artifacts/worldgen-probes/paper-1.21.1`. The reviewed Moonrise/chunk-system,
+bedrock and End patches do not establish a different default Overworld mountain
+or plateau density algorithm. The official 1.21.1 JAR remains the terrain oracle;
+this is not a complete Paper-world comparison.
 
 `FeatureOrderProbe` exports the Overworld's 151 globally sorted placed features
 and each biome's feature list. `OverworldFeatureSchedule` reproduces the
@@ -66,8 +100,11 @@ definitions from the 1.21.1 JAR; Atlas embeds them without a runtime JVM.
 `WorldgenRandom` reproduces the Xoroshiro-backed decoration/feature seeds and
 legacy-style random calls. The placement probe checks 992 candidate positions
 across ten feature types/configurations and six seed/chunk combinations.
-`OverworldFeaturePositions` additionally filters by biome membership, but
-most configured feature types are not implemented. `PlaceOreFeature` ports the
+`OverworldFeaturePositions` additionally filters by biome membership. The
+version-7 runtime compiles all 151 top-level Overworld placed-feature plans;
+the [current coverage report](../../artifacts/worldgen-feature-coverage-v12.json) also records
+the remaining generation stages and independent beehive random-source difference.
+This is plan coverage rather than complete-world equivalence. `PlaceOreFeature` ports the
 Overworld ore algorithm and its air-exposure rule; JAR probes compare 12
 synthetic stone-world veins block for block and 32 replacement decisions.
 `OverworldFeatureRegion` applies feature edits across already-generated neighboring
@@ -81,7 +118,13 @@ including waterlogged variants, and checks 3,072 carved-chunk motion-blocking
 column heights. `build_motion_blocking.py` reduces those JAR vectors to pure-Go
 classifiers; the feature region computes and invalidates both heights as blocks
 change. The previous non-air/non-fluid ocean-floor approximation disagreed
-with the JAR for 3,890 registered states. `BlueIceProbe` checks 16
+with the JAR for 3,890 registered states. `FaceFullProbe` dumps the per-state
+top-face-full collision and non-empty-fluid vectors used by the spawn column
+scan; they extend `internal/world/heightmap_flags.txt` alongside the
+motion-blocking and ocean-floor vectors. `SpawnSearchProbe` records vanilla's
+deterministic climate-based initial spawn search (`Climate$SpawnFinder`) for
+nine fixed seeds (including the reported seed), and `FindSpawnPosition` reproduces it exactly for world
+creation. `BlueIceProbe` checks 16
 synthetic-world cases block for block and verifies subsequent random state.
 The region rejects a missing 3x3 neighborhood before applying ores, forest
 rocks, or blue ice. This is not yet a complete decoration pass.
@@ -115,7 +158,47 @@ negative/cross-chunk positions and build-height/extreme-coordinate boundaries.
 and their step-9 indices. `column_vegetation_features_1.21.1.txt` adds cactus,
 sugar cane, waterlilies, huge mushrooms and mushroom-island selection. These
 include contextual survival and block-column height/truncation rules. Small
-mushroom, melon and other unsupported graphs still reject their branches.
+mushrooms use the original generation-time brightness and survival rules,
+verified by `TestMushroomFeatureAgainstVanillaJAR`. Melon patches are enabled
+and verified by `LandFeatureProbe`.
+
+The following additional probes compare actual configured/placed features,
+including changed block states, success/failure and subsequent random state.
+The configured probes use synthetic worlds; their success does not validate
+every interaction in a fully decorated neighboring-chunk pipeline.
+
+| Probe | Cases | Behavior |
+| --- | ---: | --- |
+| `FrozenSpringProbe` | 1,120 | Springs, ice spikes and surface freezing |
+| `CaveFeatureProbe` | 10,752 | Dripstone, geodes, lava lakes, lush vegetation, vines and rooted azalea |
+| `CavePlacementProbe` | 1,024 | Complete lazy cave placement and selectors |
+| `OceanFeatureProbe` | 2,112 | Seagrass, kelp, sea pickles and coral |
+| `OceanPlacementProbe` | 2,496 | Ocean placement and coral selectors |
+| `IcebergFeatureProbe` | 320 | Packed/blue icebergs and carving |
+| `IcebergPlacementProbe` | 320 | Iceberg placement |
+| `IcebergRadiusProbe` | 2,820 | Radius computation and floating-point boundaries |
+| `LandFeatureProbe` | 1,792 | Bamboo/podzol, melon and block piles |
+| `DesertWellProbe` | 256 | Sandstone wells, suspicious sand and loot NBT |
+| `MonsterRoomProbe` | 224 | Room validation, protected blocks, chest orientation, loot and spawner NBT |
+| `SculkVeinProbe` / `SculkVeinPlacementProbe` | 640 / 128 | Specialized sculk spreader, corner wrapping, fluids and protected supports |
+| `PositionSetProbe` | 1,544 | Java HashSet traversal and tree-bin iterator removal |
+
+Sculk veins are enabled in deep-dark runtime generation. The integration test
+generates chunk (-256,232), seed 1234, and checks its deep-dark biome and resulting
+veins. The initial feature can grow in flowing water; spreading requires the
+source-water fluid type. Full sculk-patch worldgen charge propagation is now
+implemented and checked against 264 official feature cases. Scattered growths
+include catalyst, sensor and shrieker NBT checked against official saved defaults
+and actual Anvil reload/replacement. Gameplay sculk ticks remain separate.
+
+Iceberg trig uses Java-compatible fdlibm kernels where Go and Java differ by
+one ULP. `feature_trig.go` retains the source license. Java identity ordering
+for positions with identical full hashes is still not fully reproduced.
+`BlockEntityPacketProbe` independently checks the official chunk-packet entity
+header and update tag. Chest (registry ID 1), spawner (9), brushable block
+(39), beehive (33), sensor (34), catalyst (36) and shrieker (37) entities are
+persisted and sent; this does not implement container menus,
+spawner mob ticks or all existing Java block-entity types.
 
 `RuleDiskProbe` compares sand/grass rule-provider disks, including all changed
 states, following random state and postprocessing lists, across 96 cases.
@@ -138,20 +221,21 @@ python docs/worldgen/build_feature_data.py --check
 python docs/worldgen/build_motion_blocking.py --check
 python docs/worldgen/build_tree_tags.py
 python docs/worldgen/build_vegetation_tags.py
+python docs/worldgen/build_ocean_tags.py
 python docs/worldgen/verify_reference.py
 python docs/worldgen/verify_reference.py --probe VegetationProbe --vegetation-set columns
 python docs/worldgen/verify_reference.py --probe RuleDiskProbe
 python docs/worldgen/verify_reference.py --probe LightEngineProbe
 go test ./internal/worldgen -timeout=10m
-$env:ATLAS_SERVER_JAR = (Resolve-Path vanilla/server.jar).Path
+$env:ATLAS_SERVER_JAR = (Resolve-Path jar/server.jar).Path
 go test ./internal/world -run TestNewWorldMetadataOpensInVanillaServer -v -count=1
 
 # Real Atlas binary: default normal creation, protocol batches, edits and restart
-go build -o atlas.exe ./cmd/atlas
-go build -o atlas-test.exe ./cmd/atlas-test
-$env:ATLAS_SERVER_EXE = (Resolve-Path atlas.exe).Path
-$env:ATLAS_TEST_EXE = (Resolve-Path atlas-test.exe).Path
-go test ./cmd/atlas -run TestNormalWorldBinaryCreateAndRestart -v -count=1 -timeout=5m
+./build.ps1 -Output atlas-worldgen.exe
+go build -o atlas-worldgen-test.exe ./cmd/atlas-test
+$env:ATLAS_SERVER_EXE = (Resolve-Path atlas-worldgen.exe).Path
+$env:ATLAS_TEST_EXE = (Resolve-Path atlas-worldgen-test.exe).Path
+go test ./cmd/atlas -run 'TestNormalWorldBinaryCreateAndRestart|TestIdleChunksBinaryUnloadAndReload' -v -count=1 -timeout=5m
 ```
 
 `verify_reference.py --update` deliberately rewrites the checked-in vectors.
@@ -160,14 +244,22 @@ The normal verification command checks them without editing files.
 Normal-world creation and chunk integration now run `OverworldGenerator`.
 It generates a terrain-only 5x5 halo and replays the neighboring 3x3 feature
 sources in a fixed order. Ores, forest rocks, blue ice, clay/gravel/sand/grass disks,
-supported vegetation and the seven fully supported placed tree distributions (`trees_taiga`,
+supported cave/frozen/ocean/land features, desert wells, monster rooms,
+vegetation and the seven fully supported placed tree distributions (`trees_taiga`,
 `trees_grove`, `trees_snowy`, `trees_water`, `trees_windswept_forest`,
 `trees_windswept_hills`, `trees_badlands`)
 are enabled; the requested chunk alone is persisted, including quart biomes,
-heightmaps, fluid post-processing positions and explicit skipped-feature tags.
+heightmaps, fluid post-processing positions, generated block entities and
+explicit skipped-feature tags.
 The immutable base cache coalesces concurrent requests and retains at most 128
 completed terrain chunks. Workers compute missing terrain before waiting on
 neighbors already in progress, allowing shared halos to use the worker pool.
+Cold halos now use a shared terrain worker budget, including the first spawn
+scan and canonical structure replay. The runtime budget follows
+`chunk-generation-workers`; concurrent final chunks do not multiply that budget.
+Preceding structure stages retain at most 128 center-chunk snapshots with private
+write overlays. Mineshaft replay prepares only clips containing pieces, preserving
+canonical piece flags, spider spawners, loot requests and random consumption.
 Tests cover negative coordinates, concurrent repeat
 generation, exploration order, block edits, preload and restart.
 
@@ -188,8 +280,9 @@ compiled once, preserving evaluation order and the lazy random stream. Aquifer
 centers use a compact chunk-local grid with a general fallback for probes outside
 that grid. Internal surface-rule states are immutable; public sampling results
 and final generated chunks receive their own property maps.
-The version-4 output hashes for three adjacent/negative-coordinate chunks are
-checked in both sequential and parallel generation. To reproduce the cold
+The version-10 output hashes (including generated block entities) for three
+adjacent/negative-coordinate chunks are checked in both sequential and parallel
+generation. To reproduce the cold
 nine-chunk performance measurement (one operation is the entire area):
 
 ```powershell
@@ -198,18 +291,47 @@ go test ./internal/worldgen -run '^$' -bench '^BenchmarkOverworldArea$' -benchti
 
 The further performance measurements, current-source baseline and profiles are
 recorded in [the October 1 validation report](../../artifacts/chunk-performance-v2/validation.md).
+The October 2 structure/halo, template and initial-animal optimizations are
+recorded in [the current performance report](../../artifacts/worldgen-probes/performance-v8.md).
 The region store now reads compressed records by offset and uses shared read
 locks scoped to regions, with codec work outside the file locks. Immutable
 network packets have a bounded actor cache; lighting reuses private work arrays
 under the engine mutex while every published light snapshot remains detached.
+Region rewriting now streams original neighboring records, padding and
+timestamps through a fixed copy buffer. Each 30-second autosave unloads saved
+chunks idle for one minute outside player views and a one-chunk border, releasing
+both packet caches and dense lighting columns. Failed saves retain data; region
+actors themselves are retained. See [the version-5 validation report](../../artifacts/worldgen-v5-validation.md)
+for controlled heap replay and the real autosave/unload/reconnect binary test.
 
 The opt-in official-server test loads both Atlas-created normal and flat
 chunks and checks that a block edit, all quart biomes and 30 generated tree/vegetation
-blocks survive actual forced loading and saving. The JAR is
-used only for tests. New normal metadata disables structures and marks the
-generator incomplete. Structure starts/references, decorated/special trees,
-remaining features (including small mushrooms), Nether/End
-and vanilla spawn search still need ports. Generation coverage is version 4.
+blocks survive actual forced loading and saving. Separate well/monster-room
+cases generate official configured features on synthetic terrain, bridge their
+entities into Atlas chunks, and verify that the actual server retains 2 well
+entities and 3 monster-room entities. The JAR is
+used only for tests. New normal metadata enables supported structures and marks
+the generator incomplete. Desert pyramids, jungle temples, swamp huts, igloos,
+buried treasure, six Overworld ruined-portal variants and both shipwreck variants
+join starts, terrain, blocks and canonical saved references in the runtime
+pipeline. Nether fortresses, Nether fossils and Nether ruined portals have
+dimension generation, references and Anvil reopen checks. End cities include
+all 20 templates, rotated/clipped block placement, loot requests, Shulkers and
+Elytra item frames. Generated source-water columns above magma/soul sand settle
+into bubble columns; generated leaves settle their distance across neighboring
+tree bounds. These are generation postprocessing passes, not a general fluid,
+leaf-decay or scheduled-tick implementation. The remaining Overworld structure
+families still require their own complete starts, processors and pieces.
+All 37 Nether and 5 End feature plans and their three-dimension
+runtime access are integrated. Generated crystals and supported structure NPCs
+are persisted in independent entity Anvil regions and delivered after terrain;
+Eighteen initial animal types and supported structure actors are generated;
+AI, physics, interactions and spawning beyond that coverage remain incomplete.
+Initial spawn uses the JAR-verified climate search and vanilla's
+11x11 chunk spiral, with additional Atlas clearance and hazard checks. Generation coverage is version 11;
+[the machine-readable report](../../artifacts/worldgen-feature-coverage-v11.json)
+lists 151/151, 37/37 and 5/5 feature plans plus integrated/remaining structures,
+not a world-equivalence percentage.
 Fixed-order decoration
 replay has not been proven equivalent to vanilla's neighboring chunk ordering;
 the terrain-stage JAR matches are not a claim of identical full worlds.

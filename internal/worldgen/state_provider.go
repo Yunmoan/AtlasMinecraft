@@ -49,6 +49,13 @@ func decodeFeatureStateProvider(raw json.RawMessage, validate func(SurfaceBlockS
 		return validate(state)
 	}
 	switch config.Type {
+	case "minecraft:rotated_block_provider":
+		if err := checkState(config.State); err != nil {
+			return nil, err
+		}
+		return func(r *WorldgenRandom, _ FeaturePosition) SurfaceBlockState {
+			return stateWithProperty(config.State, "axis", []string{"x", "y", "z"}[r.NextIntBound(3)])
+		}, nil
 	case "minecraft:randomized_int_state_provider":
 		if config.Property != "age" {
 			return nil, fmt.Errorf("unsupported randomized state property %s", config.Property)

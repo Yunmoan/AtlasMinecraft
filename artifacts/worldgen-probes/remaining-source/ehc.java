@@ -2,13 +2,7 @@
  * Decompiled with CFR 0.152.
  * 
  * Could not load the following classes:
- *  ayw
  *  com.mojang.serialization.MapCodec
- *  dov
- *  eha
- *  eha$a
- *  ehb
- *  jd
  */
 import com.mojang.serialization.MapCodec;
 
@@ -17,10 +11,12 @@ extends eha {
     public static final MapCodec<ehc> a = MapCodec.unit(() -> b);
     public static final ehc b = new ehc();
 
+    @Override
     protected ehb<?> a() {
         return ehb.a;
     }
 
+    @Override
     public void a(eha.a $$0) {
         ayw $$1 = $$0.b();
         $$0.c().forEach($$2 -> {

@@ -29,7 +29,7 @@ type blockReadResult struct {
 func (w *World) ReadLoadedBlocks(positions []BlockPosition) ([]uint32, error) {
 	groups := make(map[chunkKey][]int)
 	for i, p := range positions {
-		if p.Y >= MinY && p.Y < MaxY {
+		if p.Y >= w.MinBuildHeight() && p.Y < w.MaxBuildHeight() {
 			groups[chunkKey{p.X >> 9, p.Z >> 9}] = append(groups[chunkKey{p.X >> 9, p.Z >> 9}], i)
 		}
 	}
@@ -77,7 +77,7 @@ func (w *World) BlockAt(x, y, z int32) (uint32, error) {
 // TryPlaceBlock checks the clicked snapshot in the actor. Double plants are
 // committed together with their upper half, updates and the final Anvil write.
 func (w *World) TryPlaceBlock(p BlockPosition, expected, state uint32, upper *uint32) error {
-	if p.Y < MinY || p.Y >= MaxY || state > MaxBlockState || upper != nil && (p.Y+1 >= MaxY || *upper > MaxBlockState) {
+	if p.Y < w.MinBuildHeight() || p.Y >= w.MaxBuildHeight() || state > MaxBlockState || upper != nil && (p.Y+1 >= w.MaxBuildHeight() || *upper > MaxBlockState) {
 		return errors.New("invalid block placement")
 	}
 	w.blockUpdateMu.Lock()
@@ -94,7 +94,7 @@ func (w *World) TryPlaceBlock(p BlockPosition, expected, state uint32, upper *ui
 // entities and their animation, item drops and other tick behaviors are future
 // work. The whole column mutation is persisted in one chunk write.
 func settleColumn(ch *Chunk, x, z int, start int32, change func(int32, uint32)) error {
-	for y := max(int32(MinY), start); y < MaxY; y++ {
+	for y := max(ch.minY, start); y < ch.maxY; y++ {
 		id := ch.GetBlock(x, z, y)
 		if isAir(id) {
 			continue
@@ -105,7 +105,7 @@ func settleColumn(ch *Chunk, x, z int, start int32, change func(int32, uint32)) 
 		}
 		if state.Name == "minecraft:sand" || state.Name == "minecraft:red_sand" || state.Name == "minecraft:gravel" {
 			target := y
-			for target > MinY {
+			for target > ch.minY {
 				below, err := blockrules.Lookup(ch.GetBlock(x, z, target-1))
 				if err != nil {
 					return err
@@ -117,7 +117,7 @@ func settleColumn(ch *Chunk, x, z int, start int32, change func(int32, uint32)) 
 			}
 			if target != y {
 				change(y, StateAir)
-				if target > MinY {
+				if target > ch.minY {
 					change(target, id)
 				}
 			}
@@ -127,7 +127,7 @@ func settleColumn(ch *Chunk, x, z int, start int32, change func(int32, uint32)) 
 	// A falling block can land below the originally edited Y and replace the
 	// lower half of a plant. Validate plants after all vertical moves, including
 	// positions below the source; otherwise the upper half remains suspended.
-	for y := int32(MinY); y < MaxY; y++ {
+	for y := ch.minY; y < ch.maxY; y++ {
 		id := ch.GetBlock(x, z, y)
 		if isAir(id) {
 			continue
@@ -217,6 +217,7 @@ func (r *Region) applyColumnEdit(ch *Chunk, msg setBlockMsg) error {
 		rollback()
 		return fmt.Errorf("block update save failed: %w", err)
 	}
+	var lightUpdates map[light.Position]*light.Data
 	if r.world.lighting != nil {
 		changes := make([]light.Change, 0, len(ys))
 		for _, y := range ys {
@@ -234,7 +235,7 @@ func (r *Region) applyColumnEdit(ch *Chunk, msg setBlockMsg) error {
 		if err := r.world.store.vanilla.persistChunk(ch); err != nil {
 			return fmt.Errorf("block saved but lighting save failed: %w", err)
 		}
-		r.world.notifyLight(updates, position)
+		lightUpdates = updates
 	}
 	sort.Ints(ys)
 	for _, value := range ys {
@@ -248,7 +249,10 @@ func (r *Region) applyColumnEdit(ch *Chunk, msg setBlockMsg) error {
 			v.SendPacket(proto.SBlockChange, payload)
 		}
 	}
-	if ch.lights != nil {
+	// Other region actors may broadcast immediately on receiving a lighting
+	// notification. Enqueue the source block changes first for every viewer.
+	r.world.notifyLight(lightUpdates, light.Position{X: ch.cx, Z: ch.cz})
+	if ch.lights != nil && lightUpdates[light.Position{X: ch.cx, Z: ch.cz}] != nil {
 		writer := proto.NewWriter().VarInt(ch.cx).VarInt(ch.cz)
 		writeLightData(writer, ch.lights)
 		for _, sink := range r.world.hub.ViewersOf(msg.x, msg.z) {
@@ -276,8 +280,8 @@ func (w *World) collisionBoxes(bounds blockrules.Box) ([]blockrules.Box, error) 
 	const contactEpsilon = 1e-7
 	minX, minY, minZ := int32(math.Floor(bounds[0]+contactEpsilon)), int32(math.Floor(bounds[1]+contactEpsilon))-1, int32(math.Floor(bounds[2]+contactEpsilon))
 	maxX, maxY, maxZ := int32(math.Floor(bounds[3]-contactEpsilon)), int32(math.Floor(bounds[4]-contactEpsilon)), int32(math.Floor(bounds[5]-contactEpsilon))
-	minY = max(minY, int32(MinY))
-	maxY = min(maxY, int32(MaxY-1))
+	minY = max(minY, w.MinBuildHeight())
+	maxY = min(maxY, w.MaxBuildHeight()-1)
 	if int64(maxX-minX+1)*int64(maxY-minY+1)*int64(maxZ-minZ+1) > 32768 {
 		return nil, errors.New("movement crosses too many blocks")
 	}

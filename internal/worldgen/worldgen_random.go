@@ -11,6 +11,11 @@ type WorldgenRandom struct {
 	hasGaussian bool
 }
 
+// XoroshiroState is a read-only snapshot for independent feature randomness.
+func (random *WorldgenRandom) XoroshiroState() (lo,hi uint64) {
+	return random.source.lo,random.source.hi
+}
+
 // SetSeed matches WorldgenRandom.setSeed: its inherited Gaussian cache survives
 // feature reseeding, unlike the cache in the wrapped Xoroshiro source.
 func (random *WorldgenRandom) SetSeed(seed int64) { random.source = NewXoroshiro(seed) }

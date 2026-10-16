@@ -5,14 +5,17 @@ import (
 	"math"
 )
 
-// DensitySampler evaluates direct density expressions for a single block
-// position. NoiseChunk's cell interpolation, old blended terrain noise, End
-// islands, and other contextual generation stages are deliberately rejected.
+// DensitySampler evaluates density expressions for a single block position.
+// NoiseChunk sampling adds interpolation and caches; actual structure starts
+// must be supplied separately for nonzero terrain adjustments.
 // One sampler must not be used concurrently by multiple goroutines.
 type DensitySampler struct {
 	Seed                  int64
 	noises                map[string]*NormalNoise
 	blended               map[*DensityNode]*BlendedNoise
+	endIslands            *EndIslandDensity
+	legacy                bool
+	beardifier            *StructureBeardifier
 	cellWidth, cellHeight int32
 	chunk                 *chunkDensityContext
 }
@@ -27,6 +30,7 @@ func NewDensitySampler(seed int64) *DensitySampler {
 func NewCellDensitySampler(seed int64, settings *DensitySettings) *DensitySampler {
 	s := NewDensitySampler(seed)
 	s.cellWidth, s.cellHeight = settings.CellWidth, settings.CellHeight
+	s.legacy = settings.Legacy
 	return s
 }
 
@@ -34,7 +38,13 @@ func (s *DensitySampler) noise(name string) (*NormalNoise, error) {
 	if n := s.noises[name]; n != nil {
 		return n, nil
 	}
-	n, err := NewNamedNormalNoise(s.Seed, name)
+	var n *NormalNoise
+	var err error
+	if s.legacy {
+		n, err = newLegacyNamedNormalNoise(s.Seed, name)
+	} else {
+		n, err = NewNamedNormalNoise(s.Seed, name)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +72,14 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 		return 1, nil // No old/new chunk blending in a direct sample.
 	case "blend_offset":
 		return 0, nil
+	case "beardifier":
+		if s.beardifier == nil { return 0, nil }
+		return s.beardifier.Sample(x, y, z), nil
+	case "end_islands":
+		if s.endIslands == nil {
+			s.endIslands = NewEndIslandDensity(s.Seed)
+		}
+		return s.endIslands.Sample(x, z), nil
 	case "flat_cache":
 		if s.chunk != nil {
 			return s.sampleFlatCache(n, x, y, z)
@@ -202,8 +220,13 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 	case "old_blended_noise":
 		b := s.blended[n]
 		if b == nil {
-			b = NewBlendedNoise(s.Seed, evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale],
-				evaluation.numbers[densityXZFactor], evaluation.numbers[densityYFactor], evaluation.numbers[densitySmearScale])
+			if s.legacy {
+				b = newLegacyBlendedNoise(s.Seed, evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale],
+					evaluation.numbers[densityXZFactor], evaluation.numbers[densityYFactor], evaluation.numbers[densitySmearScale])
+			} else {
+				b = NewBlendedNoise(s.Seed, evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale],
+					evaluation.numbers[densityXZFactor], evaluation.numbers[densityYFactor], evaluation.numbers[densitySmearScale])
+			}
 			s.blended[n] = b
 		}
 		return b.Noise(x, y, z), nil

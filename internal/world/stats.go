@@ -4,6 +4,7 @@ package world
 // generation, so operators can inspect a busy world without joining its backlog.
 type Stats struct {
 	LoadedChunks      int64
+	LightColumns      int
 	Regions           int
 	MailboxMessages   int
 	GenerationWorkers int
@@ -13,6 +14,9 @@ type Stats struct {
 
 func (w *World) Stats() Stats {
 	s := Stats{LoadedChunks: w.loadedChunks.Load(), GenerationWorkers: w.workers, ActiveGeneration: w.activeJobs.Load()}
+	if w.lighting != nil {
+		s.LightColumns = w.lighting.LoadedColumns()
+	}
 	w.mu.Lock()
 	s.Regions = len(w.regions)
 	for _, r := range w.regions {

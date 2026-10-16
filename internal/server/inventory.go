@@ -48,17 +48,22 @@ func (s *Server) publishEquipment(p *player.Player) {
 	s.sendTracked(p, proto.SSetEquipment, equipmentPayload(p))
 }
 func (s *Server) handleCreativeInventorySlot(p *player.Player, payload []byte) {
+	if s.rejectChestInteraction(p) {
+		return
+	}
 	r := proto.NewReader(payload)
 	slot, err := r.I16()
 	if err != nil {
 		return
 	}
+	p.SaveMu.Lock()
 	v, _ := p.Inventory()
 	stack, err := item.Read(r)
 	if err != nil || r.Remaining() != 0 || slot < 1 || slot >= 46 {
 		// Keep authoritative items, correcting any client prediction.
 		s.setInventory(p, v)
 		s.sendInventory(p)
+		p.SaveMu.Unlock()
 		return
 	}
 	v.Slots[slot] = stack
@@ -69,6 +74,7 @@ func (s *Server) handleCreativeInventorySlot(p *player.Player, payload []byte) {
 	w := proto.NewWriter().U8(0).VarInt(state).I16(slot)
 	stack.Write(w)
 	p.SendPacket(proto.SContainerSlot, w.Payload())
+	p.SaveMu.Unlock()
 	s.publishEquipment(p)
 }
 
@@ -102,6 +108,9 @@ func slotLimit(slot int, stack item.Stack) int32 {
 // Never trust the client's changed-slot contents as inventory authority.
 // Replay the menu action against our own state and send its resulting snapshot.
 func (s *Server) handleContainerClick(p *player.Player, payload []byte) {
+	if s.handleChestClick(p, payload) {
+		return
+	}
 	r := proto.NewReader(payload)
 	window, e1 := r.U8()
 	_, e2 := r.VarInt()
@@ -130,6 +139,7 @@ func (s *Server) handleContainerClick(p *player.Player, payload []byte) {
 		s.sendInventory(p)
 		return
 	}
+	p.SaveMu.Lock()
 	v, _ := p.Inventory()
 	if mode == 5 {
 		s.handleInventoryDrag(p, &v, int(slot), int(button))
@@ -139,6 +149,7 @@ func (s *Server) handleContainerClick(p *player.Player, payload []byte) {
 	}
 	s.setInventory(p, v)
 	s.sendInventory(p)
+	p.SaveMu.Unlock()
 	s.publishEquipment(p)
 }
 
@@ -306,6 +317,7 @@ func (s *Server) handleInventoryDrag(p *player.Player, v *item.Inventory, slot, 
 	}
 }
 func (s *Server) closeInventory(p *player.Player) {
+	p.SaveMu.Lock()
 	v, _ := p.Inventory()
 	var targets []int
 	for i := 9; i <= 44; i++ {
@@ -318,5 +330,6 @@ func (s *Server) closeInventory(p *player.Player) {
 	p.ResetInventoryDrag()
 	s.setInventory(p, v)
 	s.sendInventory(p)
+	p.SaveMu.Unlock()
 	s.publishEquipment(p)
 }

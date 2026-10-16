@@ -98,12 +98,12 @@ func TestSurfaceRulesAgainstVanillaJAR(t *testing.T) {
 	}
 }
 
-func TestSurfaceRuleSamplerRejectsLegacySettings(t *testing.T) {
+func TestSurfaceRuleSamplerAcceptsLegacySettings(t *testing.T) {
 	settings, err := worldgen.LoadDensitySettings("nether")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := worldgen.NewSurfaceRuleSampler(1, settings); err == nil {
-		t.Fatal("legacy random settings must not use the Xoroshiro surface sampler")
+	if _, err := worldgen.NewSurfaceRuleSampler(1, settings); err != nil {
+		t.Fatal(err)
 	}
 }

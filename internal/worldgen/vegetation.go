@@ -49,6 +49,19 @@ var doublePlants = map[string]bool{
 }
 
 func validateVegetationState(state SurfaceBlockState) error {
+	switch state.Name {
+	case "minecraft:fire", "minecraft:soul_fire", "minecraft:crimson_roots", "minecraft:warped_roots", "minecraft:crimson_fungus", "minecraft:warped_fungus", "minecraft:nether_sprouts":
+		return nil
+	}
+	if state.Name == "minecraft:melon" {
+		return nil
+	}
+	if state.Name == "minecraft:seagrass" {
+		return nil
+	}
+	if state.Name == "minecraft:brown_mushroom" || state.Name == "minecraft:red_mushroom" {
+		return nil
+	}
 	if state.Name == "minecraft:azalea" || state.Name == "minecraft:flowering_azalea" || state.Name == "minecraft:moss_carpet" || state.Name == "minecraft:small_dripleaf" || state.Name == "minecraft:hanging_roots" {
 		return nil
 	}

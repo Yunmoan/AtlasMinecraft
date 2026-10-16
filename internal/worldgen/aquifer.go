@@ -97,7 +97,12 @@ func (aquifer *noiseAquifer) globalFluid(y int32) aquiferFluid {
 	if y < min(int32(-54), aquifer.settings.SeaLevel) {
 		return aquiferFluid{level: -54, material: NoiseLava}
 	}
-	return aquiferFluid{level: aquifer.settings.SeaLevel, material: NoiseWater}
+	material := NoiseWater
+	switch aquifer.settings.DefaultFluid.Name {
+	case "minecraft:lava": material = NoiseLava
+	case "minecraft:air": material = NoiseAir
+	}
+	return aquiferFluid{level: aquifer.settings.SeaLevel, material: material}
 }
 
 func (aquifer *noiseAquifer) compute(x, y, z int32, density float64) (NoiseMaterial, bool, bool) {

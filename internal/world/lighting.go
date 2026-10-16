@@ -18,11 +18,11 @@ type lightChanged struct {
 }
 
 func denseLightStates(ch *Chunk) []uint16 {
-	states := make([]uint16, WorldHeight*256)
-	for y := int32(MinY); y < MaxY; y++ {
+	states := make([]uint16, int(ch.maxY-ch.minY)*256)
+	for y := ch.minY; y < ch.maxY; y++ {
 		for z := 0; z < 16; z++ {
 			for x := 0; x < 16; x++ {
-				states[int(y-MinY)*256+z*16+x] = uint16(ch.GetBlock(x, z, y))
+				states[int(y-ch.minY)*256+z*16+x] = uint16(ch.GetBlock(x, z, y))
 			}
 		}
 	}
@@ -44,13 +44,13 @@ func readAnvilLight(root nbt.Object, sections []nbt.Tag, ch *Chunk) (*light.Data
 	marker, _ := root.Object("AtlasLight")
 	version, _ := marker.Number("Version")
 	stale, _ := marker.Number("Stale")
-	data := &light.Data{Sky: make([][]byte, NumSections+2), Block: make([][]byte, NumSections+2), Complete: on != 0}
+	data := &light.Data{Sky: make([][]byte, len(ch.sect)+2), Block: make([][]byte, len(ch.sect)+2), Complete: on != 0}
 	hash, _ := marker["BlocksSHA256"].Value.([]byte)
 	data.Preserved = version == 2 && stale == 0 && bytes.Equal(hash, lightBlockHash(ch))
 	for _, section := range sections {
 		o, _ := section.Object()
 		y, _ := o.Number("Y")
-		index := int(y) - (MinY/16 - 1)
+		index := int(y) - (int(ch.minY)/16 - 1)
 		if index < 0 || index >= len(data.Sky) {
 			continue
 		}
@@ -86,7 +86,7 @@ func (c *Chunk) writeAnvilLight(root nbt.Object) {
 		byY[int(y)] = o
 	}
 	for index := range c.lights.Sky {
-		y := MinY/16 - 1 + index
+		y := int(c.minY)/16 - 1 + index
 		o := byY[y]
 		if o == nil {
 			if c.lights.Sky[index] == nil && c.lights.Block[index] == nil {
@@ -145,7 +145,7 @@ func writeLightData(w *proto.Writer, data *light.Data) {
 }
 
 func detachedLight(ch *Chunk) *light.Data {
-	engine, err := light.New(MinY, WorldHeight, true)
+	engine, err := light.New(int(ch.minY), int(ch.maxY-ch.minY), ch.hasSky)
 	if err == nil {
 		if _, err := engine.Install(light.Position{X: ch.cx, Z: ch.cz}, denseLightStates(ch), ch.lights); err == nil {
 			return engine.Snapshot(light.Position{X: ch.cx, Z: ch.cz})
@@ -153,7 +153,7 @@ func detachedLight(ch *Chunk) *light.Data {
 	}
 	// Embedded rules are validated before a real world load. A malformed
 	// stand-alone test chunk has no valid lighting rather than synthetic light.
-	return &light.Data{Sky: make([][]byte, NumSections+2), Block: make([][]byte, NumSections+2)}
+	return &light.Data{Sky: make([][]byte, len(ch.sect)+2), Block: make([][]byte, len(ch.sect)+2)}
 }
 
 func (w *World) notifyLight(updates map[light.Position]*light.Data, except light.Position) {

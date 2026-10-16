@@ -68,15 +68,16 @@ func readCommandTree(t *testing.T, payload []byte) []commandNode {
 				}
 			case 5:
 				kind, err := r.VarInt()
-				if err != nil || kind != 0 {
-					t.Fatal("command argument is not a word")
+				if err != nil || kind != 0 && kind != 2 {
+					t.Fatal("invalid word or greedy command argument")
 				}
+				nodes[i].properties = proto.NewWriter().VarInt(kind).Payload()
 			case 6:
 				options, err := r.U8()
 				if err != nil || options != 3 {
 					t.Fatal("entity argument must be a single player")
 				}
-			case 7, 8, 10, 12:
+			case 7, 8, 10, 12, 27:
 			case 42:
 				minimum, err := r.I32()
 				if err != nil || minimum != 0 {
@@ -138,11 +139,16 @@ func TestCommandTreesMatchPermissionsAndTypedArguments(t *testing.T) {
 			parser     int32
 			executable bool
 		}{
+			{[]string{"execute", "in", "minecraft:the_nether", "run", "command"}, 5, true},
 			{[]string{"tp", "location"}, 10, true}, {[]string{"teleport", "target", "destination"}, 6, true},
 			{[]string{"setblock", "pos"}, 8, false}, {[]string{"setblock", "pos", "block"}, 12, true},
 			{[]string{"setblock", "pos", "block", "keep"}, -1, true},
 			{[]string{"time", "set", "time"}, 42, true}, {[]string{"time", "query", "day"}, -1, true},
 			{[]string{"weather", "rain"}, -1, true}, {[]string{"save-all", "flush"}, -1, true},
+			{[]string{"setworldspawn"}, -1, true}, {[]string{"setworldspawn", "pos"}, 8, false},
+			{[]string{"setworldspawn", "pos", "angle"}, 27, true},
+			{[]string{"spawnpoint", "targets"}, 6, false}, {[]string{"spawnpoint", "targets", "pos"}, 8, false},
+			{[]string{"spawnpoint", "targets", "pos", "angle"}, 27, true},
 		} {
 			node, ok := treePath(nodes, test.path...)
 			if !ok || node.parser != test.parser || node.executable != test.executable {

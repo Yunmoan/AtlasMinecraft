@@ -5,11 +5,14 @@
 *.test
 *.out
 
+/artifacts/
+
 # Coverage / profiling artifacts
 *.prof
 *.pprof
 *.cpu
 *.mem
+*.txt
 
 # Go workspace files are local-only
 go.work

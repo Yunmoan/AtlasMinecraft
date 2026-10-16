@@ -1,7 +1,9 @@
 package worldgen
 
 import (
+	"atlas/internal/nbt"
 	"fmt"
+	"runtime"
 	"sort"
 	"sync"
 )
@@ -10,7 +12,7 @@ const overworldCacheLimit = 128
 
 // OverworldGenerationVersion distinguishes newly generated chunks from earlier
 // Atlas coverage without rewriting or regenerating any existing full chunks.
-const OverworldGenerationVersion int32 = 5
+const OverworldGenerationVersion int32 = 12
 
 // GeneratedOverworldChunk contains terrain, quart biomes and the decoration
 // coverage for one chunk. Unsupported features are explicit, never presented
@@ -19,12 +21,17 @@ type GeneratedOverworldChunk struct {
 	Terrain         *NoiseChunkResult
 	Biomes          [24][64]string
 	SkippedFeatures []string
+	BlockEntities   []nbt.Object
+	Structures      nbt.Object
+	SkippedStages   []string
+	PendingEntities []PendingStructureEntity
 }
 
 type overworldBase struct {
 	terrain    *NoiseChunkResult
 	biomes     [24][64]string
 	biomeNames []string
+	starts     []StructureStart
 }
 
 type overworldCacheEntry struct {
@@ -46,15 +53,85 @@ type decorationFeature struct {
 // requested final chunk is saved, so generating its neighbors never rewrites
 // blocks already edited by players.
 type OverworldGenerator struct {
-	seed  int64
-	noise *OverworldNoiseGenerator
-	plans map[string]decorationFeature
-	mu    sync.Mutex
-	clock uint64
-	cache map[featureChunkPosition]*overworldCacheEntry
+	seed               int64
+	noise              *OverworldNoiseGenerator
+	plans              map[string]decorationFeature
+	mu                 sync.Mutex
+	clock              uint64
+	cache              map[featureChunkPosition]*overworldCacheEntry
+	beehiveShuffleSalt int64
+	structures         *overworldStructureCache
+	structureDayTime   func() int64
+	structureGameTime  func() int64
+	precedingMu        sync.Mutex
+	precedingClock     uint64
+	preceding          map[structureChunkKey]*structureChunkEntry
+	terrainSlots       chan struct{}
+}
+
+type OverworldGeneratorOptions struct {
+	BeehiveShuffleSalt int64
+	GenerateStructures bool
+}
+
+// Runtime installs the world's clock before workers start. Moon-dependent
+// mob finalization consumes the original region stream at generation time.
+func (generator *OverworldGenerator) SetStructureDayTimeSource(source func() int64) {
+	generator.mu.Lock()
+	generator.structureDayTime = source
+	generator.mu.Unlock()
+}
+
+// GameTime is independent of DayTime, which commands may change. Camel pose
+// finalization uses world age even when the sun's time is fixed or changed.
+func (generator *OverworldGenerator) SetStructureGameTimeSource(source func() int64) {
+	generator.mu.Lock()
+	generator.structureGameTime = source
+	generator.mu.Unlock()
+}
+
+func (generator *OverworldGenerator) structureAge() int64 {
+	generator.mu.Lock()
+	source := generator.structureGameTime
+	generator.mu.Unlock()
+	if source == nil {
+		return 0
+	}
+	return source()
+}
+
+// SetTerrainWorkers configures the shared terrain budget before generation
+// starts. A single cold chunk can use the budget to prepare its halo; concurrent
+// final-chunk jobs share the same budget instead of multiplying CPU workers.
+func (generator *OverworldGenerator) SetTerrainWorkers(workers int) {
+	generator.terrainSlots = make(chan struct{}, max(1, min(256, workers)))
+}
+
+func (generator *OverworldGenerator) structureFullMoon() bool {
+	generator.mu.Lock()
+	source := generator.structureDayTime
+	generator.mu.Unlock()
+	if source == nil {
+		return true
+	}
+	phase := (source() / 24000) % 8
+	if phase < 0 {
+		phase += 8
+	}
+	return phase == 0
 }
 
 func NewOverworldGenerator(seed int64) (*OverworldGenerator, error) {
+	return NewOverworldGeneratorWithBeehiveSalt(seed, 0)
+}
+
+// Saved worlds supply their own independent persisted salt. The convenience
+// constructor uses zero for reproducible development probes and benchmarks.
+func NewOverworldGeneratorWithBeehiveSalt(seed, salt int64) (*OverworldGenerator, error) {
+	return NewOverworldGeneratorWithOptions(seed, OverworldGeneratorOptions{BeehiveShuffleSalt: salt})
+}
+
+func NewOverworldGeneratorWithOptions(seed int64, options OverworldGeneratorOptions) (*OverworldGenerator, error) {
 	noise, err := NewOverworldNoiseGenerator(seed)
 	if err != nil {
 		return nil, err
@@ -64,6 +141,14 @@ func NewOverworldGenerator(seed int64) (*OverworldGenerator, error) {
 		return nil, err
 	}
 	generator := &OverworldGenerator{seed: seed, noise: noise, plans: make(map[string]decorationFeature), cache: make(map[featureChunkPosition]*overworldCacheEntry)}
+	generator.SetTerrainWorkers(min(4, runtime.GOMAXPROCS(0)))
+	generator.beehiveShuffleSalt = options.BeehiveShuffleSalt
+	if options.GenerateStructures {
+		generator.structures, err = newOverworldStructureCache(seed)
+		if err != nil {
+			return nil, err
+		}
+	}
 	for _, feature := range order.features {
 		placed, err := LoadPlacedFeatureDefinition(feature.Name)
 		if err != nil {
@@ -75,12 +160,6 @@ func NewOverworldGenerator(seed int64) (*OverworldGenerator, error) {
 		}
 		plan := decorationFeature{feature: feature}
 		switch configured.Type {
-		case "minecraft:tree", "minecraft:random_selector", "minecraft:simple_block", "minecraft:random_patch", "minecraft:flower", "minecraft:no_bonemeal_flower", "minecraft:block_column", "minecraft:huge_brown_mushroom", "minecraft:huge_red_mushroom", "minecraft:random_boolean_selector", "minecraft:spring_feature", "minecraft:freeze_top_layer", "minecraft:ice_spike", "minecraft:simple_random_selector", "minecraft:underwater_magma", "minecraft:dripstone_cluster", "minecraft:large_dripstone", "minecraft:multiface_growth", "minecraft:vegetation_patch", "minecraft:waterlogged_vegetation_patch", "minecraft:root_system", "minecraft:vines", "minecraft:lake", "minecraft:geode":
-			place, err := compileFeaturePlan(placed.Feature, 0)
-			if err != nil {
-				continue
-			}
-			plan.place = place
 		case "minecraft:ore":
 			config, err := LoadOreConfiguration(placed.Feature)
 			if err != nil {
@@ -110,7 +189,11 @@ func NewOverworldGenerator(seed int64) (*OverworldGenerator, error) {
 				return PlaceDiskFeature(region, random, origin, config)
 			}
 		default:
-			continue
+			place, err := compileFeaturePlan(placed.Feature, 0)
+			if err != nil {
+				continue
+			}
+			plan.place = place
 		}
 		plan.placement, err = compilePlacementTemplate(placed, &feature)
 		if err != nil {
@@ -122,17 +205,27 @@ func NewOverworldGenerator(seed int64) (*OverworldGenerator, error) {
 }
 
 func (generator *OverworldGenerator) generateBase(cx, cz int32) (*overworldBase, error) {
-	terrain, err := generator.noise.GenerateCarved(cx, cz)
+	starts, err := generator.structureNeighborhood(cx, cz)
 	if err != nil {
 		return nil, err
 	}
-	// Carving masks are probe/debug data; they are not needed for decoration.
-	terrain.CarvingMask = nil
 	biomes, err := newOverworldBiomeSampler(generator.seed, generator.noise.settings)
 	if err != nil {
 		return nil, err
 	}
-	base := &overworldBase{terrain: terrain}
+	terrain, err := generator.noise.GenerateNoiseWithStructures(cx, cz, structureTerrainPieces(starts))
+	if err != nil {
+		return nil, err
+	}
+	if err := generator.noise.ApplySurface(terrain, biomes.BiomeAtQuart); err != nil {
+		return nil, err
+	}
+	if err := generator.noise.ApplyCarvers(terrain, biomes.BiomeAtQuart); err != nil {
+		return nil, err
+	}
+	// Carving masks are probe/debug data; they are not needed for decoration.
+	terrain.CarvingMask = nil
+	base := &overworldBase{terrain: terrain, starts: starts}
 	present := make(map[string]bool)
 	for si := range base.biomes {
 		for i := range base.biomes[si] {
@@ -166,7 +259,9 @@ func (generator *OverworldGenerator) baseEntryAt(cx, cz int32) *overworldCacheEn
 	entry := &overworldCacheEntry{ready: make(chan struct{}), used: generator.clock}
 	generator.cache[key] = entry
 	generator.mu.Unlock()
+	generator.terrainSlots <- struct{}{}
 	base, err := generator.generateBase(cx, cz)
+	<-generator.terrainSlots
 	generator.mu.Lock()
 	entry.base, entry.err, entry.complete = base, err, true
 	close(entry.ready)
@@ -212,8 +307,46 @@ func cloneTerrain(source *NoiseChunkResult) *NoiseChunkResult {
 }
 
 func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworldChunk, error) {
+	bases, chunks, err := generator.decorationBases(cx, cz)
+	if err != nil {
+		return nil, err
+	}
+	starts := generator.decorationStructures(bases, cx, cz)
+	region, skipped, err := generator.decorateRegion(bases, chunks, cx, cz, 11, starts)
+	if err != nil {
+		return nil, err
+	}
+	if err := finalizeGeneratedLeafDistances(region, cx, cz); err != nil {
+		return nil, err
+	}
+	unsupportedAnimals, err := generator.generateInitialAnimals(region, cx, cz)
+	if err != nil {
+		return nil, err
+	}
+	result := &GeneratedOverworldChunk{Terrain: region.cloneChunk(cx, cz), Biomes: bases[featureChunkPosition{cx, cz}].biomes, BlockEntities: region.BlockEntitiesInChunk(cx, cz), SkippedFeatures: skipped, PendingEntities: region.PendingEntitiesInChunk(cx, cz)}
+	if _, err := PostProcessGeneratedBubbleColumns(result.Terrain); err != nil {
+		return nil, err
+	}
+	if generator.structures != nil {
+		if err := generator.commitStrongholdChunk(starts, cx, cz); err != nil {
+			return nil, err
+		}
+		result.Structures, err = generator.generatedStructureNBT(cx, cz, bases[featureChunkPosition{cx, cz}].starts)
+		if err != nil {
+			return nil, err
+		}
+		result.SkippedStages = append(result.SkippedStages, "remaining_structures", "generated_entity_behavior")
+	}
+	result.SkippedStages = append(result.SkippedStages, "neighbor_decoration_order", "generation_lighting_and_ticks")
+	if len(unsupportedAnimals) > 0 {
+		result.SkippedStages = append(result.SkippedStages, "initial_mob_spawning")
+	}
+	return result, nil
+}
+
+func (generator *OverworldGenerator) decorationBases(cx, cz int32) (map[featureChunkPosition]*overworldBase, []*NoiseChunkResult, error) {
 	if cx < -1874998 || cx >= 1874998 || cz < -1874998 || cz >= 1874998 {
-		return nil, fmt.Errorf("chunk %d,%d has a generation neighborhood outside the world bounds", cx, cz)
+		return nil, nil, fmt.Errorf("chunk %d,%d has a generation neighborhood outside the world bounds", cx, cz)
 	}
 	// Neighboring source chunks can place features into the requested chunk.
 	// Their own 3x3 neighborhoods require a 5x5 terrain-only region. Replay in
@@ -221,26 +354,46 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 	bases := make(map[featureChunkPosition]*overworldBase, 25)
 	chunks := make([]*NoiseChunkResult, 0, 25)
 	var entries [5][5]*overworldCacheEntry
+	// Terrain has no decoration dependency on its neighbors. Prepare the halo
+	// with a bounded local pool, including during the initial single-chunk spawn
+	// scan and canonical structure replay, then retain the original replay order.
+	jobs := make(chan featureChunkPosition, 25)
 	for dx := int32(-2); dx <= 2; dx++ {
 		for dz := int32(-2); dz <= 2; dz++ {
-			entries[dx+2][dz+2] = generator.baseEntryAt(cx+dx, cz+dz)
+			jobs <- featureChunkPosition{dx, dz}
 		}
 	}
+	close(jobs)
+	var ready sync.WaitGroup
+	for worker := 0; worker < min(25, cap(generator.terrainSlots)); worker++ {
+		ready.Add(1)
+		go func() {
+			defer ready.Done()
+			for offset := range jobs {
+				entries[offset.chunkX+2][offset.chunkZ+2] = generator.baseEntryAt(cx+offset.chunkX, cz+offset.chunkZ)
+			}
+		}()
+	}
+	ready.Wait()
 	for dx := int32(-2); dx <= 2; dx++ {
 		for dz := int32(-2); dz <= 2; dz++ {
 			entry := entries[dx+2][dz+2]
 			<-entry.ready
 			if entry.err != nil {
-				return nil, entry.err
+				return nil, nil, entry.err
 			}
 			base := entry.base
 			bases[featureChunkPosition{cx + dx, cz + dz}] = base
 			chunks = append(chunks, base.terrain)
 		}
 	}
+	return bases, chunks, nil
+}
+
+func (generator *OverworldGenerator) decorateRegion(bases map[featureChunkPosition]*overworldBase, chunks []*NoiseChunkResult, cx, cz int32, beforeStep int, starts []StructureStart) (*OverworldFeatureRegion, []string, error) {
 	region, err := NewOverworldFeatureRegion(chunks...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// Feature writes use sparse private overlays. The returned target alone is
 	// materialized and fully detached from all immutable terrain templates.
@@ -257,10 +410,13 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 		return base.biomes[(qy+16)>>2][((qy&3)<<4)|((qz&3)<<2)|(qx&3)], nil
 	}
 	region.biomeSeed, region.biomeAtQuart = generator.seed, biomeAtQuart
+	region.biomeBases = bases
+	region.treeShuffle = &treeShuffleContext{seed: generator.seed, salt: generator.beehiveShuffleSalt}
 	skipped := make(map[string]bool)
 	for dx := int32(-1); dx <= 1; dx++ {
 		for dz := int32(-1); dz <= 1; dz++ {
 			sx, sz := cx+dx, cz+dz
+			region.treeShuffle.sourceX, region.treeShuffle.sourceZ = sx, sz
 			present := make(map[string]bool)
 			for nx := int32(-1); nx <= 1; nx++ {
 				for nz := int32(-1); nz <= 1; nz++ {
@@ -275,11 +431,28 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 			}
 			schedule, err := OverworldFeatureSchedule(biomes)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			decorationSeed := OverworldDecorationSeed(generator.seed, sx, sz)
 			random := NewWorldgenRandom(decorationSeed)
+			structureStep := int32(0)
+			applyStructuresThrough := func(step int) error {
+				for int(structureStep) <= step && int(structureStep) < beforeStep {
+					if err := generator.applyStructureStep(region, starts, sx, sz, structureStep); err != nil {
+						return err
+					}
+					structureStep++
+				}
+				return nil
+			}
 			for _, feature := range schedule {
+				if feature.Step >= beforeStep {
+					break
+				}
+				if err := applyStructuresThrough(feature.Step); err != nil {
+					return nil, nil, err
+				}
+				region.treeShuffle.step, region.treeShuffle.index = feature.Step, feature.Index
 				plan, supported := generator.plans[feature.Name]
 				if !supported {
 					skipped[feature.Name] = true
@@ -287,7 +460,7 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 				}
 				operations, err := plan.placement.bind(region, biomeAtQuart)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				random.SetSeed(decorationSeed + int64(feature.Index) + int64(10000*feature.Step))
 				if err := walkPlacement(operations, random, FeaturePosition{X: sx * 16, Z: sz * 16},
@@ -295,15 +468,18 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 						_, err := plan.place(region, random, position)
 						return err
 					}); err != nil {
-					return nil, fmt.Errorf("feature %s in %d,%d: %w", feature.Name, sx, sz, err)
+					return nil, nil, fmt.Errorf("feature %s in %d,%d: %w", feature.Name, sx, sz, err)
 				}
+			}
+			if err := applyStructuresThrough(beforeStep - 1); err != nil {
+				return nil, nil, err
 			}
 		}
 	}
-	result := &GeneratedOverworldChunk{Terrain: region.cloneChunk(cx, cz), Biomes: bases[featureChunkPosition{cx, cz}].biomes}
+	var skippedNames []string
 	for name := range skipped {
-		result.SkippedFeatures = append(result.SkippedFeatures, name)
+		skippedNames = append(skippedNames, name)
 	}
-	sort.Strings(result.SkippedFeatures)
-	return result, nil
+	sort.Strings(skippedNames)
+	return region, skippedNames, nil
 }

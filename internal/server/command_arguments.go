@@ -110,6 +110,38 @@ func (s *Server) resolveCommandPlayer(source *player.Player, name string) *playe
 	return s.Hub.FindName(name)
 }
 
+// parseCommandAngle mirrors vanilla AngleArgument: an optional "~" prefix
+// makes the angle relative to the source's yaw, empty relative values are 0,
+// and the result wraps to vanilla's [-180, 180) degree range.
+func parseCommandAngle(source *player.Player, value string) (float32, error) {
+	relative := strings.HasPrefix(value, "~")
+	number := strings.TrimPrefix(value, "~")
+	if number == "" {
+		number = "0"
+	}
+	angle, err := strconv.ParseFloat(number, 64)
+	if err != nil || math.IsNaN(angle) || math.IsInf(angle, 0) {
+		return 0, fmt.Errorf("Invalid angle")
+	}
+	if relative && source != nil {
+		_, _, _, yaw, _, _ := source.Pos()
+		angle += float64(yaw)
+	}
+	return wrapCommandDegrees(angle), nil
+}
+
+// wrapCommandDegrees matches vanilla Mth.wrapDegrees.
+func wrapCommandDegrees(degrees float64) float32 {
+	wrapped := math.Mod(degrees, 360)
+	if wrapped >= 180 {
+		wrapped -= 360
+	}
+	if wrapped < -180 {
+		wrapped += 360
+	}
+	return float32(wrapped)
+}
+
 func parseCommandTime(value string) (int64, error) {
 	factor := float64(1)
 	if len(value) > 0 {

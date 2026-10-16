@@ -55,3 +55,11 @@ func (c *chunkPacketCache) remove(element *list.Element) {
 	c.bytes -= len(entry.payload)
 	c.recent.Remove(element)
 }
+
+// forget drops one chunk's cached packet, e.g. right before the chunk is
+// unloaded, so its payload cannot be served for a stale chunk identity.
+func (c *chunkPacketCache) forget(ch *Chunk) {
+	if element := c.entries[ch]; element != nil {
+		c.remove(element)
+	}
+}

@@ -1,6 +1,8 @@
 package worldgen
 
 import (
+	"atlas/internal/blockrules"
+	"atlas/internal/blockstate"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -42,8 +44,27 @@ func decodeFeaturePredicate(raw json.RawMessage, depth int) (featurePredicate, e
 		offset = FeaturePosition{config.Offset[0], config.Offset[1], config.Offset[2]}
 	}
 	switch config.Type {
+	case "minecraft:replaceable":
+		return func(world FeatureBlockWorld, p FeaturePosition) (bool, error) {
+			s, err := world.BlockAt(treeOffset(p, offset.X, offset.Y, offset.Z))
+			if err != nil {
+				return false, err
+			}
+			id, err := blockstate.BlockStateID(s.Name, s.Properties)
+			if err != nil {
+				return false, err
+			}
+			rule, err := blockrules.Lookup(id)
+			return rule.Replaceable, err
+		}, nil
 	case "minecraft:inside_world_bounds":
-		return func(world FeatureBlockWorld,p FeaturePosition)(bool,error) { q:=treeOffset(p,offset.X,offset.Y,offset.Z);return q.Y>=-64&&q.Y<320,nil },nil
+		return func(world FeatureBlockWorld, p FeaturePosition) (bool, error) {
+			q := treeOffset(p, offset.X, offset.Y, offset.Z)
+			if bounds,ok:=world.(interface{MinBuildHeight() int32;MaxBuildHeight() int32});ok {
+				return q.Y>=bounds.MinBuildHeight() && q.Y<bounds.MaxBuildHeight(),nil
+			}
+			return q.Y >= -64 && q.Y < 320, nil
+		}, nil
 	case "minecraft:matching_block_tag":
 		tag := strings.TrimPrefix(config.Tag, "minecraft:")
 		blocks := vegetationTags[tag]
@@ -144,8 +165,7 @@ func decodeFeaturePredicate(raw json.RawMessage, depth int) (featurePredicate, e
 			return matching[state.Name], nil
 		}, nil
 	case "minecraft:would_survive":
-		// These saplings all inherit BushBlock's dirt/farmland ground test.
-		if config.State.Name != "minecraft:oak_sapling" && config.State.Name != "minecraft:birch_sapling" && config.State.Name != "minecraft:spruce_sapling" && config.State.Name != "minecraft:cactus" && config.State.Name != "minecraft:sugar_cane" {
+		if !isFeatureSapling(config.State.Name) && config.State.Name != "minecraft:mangrove_propagule" && config.State.Name != "minecraft:cactus" && config.State.Name != "minecraft:sugar_cane" {
 			return nil, fmt.Errorf("unsupported survival predicate for %s", config.State.Name)
 		}
 		return func(world FeatureBlockWorld, p FeaturePosition) (bool, error) {

@@ -230,11 +230,3 @@ func TestVegetationAgainstVanillaJAR(t *testing.T) {
 	}
 	t.Logf("matched %d JAR cases, %d configured and placed feature names", cases, len(successes))
 }
-
-func TestUnsupportedVegetationRejected(t *testing.T) {
-	for _, name := range []string{"patch_brown_mushroom", "patch_red_mushroom", "patch_melon", "patch_fire", "moss_vegetation"} {
-		if _, err := compileFeaturePlan("minecraft:"+name, 0); err == nil {
-			t.Fatalf("unsupported %s accepted", name)
-		}
-	}
-}

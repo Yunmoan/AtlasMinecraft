@@ -40,19 +40,24 @@ type Config struct {
 }
 
 type Server struct {
-	Cfg            Config
-	Hub            *hub.Hub
-	World          *world.World
-	nextEID        atomic.Int32
-	nextTeleportID atomic.Int32
-	listenerMu     sync.Mutex
-	listener       net.Listener
-	connections    sync.Map
-	clients        sync.WaitGroup
-	closed         bool
-	entityMu       sync.Mutex // position publication, spawn/despawn and observer movement ordering
-	auth           onlineAuthentication
-	performance    *performanceMetrics
+	Cfg               Config
+	Hub               *hub.Hub
+	World             *world.World
+	worldMu           sync.RWMutex
+	worlds            map[string]*world.World
+	nextEID           atomic.Int32
+	nextTeleportID    atomic.Int32
+	listenerMu        sync.Mutex
+	listener          net.Listener
+	connections       sync.Map
+	clients           sync.WaitGroup
+	closed            bool
+	entityMu          sync.Mutex // position publication, spawn/despawn and observer movement ordering
+	generatedEntities map[generatedEntityKey]*generatedEntityTracking
+	generatedViews    map[*player.Player]map[generatedEntityKey]int32
+	auth              onlineAuthentication
+	performance       *performanceMetrics
+	containers        chestSessions
 }
 
 func New(cfg Config, h *hub.Hub, w *world.World) *Server {
@@ -62,7 +67,7 @@ func New(cfg Config, h *hub.Hub, w *world.World) *Server {
 	if cfg.SimulationDistance == 0 {
 		cfg.SimulationDistance = 10
 	}
-	return &Server{Cfg: cfg, Hub: h, World: w, performance: newPerformanceMetrics(time.Now())}
+	return &Server{Cfg: cfg, Hub: h, World: w, worlds: map[string]*world.World{"minecraft:overworld": w}, performance: newPerformanceMetrics(time.Now())}
 }
 
 func (s *Server) Logf(format string, args ...any) {
@@ -145,8 +150,8 @@ func (s *Server) Close() {
 func (s *Server) savePlayer(p *player.Player) {
 	p.SaveMu.Lock()
 	defer p.SaveMu.Unlock()
-	x, y, z, yaw, pitch, _ := p.Pos()
-	position := world.PlayerPosition{X: x, Y: y, Z: z, Yaw: yaw, Pitch: pitch, Flying: p.Flying()}
+	dimension, x, y, z, yaw, pitch, flying, cooldown := p.WorldPositionWithPortalCooldown()
+	position := world.PlayerPosition{Dimension: dimension, X: x, Y: y, Z: z, Yaw: yaw, Pitch: pitch, Flying: flying, PortalCooldown: cooldown}
 	inventory, _ := p.Inventory()
 	if err := s.World.SavePlayerState(p.UUID, position, inventory); err != nil {
 		slog.Error("player save failed", "player", p.Name, "error", err)

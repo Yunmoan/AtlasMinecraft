@@ -67,7 +67,7 @@ func (w *World) updateBlockNeighbors(changed []BlockPosition) error {
 			candidates = append(candidates, neighbor(p, face))
 		}
 		for _, target := range candidates {
-			if target.Y < MinY || target.Y >= MaxY {
+			if target.Y < w.MinBuildHeight() || target.Y >= w.MaxBuildHeight() {
 				continue
 			}
 			states, err := w.ReadLoadedBlocks([]BlockPosition{target})

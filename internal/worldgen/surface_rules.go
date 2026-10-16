@@ -93,12 +93,14 @@ type SurfaceRuleSampler struct {
 	random   PositionalRandom
 	noises   map[string]*NormalNoise
 	randoms  map[string]PositionalRandom
+	legacyRandom *LegacyPositionalRandom
+	legacyRandoms map[string]LegacyPositionalRandom
 	bands    [192]SurfaceBlockState
 }
 
 func NewSurfaceRuleSampler(seed int64, settings *DensitySettings) (*SurfaceRuleSampler, error) {
-	if settings == nil || settings.Height <= 0 || settings.Legacy {
-		return nil, fmt.Errorf("surface sampler requires non-legacy noise settings")
+	if settings == nil || settings.Height <= 0 {
+		return nil, fmt.Errorf("surface sampler requires valid noise settings")
 	}
 	var raw struct {
 		Rule *surfaceRule `json:"surface_rule"`
@@ -110,6 +112,11 @@ func NewSurfaceRuleSampler(seed int64, settings *DensitySettings) (*SurfaceRuleS
 		settings: settings, rule: raw.Rule,
 		random: NewXoroshiro(seed).ForkPositional(),
 		noises: make(map[string]*NormalNoise), randoms: make(map[string]PositionalRandom),
+	}
+	if settings.Legacy {
+		random := NewLegacyRandom(seed).ForkPositional()
+		sampler.legacyRandom = &random
+		sampler.legacyRandoms = make(map[string]LegacyPositionalRandom)
 	}
 	if err := sampler.validateRule(raw.Rule); err != nil {
 		return nil, err
@@ -199,7 +206,12 @@ func (sampler *SurfaceRuleSampler) noise(name string) (*NormalNoise, error) {
 	if err != nil {
 		return nil, err
 	}
-	noise, err := NewNormalNoise(sampler.random.FromHashOf(densityName(name)), parameters.FirstOctave, parameters.Amplitudes)
+	var noise *NormalNoise
+	if sampler.legacyRandom != nil {
+		noise, err = newModernLegacyNormalNoise(sampler.legacyRandom.FromHashOf(densityName(name)), parameters.FirstOctave, parameters.Amplitudes)
+	} else {
+		noise, err = NewNormalNoise(sampler.random.FromHashOf(densityName(name)), parameters.FirstOctave, parameters.Amplitudes)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +225,7 @@ func (sampler *SurfaceRuleSampler) SurfaceDepth(x, z int32) (int32, error) {
 		return 0, err
 	}
 	value := noise.Noise(float64(x), 0, float64(z))
-	return int32(value*2.75 + 3 + sampler.random.At(x, 0, z).NextDouble()*0.25), nil
+	return int32(value*2.75 + 3 + sampler.randomAt(x, 0, z).NextDouble()*0.25), nil
 }
 
 func (sampler *SurfaceRuleSampler) SecondaryDepth(x, z int32) (float64, error) {
@@ -291,6 +303,15 @@ func (sampler *SurfaceRuleSampler) matches(condition *surfaceCondition, context 
 		if context.Y >= high {
 			return false, nil
 		}
+		if sampler.legacyRandom != nil {
+			random, exists := sampler.legacyRandoms[condition.RandomName]
+			if !exists {
+				random = sampler.legacyRandom.FromHashOf(condition.RandomName).ForkPositional()
+				sampler.legacyRandoms[condition.RandomName] = random
+			}
+			threshold := 1 + float64(context.Y-low)/float64(high-low)*(-1)
+			return float64(random.At(context.X,context.Y,context.Z).NextFloat()) < threshold,nil
+		}
 		random, exists := sampler.randoms[condition.RandomName]
 		if !exists {
 			random = sampler.random.FromHashOf(condition.RandomName).ForkPositional()
@@ -342,7 +363,7 @@ func (sampler *SurfaceRuleSampler) matches(condition *surfaceCondition, context 
 }
 
 func (sampler *SurfaceRuleSampler) initializeBands() {
-	random := sampler.random.FromHashOf("minecraft:clay_bands")
+	random := sampler.hashRandom("minecraft:clay_bands")
 	state := func(name string) SurfaceBlockState {
 		return SurfaceBlockState{Name: "minecraft:" + name + "_terracotta"}
 	}

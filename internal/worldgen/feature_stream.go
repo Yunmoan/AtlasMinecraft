@@ -3,6 +3,7 @@ package worldgen
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 )
 
 type positionConsumer func(FeaturePosition) error
@@ -53,6 +54,65 @@ func compilePlacementDefinition(name string, definition PlacedFeatureDefinition)
 			return nil, err
 		}
 		switch kind.Type {
+		case "minecraft:fixed_placement":
+			var modifier struct {
+				Positions [][]int32 `json:"positions"`
+			}
+			if err := json.Unmarshal(raw, &modifier); err != nil {
+				return nil, err
+			}
+			positions := make([]FeaturePosition, len(modifier.Positions))
+			for i, p := range modifier.Positions {
+				if len(p) != 3 {
+					return nil, fmt.Errorf("invalid fixed position for %s", name)
+				}
+				positions[i] = FeaturePosition{p[0], p[1], p[2]}
+			}
+			operations = append(operations, func(origin FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
+				for _, p := range positions {
+					if p.X>>4 == origin.X>>4 && p.Z>>4 == origin.Z>>4 {
+						if err := next(p); err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			})
+		case "minecraft:noise_based_count":
+			var modifier struct {
+				Ratio  int32   `json:"noise_to_count_ratio"`
+				Factor float64 `json:"noise_factor"`
+				Offset float64 `json:"noise_offset"`
+			}
+			if err := json.Unmarshal(raw, &modifier); err != nil {
+				return nil, err
+			}
+			if modifier.Factor <= 0 || modifier.Ratio < 0 {
+				return nil, fmt.Errorf("invalid noise based count for %s", name)
+			}
+			noise := newSimplexNoise(NewLegacyRandom(2345))
+			operations = append(operations, func(p FeaturePosition, r *WorldgenRandom, next positionConsumer) error {
+				count := int32(math.Ceil((noise.sample(float64(p.X)/modifier.Factor, float64(p.Z)/modifier.Factor) + modifier.Offset) * float64(modifier.Ratio)))
+				for i := int32(0); i < count; i++ {
+					if err := next(p); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+		case "minecraft:carving_mask":
+			var modifier struct {
+				Step string `json:"step"`
+			}
+			if err := json.Unmarshal(raw, &modifier); err != nil {
+				return nil, err
+			}
+			// The built-in Overworld has no liquid-step carvers. Its liquid
+			// mask is empty; reading the AIR mask here would add extra grass.
+			if modifier.Step != "liquid" {
+				return nil, fmt.Errorf("unsupported carving mask step %s", modifier.Step)
+			}
+			operations = append(operations, func(FeaturePosition, *WorldgenRandom, positionConsumer) error { return nil })
 		case "minecraft:random_offset":
 			var modifier struct {
 				XZ json.RawMessage `json:"xz_spread"`
@@ -153,7 +213,7 @@ func compilePlacementDefinition(name string, definition PlacedFeatureDefinition)
 				position.Y = height(random)
 				return next(position)
 			})
-		case "minecraft:biome", "minecraft:heightmap", "minecraft:block_predicate_filter", "minecraft:surface_water_depth_filter", "minecraft:environment_scan", "minecraft:surface_relative_threshold_filter":
+		case "minecraft:biome", "minecraft:heightmap", "minecraft:block_predicate_filter", "minecraft:surface_water_depth_filter", "minecraft:environment_scan", "minecraft:surface_relative_threshold_filter", "minecraft:count_on_every_layer":
 			// These need the region or biome source and are bound during execution.
 			operations = append(operations, nil)
 		default:
@@ -204,14 +264,10 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 	template := &placementTemplate{operations: operations}
 	var bindings []placementBinding
 	for i, operation := range operations {
-		if operation != nil {
-			continue
-		}
-		if bindings == nil {
-			bindings = make([]placementBinding, len(operations))
-		}
 		var modifier struct {
 			Type       string          `json:"type"`
+			Height     json.RawMessage `json:"height"`
+			Count      json.RawMessage `json:"count"`
 			Heightmap  string          `json:"heightmap"`
 			Predicate  json.RawMessage `json:"predicate"`
 			WaterDepth int32           `json:"max_water_depth"`
@@ -225,7 +281,65 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 		if err := json.Unmarshal(definition.Placement[i], &modifier); err != nil {
 			return nil, err
 		}
+		if operation != nil && modifier.Type != "minecraft:height_range" {
+			continue
+		}
+		if bindings == nil {
+			bindings = make([]placementBinding, len(operations))
+		}
 		switch modifier.Type {
+		case "minecraft:count_on_every_layer":
+			count, err := decodeFeatureIntProvider(modifier.Count, 0, 256)
+			if err != nil {
+				return nil, err
+			}
+			bindings[i] = func(region *OverworldFeatureRegion, _ func(int32, int32, int32) (string, error)) placementOperation {
+				return func(p FeaturePosition, random *WorldgenRandom, next positionConsumer) error {
+					// This deprecated modifier builds its Stream eagerly. Unlike
+					// flatMap-based modifiers, all candidates consume RNG before
+					// any feature at a candidate runs. The count is sampled anew
+					// at every Java for-loop condition, including the final one.
+					var positions []FeaturePosition
+					for layer := 0; ; layer++ {
+						found := false
+						for i := int32(0); i < count(random); i++ {
+							x, z := p.X+random.NextIntBound(16), p.Z+random.NextIntBound(16)
+							top, err := region.HeightmapAt("MOTION_BLOCKING", x, z)
+							if err != nil {
+								return err
+							}
+							y, exists, err := featureLayerHeight(region, x, top, z, layer)
+							if err != nil {
+								return err
+							}
+							if exists {
+								positions = append(positions, FeaturePosition{x, y, z})
+								found = true
+							}
+						}
+						if !found {
+							break
+						}
+					}
+					for _, position := range positions {
+						if err := next(position); err != nil {
+							return err
+						}
+					}
+					return nil
+				}
+			}
+		case "minecraft:height_range":
+			bindings[i] = func(region *OverworldFeatureRegion, _ func(int32, int32, int32) (string, error)) placementOperation {
+				height, err := decodeFeatureHeightProviderForBounds(modifier.Height, region.MinBuildHeight(), region.GenerationDepth())
+				return func(p FeaturePosition, random *WorldgenRandom, next positionConsumer) error {
+					if err != nil {
+						return err
+					}
+					p.Y = height(random)
+					return next(p)
+				}
+			}
 		case "minecraft:surface_relative_threshold_filter":
 			lower, upper := int32(-2147483648), int32(2147483647)
 			if modifier.Min != nil {
@@ -256,12 +370,19 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 				return nil, fmt.Errorf("biome filter without top-level feature context")
 			}
 			bindings[i] = func(region *OverworldFeatureRegion, biomeAtQuart func(int32, int32, int32) (string, error)) placementOperation {
+				boundOrder := order
+				if region.featureOrder != nil {
+					boundOrder = region.featureOrder
+				}
 				return func(position FeaturePosition, _ *WorldgenRandom, next positionConsumer) error {
-					biome, err := biomeAtQuart(position.X>>2, position.Y>>2, position.Z>>2)
+					// BiomeFilter reads LevelReader.getBiome(BlockPos), which
+					// uses the seeded BiomeManager rather than the raw quart.
+					qx, qy, qz := BiomeQuartAtBlock(region.biomeSeed, position.X, position.Y, position.Z)
+					biome, err := biomeAtQuart(qx, qy, qz)
 					if err != nil {
 						return err
 					}
-					for _, index := range order.biomes[biome][feature.Step] {
+					for _, index := range boundOrder.biomes[biome][feature.Step] {
 						if index == feature.Index {
 							return next(position)
 						}
@@ -276,7 +397,7 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 					if err != nil {
 						return err
 					}
-					if height > -64 {
+					if height > region.MinBuildHeight() {
 						position.Y = height
 						return next(position)
 					}
@@ -351,7 +472,7 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 							return next(position)
 						}
 						position.Y += delta
-						if position.Y < -64 || position.Y >= 320 {
+						if position.Y < region.MinBuildHeight() || position.Y >= region.MaxBuildHeight() {
 							return nil
 						}
 						ok, err = allowed(region, position)
@@ -376,6 +497,31 @@ func compilePlacementTemplate(definition PlacedFeatureDefinition, feature *Place
 	}
 	template.bindings = bindings
 	return template, nil
+}
+
+func featureLayerHeight(region *OverworldFeatureRegion, x, top, z int32, target int) (int32, bool, error) {
+	isEmpty := func(state SurfaceBlockState) bool {
+		return state.Name == "minecraft:air" || state.Name == "minecraft:cave_air" || state.Name == "minecraft:void_air" || state.Name == "minecraft:water" || state.Name == "minecraft:lava"
+	}
+	previous, err := region.BlockAt(FeaturePosition{x, top, z})
+	if err != nil {
+		return 0, false, err
+	}
+	layer := 0
+	for y := top; y >= region.MinBuildHeight()+1; y-- {
+		below, err := region.BlockAt(FeaturePosition{x, y - 1, z})
+		if err != nil {
+			return 0, false, err
+		}
+		if !isEmpty(below) && isEmpty(previous) && below.Name != "minecraft:bedrock" {
+			if layer == target {
+				return y, true, nil
+			}
+			layer++
+		}
+		previous = below
+	}
+	return 0, false, nil
 }
 
 func walkPlacement(operations []placementOperation, random *WorldgenRandom, origin FeaturePosition,

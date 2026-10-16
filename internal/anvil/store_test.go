@@ -4,6 +4,7 @@ import (
 	"atlas/internal/nbt"
 	"encoding/binary"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 )
@@ -45,6 +46,67 @@ func TestStoreConcurrentRegionReadsAndReplacements(t *testing.T) {
 		value, ok := object.Number("xPos")
 		if err != nil || !exists || !ok || value != int64(x) {
 			t.Fatalf("write lost at %d,-1: value=%d exists=%v err=%v", x, value, exists, err)
+		}
+	}
+}
+
+func TestStoresAndPackageFunctionsShareRegionLocks(t *testing.T) {
+	dir := t.TempDir()
+	// Mix equivalent absolute/relative directory names and multiple Store
+	// instances with package functions. Every writer edits a different chunk
+	// in the same region; none of the replacements may lose another edit.
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	relative, err := filepath.Rel(workingDir, dir)
+	if err != nil {
+		// TempDir may be on a different Windows volume than the package.
+		relative = dir + string(os.PathSeparator) + "."
+	}
+	root := func(x int32) nbt.Tag {
+		return nbt.Tag{Type: nbt.Compound, Value: nbt.Object{"xPos": {Type: nbt.Int, Value: x}}}
+	}
+	if err := WriteChunk(dir, 31, 0, "", root(31)); err != nil {
+		t.Fatal(err)
+	}
+	var stores [2]Store
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for x := int32(0); x < 24; x++ {
+		wg.Add(1)
+		go func(x int32) {
+			defer wg.Done()
+			<-start
+			for pass := 0; pass < 3; pass++ {
+				var err error
+				if x%3 == 0 {
+					err = WriteChunk(relative, x, 0, "", root(x))
+				} else {
+					err = stores[x%2].WriteChunk(dir, x, 0, "", root(x))
+				}
+				if err != nil {
+					t.Errorf("write %d: %v", x, err)
+					return
+				}
+				_, got, exists, err := ReadChunk(dir, 31, 0)
+				object, _ := got.Object()
+				value, ok := object.Number("xPos")
+				if err != nil || !exists || !ok || value != 31 {
+					t.Errorf("read preserved chunk: exists=%v value=%d err=%v", exists, value, err)
+					return
+				}
+			}
+		}(x)
+	}
+	close(start)
+	wg.Wait()
+	for x := int32(0); x < 24; x++ {
+		_, got, exists, err := stores[0].ReadChunk(relative, x, 0)
+		object, _ := got.Object()
+		value, ok := object.Number("xPos")
+		if err != nil || !exists || !ok || value != int64(x) {
+			t.Fatalf("write lost at %d,0: value=%d exists=%v err=%v", x, value, exists, err)
 		}
 	}
 }

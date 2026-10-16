@@ -200,3 +200,154 @@ func (set *javaPositionSet) addTree(i int, p FeaturePosition) {
 		return
 	}
 }
+
+func (set *javaPositionSet) removeTreePosition(i int, p FeaturePosition) {
+	if len(set.buckets[i]) == 0 {
+		set.trees[i] = nil
+		return
+	}
+	root := set.trees[i]
+	node := root
+	for node.p != p {
+		if positionTreeLess(p, node.p) {
+			node = node.left
+		} else {
+			node = node.right
+		}
+	}
+	if node.left != nil && node.right != nil {
+		successor := node.right
+		for successor.left != nil {
+			successor = successor.left
+		}
+		// Iteration order is stored independently in buckets. Replacing this
+		// key has the same tree shape/colors as Java's structural node swap.
+		node.p = successor.p
+		node = successor
+	}
+	replacement := node.left
+	if replacement == nil {
+		replacement = node.right
+	}
+	if replacement == nil {
+		replacement = node
+	}
+	if replacement != node {
+		replacement.parent = node.parent
+		if node.parent == nil {
+			root = replacement
+			root.red = false
+		} else if node == node.parent.left {
+			node.parent.left = replacement
+		} else {
+			node.parent.right = replacement
+		}
+		node.left, node.right, node.parent = nil, nil, nil
+	}
+	if !node.red {
+		root = balancePositionDeletion(root, replacement)
+	}
+	if replacement == node {
+		if node.parent != nil {
+			if node == node.parent.left {
+				node.parent.left = nil
+			} else if node == node.parent.right {
+				node.parent.right = nil
+			}
+		}
+		node.parent = nil
+	}
+	set.trees[i] = root
+}
+
+func positionRed(node *javaPositionTree) bool { return node != nil && node.red }
+
+func balancePositionDeletion(root, x *javaPositionTree) *javaPositionTree {
+	for {
+		if x == nil || x == root {
+			return root
+		}
+		p := x.parent
+		if p == nil {
+			x.red = false
+			return x
+		}
+		if x.red {
+			x.red = false
+			return root
+		}
+		if x == p.left {
+			s := p.right
+			if positionRed(s) {
+				s.red = false
+				p.red = true
+				root = rotatePositionLeft(root, p)
+				p = x.parent
+				s = p.right
+			}
+			if s == nil {
+				x = p
+				continue
+			}
+			if !positionRed(s.left) && !positionRed(s.right) {
+				s.red = true
+				x = p
+				continue
+			}
+			if !positionRed(s.right) {
+				if s.left != nil {
+					s.left.red = false
+				}
+				s.red = true
+				root = rotatePositionRight(root, s)
+				p = x.parent
+				s = p.right
+			}
+			if s != nil {
+				s.red = p.red
+				if s.right != nil {
+					s.right.red = false
+				}
+			}
+			p.red = false
+			root = rotatePositionLeft(root, p)
+			x = root
+		} else {
+			s := p.left
+			if positionRed(s) {
+				s.red = false
+				p.red = true
+				root = rotatePositionRight(root, p)
+				p = x.parent
+				s = p.left
+			}
+			if s == nil {
+				x = p
+				continue
+			}
+			if !positionRed(s.left) && !positionRed(s.right) {
+				s.red = true
+				x = p
+				continue
+			}
+			if !positionRed(s.left) {
+				if s.right != nil {
+					s.right.red = false
+				}
+				s.red = true
+				root = rotatePositionLeft(root, s)
+				p = x.parent
+				s = p.left
+			}
+			if s != nil {
+				s.red = p.red
+				if s.left != nil {
+					s.left.red = false
+				}
+			}
+			p.red = false
+			root = rotatePositionRight(root, p)
+			x = root
+		}
+	}
+}

@@ -142,14 +142,9 @@ func newOverworldBiomeSampler(seed int64, settings *DensitySettings) (*Overworld
 }
 
 func (s *OverworldBiomeSampler) BiomeAtQuart(qx, qy, qz int32) (string, error) {
-	fields := [...]string{"temperature", "vegetation", "continents", "erosion", "depth", "ridges"}
-	var climate [6]int64
-	for i, field := range fields {
-		value, err := s.density.Sample(s.settings.Router[field], qx*4, qy*4, qz*4)
-		if err != nil {
-			return "", fmt.Errorf("%s biome climate: %w", field, err)
-		}
-		climate[i] = QuantizeClimate(value)
+	climate, err := s.ClimateAtBlock(qx*4, qy*4, qz*4)
+	if err != nil {
+		return "", err
 	}
 	points, err := OverworldBiomePoints()
 	if err != nil {
@@ -157,4 +152,18 @@ func (s *OverworldBiomeSampler) BiomeAtQuart(qx, qy, qz int32) (string, error) {
 	}
 	s.previous = s.index.nearest(points, climate, s.previous)
 	return points[s.previous].Biome, nil
+}
+
+// ClimateAtBlock samples the six vanilla climate density functions at block
+// coordinates and quantizes them exactly like Climate.Sampler.sample.
+func (s *OverworldBiomeSampler) ClimateAtBlock(x, y, z int32) ([6]int64, error) {
+	var climate [6]int64
+	for i, field := range climateFields {
+		value, err := s.density.Sample(s.settings.Router[field], x, y, z)
+		if err != nil {
+			return climate, fmt.Errorf("%s biome climate: %w", field, err)
+		}
+		climate[i] = QuantizeClimate(value)
+	}
+	return climate, nil
 }

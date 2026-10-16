@@ -29,6 +29,14 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 		return
 	}
 	p := player.New(name, uuid, s.nextEntityID(), fc)
+	if hasSaved {
+		if _, ok := s.WorldInDimension(saved.Dimension); !ok {
+			s.kick(fc, proto.SKickDisconnect, "Saved player dimension is unavailable")
+			return
+		}
+		p.SetInitialDimension(saved.Dimension)
+	}
+	currentWorld := s.PlayerWorld(p)
 	s.setInventory(p, inventory)
 	p.ProfileProperties = properties
 	p.SetSkinParts(skinParts)
@@ -36,11 +44,19 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 		s.kick(fc, proto.SKickDisconnect, "You are already connected to this server")
 		return
 	}
+	p.MovementMu.Lock()
+	joining := true
+	defer func() {
+		if joining {
+			p.MovementMu.Unlock()
+		}
+	}()
 	p.SetViewDistance(s.effectiveViewDistance(viewDist))
 	go p.WriterLoop()
 
 	joined := false
 	defer func() {
+		s.forgetChest(p)
 		s.savePlayer(p)
 		p.Disconnect()
 		s.Hub.Leave(p)
@@ -51,17 +67,16 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 		s.Logf("player left: %s", name)
 	}()
 
-	spawnX, spawnZ := s.World.SpawnXZ()
-	surface, err := s.World.SurfaceY(spawnX, spawnZ)
-	if err != nil {
-		slog.Error("spawn surface unavailable", "error", err)
-		return
-	}
-	groundY := surface - 1
-	px, py, pz := float64(spawnX)+0.5, float64(groundY+1), float64(spawnZ)+0.5
-	yaw, pitch := float32(0), float32(0)
+	// New players join at the stored world spawn point, as vanilla does. The
+	// Y value is kept in level.dat (the boot-time spawn scan refines the
+	// climate-searched placeholder into an exact safe column), so a spawn set
+	// via /setworldspawn — even inside a cave — is honored exactly.
+	spawnX, spawnY, spawnZ, spawnAngle := currentWorld.SpawnPoint()
+	px, py, pz := float64(spawnX)+0.5, float64(spawnY), float64(spawnZ)+0.5
+	yaw, pitch := spawnAngle, float32(0)
 	if hasSaved {
 		px, py, pz = saved.X, saved.Y, saved.Z
+		p.SetPortalCooldown(saved.PortalCooldown)
 		yaw, pitch = saved.Yaw, saved.Pitch
 		p.SetFlying(saved.Flying)
 	}
@@ -74,7 +89,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 	send(proto.SLogin, s.joinGamePayload(p))
 
 	send(proto.SSpawnPosition, proto.NewWriter().
-		I64(proto.PackPosition(spawnX, groundY+1, spawnZ)).F32(0).Payload())
+		I64(proto.PackPosition(spawnX, spawnY, spawnZ)).F32(spawnAngle).Payload())
 	abilityFlags := int8(0x0D)
 	if p.Flying() {
 		abilityFlags |= 0x02
@@ -105,6 +120,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 			select {
 			case <-p.ChunkUpdates:
 				s.updateVisibility(p)
+				s.updateGeneratedEntityVisibility(p)
 			case <-p.Done:
 				return
 			}
@@ -113,7 +129,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 	// The player's current chunk goes out first, including saved positions
 	// away from the boot-prepared spawn area.
 	p.ReserveChunk(cx, cz)
-	if err := s.World.SpawnChunk(p, cx, cz, func(cx, cz int32) {}); err != nil {
+	if err := currentWorld.SpawnChunk(p.WorldPacketSinkInDimension(currentWorld.DimensionName()), cx, cz, func(cx, cz int32) {}); err != nil {
 		slog.Error("player chunk unavailable", "player", p.Name, "x", cx, "z", cz, "error", err)
 		return
 	}
@@ -121,7 +137,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 
 	send(proto.SSystemChat, systemChat("§eWelcome to §b§lAtlas§r§7 — a Go-powered Minecraft server."))
 
-	if warning := s.World.GenerationWarning(); warning != "" {
+	if warning := currentWorld.GenerationWarning(); warning != "" {
 		send(proto.SSystemChat, systemChat("World generation: "+warning))
 	}
 
@@ -140,6 +156,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 				p.SendPacket(proto.SKeepAlive, proto.NewWriter().I64(id).Payload())
 			case <-clock.C:
 				s.sendTime(p)
+				s.validateChestSession(p)
 			case <-p.Done:
 				return
 			}
@@ -149,6 +166,8 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 	s.Logf("player joined: %s (eid %d)", name, p.EID)
 	joined = true
 	s.broadcastPlayerPresence(p.Name, true)
+	joining = false
+	p.MovementMu.Unlock()
 
 	for {
 		fc.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -202,18 +221,23 @@ func (s *Server) effectiveViewDistance(client int32) int32 {
 
 func (s *Server) joinGamePayload(p *player.Player) []byte {
 	w := proto.NewWriter()
-	w.I32(p.EID).Bool(false)                  // entityId, hardcore
-	w.VarInt(1).String("minecraft:overworld") // dimension names
+	w.I32(p.EID).Bool(false) // entityId, hardcore
+	worlds := s.Worlds()
+	w.VarInt(int32(len(worlds)))
+	for _, dimension := range worlds {
+		w.String(dimension.DimensionName())
+	}
 	w.VarInt(int32(s.Cfg.MaxPlayers))
 	w.VarInt(p.ViewDistance()).VarInt(int32(s.Cfg.SimulationDistance))
 	w.Bool(false).Bool(true).Bool(false) // reducedDebug, respawnScreen, limitedCrafting
-	w.VarInt(registry.DimOverworld).String("minecraft:overworld")
-	w.I64(s.World.HashedSeed())          // vanilla BiomeManager seed hash
-	w.I8(1).U8(255)                      // gamemode creative, no previous gamemode
-	w.Bool(false).Bool(s.World.IsFlat()) // debug, flat
-	w.Bool(false)                        // no death location
-	w.VarInt(0)                          // portal cooldown
-	w.Bool(false)                        // enforcesSecureChat
+	currentWorld := s.PlayerWorld(p)
+	w.VarInt(dimensionTypeID(currentWorld.DimensionName())).String(currentWorld.DimensionName())
+	w.I64(currentWorld.HashedSeed())          // vanilla BiomeManager seed hash
+	w.I8(1).U8(255)                           // gamemode creative, no previous gamemode
+	w.Bool(false).Bool(currentWorld.IsFlat()) // debug, flat
+	w.Bool(false)                             // no death location
+	w.VarInt(0)                               // portal cooldown
+	w.Bool(false)                             // enforcesSecureChat
 	return w.Payload()
 }
 
@@ -313,19 +337,23 @@ func (s *Server) handlePlayPacket(p *player.Player, id int32, payload []byte) bo
 
 	case proto.CBlockPlace:
 		s.handlePlace(p, payload)
+	case proto.CInteractEntity:
+		s.handleEntityInteraction(p, payload)
 
 	case proto.CSetCreativeSlot:
 		s.handleCreativeSlot(p, payload)
 	case proto.CContainerClick:
 		s.handleContainerClick(p, payload)
 	case proto.CCloseContainer:
-		if len(payload) == 1 && payload[0] == 0 {
+		if len(payload) == 1 && !s.closeChest(p, payload[0], false) && payload[0] == 0 {
 			s.closeInventory(p)
 		}
 
 	case proto.CHeldItemSlot:
 		if slot, err := proto.NewReader(payload).I16(); err == nil {
+			p.SaveMu.Lock()
 			p.SetHeld(int32(slot))
+			p.SaveMu.Unlock()
 			s.publishEquipment(p)
 		}
 
@@ -435,7 +463,7 @@ func (s *Server) handleMovement(p *player.Player, id int32, payload []byte) {
 		return
 	}
 	if moved {
-		allowed, err := s.World.CanMovePlayer([3]float64{ox, oy, oz}, [3]float64{x, y, z}, playerHeight(p), ground)
+		allowed, err := s.PlayerWorld(p).CanMovePlayer([3]float64{ox, oy, oz}, [3]float64{x, y, z}, playerHeight(p), ground)
 		if !allowed || err != nil {
 			s.Dbg("movement corrected for %s: collision or unavailable terrain (%v)", p.Name, err)
 			s.syncPosition(p)
@@ -496,9 +524,15 @@ func (s *Server) handleChunkChange(p *player.Player) {
 	p.PruneChunks(cx, cz, (vd+2)*(vd+2))
 	s.requestChunksAround(p, cx, cz)
 	s.updateVisibility(p)
+	s.updateGeneratedEntityVisibility(p)
 }
 
 func (s *Server) requestChunksAround(p *player.Player, cx, cz int32) {
+	w := s.PlayerWorld(p)
+	sink := p.WorldPacketSinkInDimension(w.DimensionName())
+	if sink == nil {
+		return
+	}
 	vd := p.ViewDistance()
 	var positions [][2]int32
 	for dx := -vd; dx <= vd; dx++ {
@@ -516,8 +550,8 @@ func (s *Server) requestChunksAround(p *player.Player, cx, cz int32) {
 		return ax*ax+az*az < bx*bx+bz*bz
 	})
 	for _, k := range positions {
-		if p.ReserveChunk(k[0], k[1]) {
-			s.World.RequestChunk(p, k[0], k[1])
+		if sink.ReserveChunk(k[0], k[1]) {
+			w.RequestChunk(sink, k[0], k[1])
 		}
 	}
 }
@@ -538,7 +572,8 @@ func (s *Server) updateVisibilityLocked(p *player.Player) {
 		dx, dz := int64(ocx)-int64(cx), int64(ocz)-int64(cz)
 		d2 := dx*dx + dz*dz
 
-		canSeeOther := p.PlayReady() && o.PlayReady() && d2 <= int64(vd+1)*int64(vd+1) && p.IsChunkSent(ocx, ocz)
+		sameDimension := p.Dimension() == o.Dimension()
+		canSeeOther := sameDimension && p.PlayReady() && o.PlayReady() && d2 <= int64(vd+1)*int64(vd+1) && p.IsChunkSent(ocx, ocz)
 		if canSeeOther && !p.IsVisible(o.EID) {
 			s.spawnPlayerFor(p, o)
 		} else if !canSeeOther && p.IsVisible(o.EID) {
@@ -547,7 +582,7 @@ func (s *Server) updateVisibilityLocked(p *player.Player) {
 		}
 
 		ovd := o.ViewDistance()
-		canSeePlayer := p.PlayReady() && o.PlayReady() && d2 <= int64(ovd+1)*int64(ovd+1) && o.IsChunkSent(cx, cz)
+		canSeePlayer := sameDimension && p.PlayReady() && o.PlayReady() && d2 <= int64(ovd+1)*int64(ovd+1) && o.IsChunkSent(cx, cz)
 		if canSeePlayer && !o.IsVisible(p.EID) {
 			s.spawnPlayerFor(o, p)
 		} else if !canSeePlayer && o.IsVisible(p.EID) {
@@ -575,6 +610,7 @@ func (s *Server) despawnFor(p *player.Player) {
 	s.entityMu.Lock()
 	defer s.entityMu.Unlock()
 	p.SetPlayReady(false)
+	s.clearGeneratedEntityView(p, false)
 	rm := proto.NewWriter().VarInt(1).UUID(p.UUID).Payload()
 	destroy := destroyPayload([]int32{p.EID})
 	s.Hub.Others(p, func(o *player.Player) {
@@ -612,10 +648,11 @@ func (s *Server) handleDig(p *player.Player, payload []byte) {
 	}
 	defer p.SendPacket(proto.SAckBlockChange, proto.NewWriter().VarInt(seq).Payload())
 	position := world.BlockPosition{X: x, Y: y, Z: z}
-	if status == 0 && canReachBlock(p, position) && y >= world.MinY && y < world.MaxY {
-		states, err := s.World.ReadLoadedBlocks([]world.BlockPosition{position})
+	currentWorld := s.PlayerWorld(p)
+	if status == 0 && !p.TeleportPending() && canReachBlock(p, position) && y >= currentWorld.MinBuildHeight() && y < currentWorld.MaxBuildHeight() {
+		states, err := currentWorld.ReadLoadedBlocks([]world.BlockPosition{position})
 		if err == nil {
-			if err := s.World.TryPlaceBlock(position, states[0], world.StateAir, nil); err != nil {
+			if err := currentWorld.TryPlaceBlock(position, states[0], world.StateAir, nil); err != nil {
 				s.Logf("dig failed for %s: %v", p.Name, err)
 			}
 		}

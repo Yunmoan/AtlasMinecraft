@@ -4,14 +4,7 @@
  * Could not load the following classes:
  *  com.google.common.collect.Lists
  *  com.mojang.serialization.MapCodec
- *  ddc
- *  ece
- *  egj
- *  eha
- *  eha$a
- *  ehb
  *  it.unimi.dsi.fastutil.objects.ObjectArrayList
- *  jd
  */
 import com.google.common.collect.Lists;
 import com.mojang.serialization.MapCodec;
@@ -27,14 +20,16 @@ extends eha {
         this.b = $$0;
     }
 
+    @Override
     protected ehb<?> a() {
         return ehb.e;
     }
 
+    @Override
     public void a(eha.a $$0) {
         ArrayList $$12 = Lists.newArrayList();
-        ObjectArrayList $$2 = $$0.e();
-        ObjectArrayList $$3 = $$0.c();
+        ObjectArrayList<jd> $$2 = $$0.e();
+        ObjectArrayList<jd> $$3 = $$0.c();
         if ($$2.isEmpty()) {
             $$12.addAll($$3);
         } else if (!$$3.isEmpty() && ((jd)$$2.get(0)).v() == ((jd)$$3.get(0)).v()) {
@@ -74,7 +69,7 @@ extends eha {
     private void b(eha.a $$0, jd $$1) {
         for (int $$2 = 2; $$2 >= -3; --$$2) {
             jd $$3 = $$1.b($$2);
-            if (ece.a((ddc)$$0.a(), (jd)$$3)) {
+            if (ece.a($$0.a(), $$3)) {
                 $$0.a($$3, this.b.a($$0.b(), $$1));
                 break;
             }

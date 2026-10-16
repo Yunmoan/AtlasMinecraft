@@ -1,6 +1,9 @@
 package worldgen
 
-import "fmt"
+import (
+	"atlas/internal/nbt"
+	"fmt"
+)
 
 type FeatureBlockWorld interface {
 	BlockAt(position FeaturePosition) (SurfaceBlockState, error)
@@ -24,14 +27,24 @@ type featureChunkOverlay struct {
 // OverworldFeatureRegion exposes already-generated neighboring chunks to block
 // features, including edits that cross chunk boundaries.
 type OverworldFeatureRegion struct {
-	chunks         map[featureChunkPosition]*NoiseChunkResult
-	borrowed       map[featureChunkPosition]bool
-	overlays       map[featureChunkPosition]*featureChunkOverlay
-	heights        map[featureColumnPosition]int32
-	motionHeights  map[featureColumnPosition]int32
-	surfaceHeights map[featureColumnPosition]int32
-	biomeSeed      int64
-	biomeAtQuart   func(int32, int32, int32) (string, error)
+	chunks             map[featureChunkPosition]*NoiseChunkResult
+	borrowed           map[featureChunkPosition]bool
+	overlays           map[featureChunkPosition]*featureChunkOverlay
+	heights            map[featureColumnPosition]int32
+	motionHeights      map[featureColumnPosition]int32
+	surfaceHeights     map[featureColumnPosition]int32
+	biomeSeed          int64
+	biomeAtQuart       func(int32, int32, int32) (string, error)
+	biomeBases         map[featureChunkPosition]*overworldBase
+	blockEntities      map[FeaturePosition]featureBlockEntity
+	minY, height       int32
+	generationDepth    int32
+	generationSeaLevel int32
+	treeShuffle        *treeShuffleContext
+	readBrightness     FeatureBrightnessReader
+	featureOrder       *featureOrder
+	pendingEntities    []PendingStructureEntity
+	structureRecording *structureBlockResult
 }
 
 func (region *OverworldFeatureRegion) ScheduleFluidUpdate(p FeaturePosition) error {
@@ -39,11 +52,27 @@ func (region *OverworldFeatureRegion) ScheduleFluidUpdate(p FeaturePosition) err
 }
 
 func NewOverworldFeatureRegion(chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, error) {
+	for _, chunk := range chunks {
+		if chunk == nil || chunk.MinY != -64 || chunk.Height != 384 {
+			return nil, fmt.Errorf("feature region requires complete 1.21.1 overworld chunks")
+		}
+	}
+	return NewFeatureRegion(chunks...)
+}
+
+// NewFeatureRegion binds chunks from one dimension to a common build range.
+// Noise generation bounds (Nether 0..128) can differ from the dimension's
+// actual build height; callers must supply chunks expanded to that range.
+func NewFeatureRegion(chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, error) {
+	if len(chunks) == 0 || chunks[0] == nil {
+		return nil, fmt.Errorf("feature region requires at least one complete chunk")
+	}
 	region := &OverworldFeatureRegion{chunks: make(map[featureChunkPosition]*NoiseChunkResult),
+		minY: chunks[0].MinY, height: chunks[0].Height, generationDepth: chunks[0].Height, generationSeaLevel: 63,
 		heights: make(map[featureColumnPosition]int32), motionHeights: make(map[featureColumnPosition]int32), surfaceHeights: make(map[featureColumnPosition]int32)}
 	for _, chunk := range chunks {
-		if chunk == nil || chunk.MinY != -64 || chunk.Height != 384 || len(chunk.Blocks) != 384*256 {
-			return nil, fmt.Errorf("feature region requires complete 1.21.1 overworld chunks")
+		if chunk == nil || chunk.MinY != region.minY || chunk.Height != region.height || chunk.Height <= 0 || chunk.Height > 4096 || chunk.MinY%16 != 0 || chunk.Height%16 != 0 || len(chunk.Blocks) != int(chunk.Height)*256 {
+			return nil, fmt.Errorf("feature region requires complete chunks with matching dimension bounds")
 		}
 		position := featureChunkPosition{chunk.X, chunk.Z}
 		if region.chunks[position] != nil {
@@ -150,7 +179,7 @@ func (region *OverworldFeatureRegion) HeightmapAt(heightmap string, blockX, bloc
 }
 
 func (region *OverworldFeatureRegion) BlockAt(position FeaturePosition) (SurfaceBlockState, error) {
-	if position.Y < -64 || position.Y >= 320 {
+	if position.Y < region.minY || position.Y >= region.minY+region.height {
 		return SurfaceBlockState{Name: "minecraft:air"}, nil
 	}
 	chunk, err := region.chunkAt(position.X, position.Z)
@@ -168,6 +197,9 @@ func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state S
 	if err != nil {
 		return err
 	}
+	if entity, ok := region.blockEntities[position]; ok && entity.block != state.Name {
+		delete(region.blockEntities, position)
+	}
 	key := featureChunkPosition{position.X >> 4, position.Z >> 4}
 	if region.borrowed[key] {
 		// A sparse write overlay avoids copying the entire surface map and
@@ -184,6 +216,12 @@ func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state S
 		overlay.blocks[index] = state
 	} else {
 		chunk.setSurfaceState(position.X&15, position.Y, position.Z&15, state)
+	}
+	if recording := region.structureRecording; recording != nil {
+		recording.blocks[position] = cloneSurfaceState(state)
+		if entity, ok := recording.blockEntities[position]; ok && entity.block != state.Name {
+			delete(recording.blockEntities, position)
+		}
 	}
 	// Underground ore writes cannot change the top of a column. Invalidating
 	// every heightmap here made each vein scan from Y=319 all over again.
@@ -205,6 +243,9 @@ func (region *OverworldFeatureRegion) MarkPostProcessing(p FeaturePosition) erro
 		return err
 	}
 	index, _ := chunk.Index(p.X&15, p.Y, p.Z&15)
+	if recording := region.structureRecording; recording != nil {
+		recording.postProcessing[p] = true
+	}
 	key := featureChunkPosition{p.X >> 4, p.Z >> 4}
 	if region.borrowed[key] {
 		if region.overlays == nil {
@@ -246,7 +287,65 @@ func (region *OverworldFeatureRegion) cloneChunk(cx, cz int32) *NoiseChunkResult
 
 func (region *OverworldFeatureRegion) InWorld(position FeaturePosition) bool {
 	return position.X > -30000000 && position.X < 30000000 &&
-		position.Z > -30000000 && position.Z < 30000000 && position.Y >= -64 && position.Y < 320
+		position.Z > -30000000 && position.Z < 30000000 && position.Y >= region.minY && position.Y < region.minY+region.height
+}
+
+func (region *OverworldFeatureRegion) MinBuildHeight() int32     { return region.minY }
+func (region *OverworldFeatureRegion) MaxBuildHeight() int32     { return region.minY + region.height }
+func (region *OverworldFeatureRegion) GenerationDepth() int32    { return region.generationDepth }
+func (region *OverworldFeatureRegion) GenerationSeaLevel() int32 { return region.generationSeaLevel }
+func (region *OverworldFeatureRegion) WorldSeed() int64          { return region.biomeSeed }
+
+// The generation stage records entity requests until a runtime entity consumer
+// has saved and spawned them. Recording a request must not set piece flags.
+func (region *OverworldFeatureRegion) AddPendingEntity(entity PendingStructureEntity) error {
+	if !region.InWorld(entity.Position) {
+		return fmt.Errorf("feature entity outside world at %+v", entity.Position)
+	}
+	if entity.Data != nil {
+		entity.Data = cloneFeatureNBT(nbt.Tag{Type: nbt.Compound, Value: entity.Data}).Value.(nbt.Object)
+	}
+	region.pendingEntities = append(region.pendingEntities, entity)
+	if recording := region.structureRecording; recording != nil {
+		recording.pending = append(recording.pending, entity)
+	}
+	return nil
+}
+
+func (region *OverworldFeatureRegion) PendingEntitiesInChunk(cx, cz int32) []PendingStructureEntity {
+	var result []PendingStructureEntity
+	for _, entity := range region.pendingEntities {
+		position := pendingEntityBlockPosition(entity)
+		if position.X>>4 == cx && position.Z>>4 == cz {
+			if entity.Data != nil {
+				entity.Data = cloneFeatureNBT(nbt.Tag{Type: nbt.Compound, Value: entity.Data}).Value.(nbt.Object)
+			}
+			result = append(result, entity)
+		}
+	}
+	return result
+}
+
+func NewDimensionFeatureRegion(generationDepth int32, chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, error) {
+	return NewDimensionFeatureRegionWithSeaLevel(generationDepth, 63, chunks...)
+}
+
+// Sea level belongs to the noise generator, independently of build height.
+// Vanilla 1.21.1 uses 32 in the Nether and 0 in the End.
+func NewDimensionFeatureRegionWithSeaLevel(generationDepth, seaLevel int32, chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, error) {
+	region, err := NewFeatureRegion(chunks...)
+	if err != nil {
+		return nil, err
+	}
+	if generationDepth <= 0 || generationDepth > region.height || generationDepth%16 != 0 {
+		return nil, fmt.Errorf("invalid dimension generation depth %d", generationDepth)
+	}
+	region.generationDepth = generationDepth
+	if seaLevel < region.minY || seaLevel >= region.minY+region.height {
+		return nil, fmt.Errorf("invalid dimension sea level %d", seaLevel)
+	}
+	region.generationSeaLevel = seaLevel
+	return region, nil
 }
 
 func (region *OverworldFeatureRegion) requireNeighborhood(chunkX, chunkZ int32) error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"runtime/metrics"
 	"sort"
 	"strings"
 	"sync"
@@ -191,6 +192,8 @@ func (s *Server) commandPerformance(command string) string {
 	}
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
+	heap := []metrics.Sample{{Name: "/gc/heap/live:bytes"}, {Name: "/gc/heap/goal:bytes"}}
+	metrics.Read(heap)
 	usage, percent, cpuWindow := s.performance.sampleProcess(now)
 	cpu := "unavailable"
 	if usage.cpuOK {
@@ -211,15 +214,16 @@ func (s *Server) commandPerformance(command string) string {
 		fmt.Sprintf("Atlas status: uptime %s; players %d/%d; goroutines %d", now.Sub(s.performance.boot).Round(time.Second), s.Hub.Count(), s.Cfg.MaxPlayers, runtime.NumGoroutine()),
 		stats.tpsText(), stats.msptText(),
 		fmt.Sprintf("Process CPU: %s; logical CPUs: %d; Go parallelism: %d", cpu, runtime.NumCPU(), runtime.GOMAXPROCS(0)),
-		fmt.Sprintf("Memory: heap live %.1f MiB; heap in use %.1f MiB; Go used/reserved %.1f / %.1f MiB; resident working set %s",
+		fmt.Sprintf("Memory: heap allocated %.1f MiB; heap in use %.1f MiB; Go used/reserved %.1f / %.1f MiB; resident working set %s",
 			float64(mem.HeapAlloc)/float64(1<<20), float64(mem.HeapInuse)/float64(1<<20), float64(mem.Sys-mem.HeapReleased)/float64(1<<20), float64(mem.Sys)/float64(1<<20), resident),
 		fmt.Sprintf("GC: %d collections; pause last/total %.3f / %.3f ms", mem.NumGC, float64(lastPause)/1e6, float64(mem.PauseTotalNs)/1e6),
+		fmt.Sprintf("GC heap: live at last collection %.1f MiB; next collection goal %.1f MiB", float64(heap[0].Value.Uint64())/float64(1<<20), float64(heap[1].Value.Uint64())/float64(1<<20)),
 		fmt.Sprintf("Runtime: %s %s/%s; view/simulation distance: %d/%d", runtime.Version(), runtime.GOOS, runtime.GOARCH, s.Cfg.ViewDistance, s.Cfg.SimulationDistance),
 	}
 	if s.World != nil {
 		w := s.World.Stats()
-		lines = append(lines, fmt.Sprintf("World: cached chunks %d; region actors %d; generation active/workers %d/%d; queued jobs %d; mailbox messages %d",
-			w.LoadedChunks, w.Regions, w.ActiveGeneration, w.GenerationWorkers, w.QueuedGeneration, w.MailboxMessages))
+		lines = append(lines, fmt.Sprintf("World: cached chunks %d; light columns %d; region actors %d; generation active/workers %d/%d; queued jobs %d; mailbox messages %d",
+			w.LoadedChunks, w.LightColumns, w.Regions, w.ActiveGeneration, w.GenerationWorkers, w.QueuedGeneration, w.MailboxMessages))
 	}
 	return strings.Join(append(lines, performanceScope), "\n")
 }

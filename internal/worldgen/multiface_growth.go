@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"atlas/internal/blockrules"
 	"atlas/internal/blockstate"
 	_ "embed"
 	"encoding/json"
@@ -54,24 +55,66 @@ func multifaceAttach(e *featureEditor, p FeaturePosition, d int) bool {
 	return multifaceSupport[id]&(1<<uint(d^1)) != 0
 }
 
-func newLichenFace(e *featureEditor, p FeaturePosition, d int) (SurfaceBlockState, bool) {
+func newMultifaceFace(e *featureEditor, p FeaturePosition, d int, block string) (SurfaceBlockState, bool) {
 	s := e.block(p)
-	if s.Name == "minecraft:glow_lichen" && s.Properties[directionNames[d]] == "true" || !multifaceAttach(e, p, d) {
+	if s.Name == block && s.Properties[directionNames[d]] == "true" || !multifaceAttach(e, p, d) {
 		return SurfaceBlockState{}, false
 	}
-	if s.Name != "minecraft:glow_lichen" {
+	if s.Name != block {
 		waterlogged := "false"
-		if hasSourceWater(s) {
+		if hasSourceWater(s) || s.Name == "minecraft:kelp" || s.Name == "minecraft:kelp_plant" || s.Name == "minecraft:seagrass" || s.Name == "minecraft:tall_seagrass" || s.Name == "minecraft:bubble_column" {
 			waterlogged = "true"
 		}
-		s = SurfaceBlockState{Name: "minecraft:glow_lichen", Properties: map[string]string{"down": "false", "up": "false", "north": "false", "south": "false", "west": "false", "east": "false", "waterlogged": waterlogged}}
+		s = SurfaceBlockState{Name: block, Properties: map[string]string{"down": "false", "up": "false", "north": "false", "south": "false", "west": "false", "east": "false", "waterlogged": waterlogged}}
 	}
 	return stateWithProperty(s, directionNames[d], "true"), true
 }
 
-func spreadLichenFace(e *featureEditor, region *OverworldFeatureRegion, r *WorldgenRandom, origin FeaturePosition, face int) {
+func multifaceRules(e *featureEditor, s SurfaceBlockState) blockrules.Rules {
+	id, err := blockstate.BlockStateID(s.Name, s.Properties)
+	if err != nil {
+		e.err = err
+		return blockrules.Rules{}
+	}
+	rules, err := blockrules.Lookup(id)
+	if err != nil {
+		e.err = err
+	}
+	return rules
+}
+
+func canSpreadMultiface(e *featureEditor, origin, target FeaturePosition, face int, block string) bool {
+	s := e.block(target)
+	ordinary := surfaceAir(s) || s.Name == block || s.Name == "minecraft:water" && hasSourceWater(s)
+	if block != "minecraft:sculk_vein" {
+		return ordinary
+	}
+	// SculkVeinSpreaderConfig excludes these support blocks even when their
+	// faces are solid. Its wrap-around path also cannot pass a sturdy face.
+	support := e.block(directionPosition(target, face))
+	if support.Name == "minecraft:sculk" || support.Name == "minecraft:sculk_catalyst" || support.Name == "minecraft:moving_piston" {
+		return false
+	}
+	if abs32(target.X-origin.X)+abs32(target.Y-origin.Y)+abs32(target.Z-origin.Z) == 2 {
+		intermediate := e.block(directionPosition(origin, face^1))
+		if multifaceRules(e, intermediate).FaceSturdy[face] {
+			return false
+		}
+	}
+	// The spreader requires Fluids.WATER exactly. Flowing water has a different
+	// fluid type, even though the initial configured feature can grow in it.
+	if s.Name == "minecraft:lava" || s.Name == "minecraft:water" && !hasSourceWater(s) {
+		return false
+	}
+	if s.Name == "minecraft:fire" || s.Name == "minecraft:soul_fire" {
+		return false
+	}
+	return multifaceRules(e, s).Replaceable || ordinary
+}
+
+func spreadMultifaceFace(e *featureEditor, region *OverworldFeatureRegion, r *WorldgenRandom, origin FeaturePosition, source SurfaceBlockState, face int, block string) {
 	for _, dir := range shuffledDirections(r, []int{0, 1, 2, 3, 4, 5}) {
-		if dir/2 == face/2 {
+		if dir/2 == face/2 || source.Properties[directionNames[dir]] == "true" {
 			continue
 		}
 		candidates := []struct {
@@ -79,11 +122,10 @@ func spreadLichenFace(e *featureEditor, region *OverworldFeatureRegion, r *World
 			d int
 		}{{origin, dir}, {directionPosition(origin, dir), face}, {directionPosition(directionPosition(origin, dir), face), dir ^ 1}}
 		for _, candidate := range candidates {
-			s := e.block(candidate.p)
-			if !(surfaceAir(s) || s.Name == "minecraft:glow_lichen" || s.Name == "minecraft:water" && hasSourceWater(s)) {
+			if !canSpreadMultiface(e, origin, candidate.p, candidate.d, block) {
 				continue
 			}
-			state, ok := newLichenFace(e, candidate.p, candidate.d)
+			state, ok := newMultifaceFace(e, candidate.p, candidate.d, block)
 			if !ok {
 				continue
 			}
@@ -110,7 +152,7 @@ func compileMultifaceGrowthPlan(def ConfiguredFeatureDefinition) (configuredFeat
 	if err := json.Unmarshal(def.Config, &c); err != nil {
 		return nil, err
 	}
-	if c.Block != "minecraft:glow_lichen" || c.Search < 1 || c.Search > 64 || c.Spread < 0 || c.Spread > 1 {
+	if c.Block != "minecraft:glow_lichen" && c.Block != "minecraft:sculk_vein" || c.Search < 1 || c.Search > 64 || c.Spread < 0 || c.Spread > 1 {
 		return nil, fmt.Errorf("unsupported multiface configuration")
 	}
 	allowed := map[string]bool{}
@@ -137,7 +179,7 @@ func compileMultifaceGrowthPlan(def ConfiguredFeatureDefinition) (configuredFeat
 				if !allowed[e.block(directionPosition(q, dir)).Name] {
 					continue
 				}
-				state, ok := newLichenFace(&e, q, dir)
+				state, ok := newMultifaceFace(&e, q, dir, c.Block)
 				if !ok {
 					return false
 				}
@@ -147,7 +189,7 @@ func compileMultifaceGrowthPlan(def ConfiguredFeatureDefinition) (configuredFeat
 					return false
 				}
 				if r.NextFloat() < c.Spread {
-					spreadLichenFace(&e, region, r, q, dir)
+					spreadMultifaceFace(&e, region, r, q, state, dir, c.Block)
 				}
 				return true
 			}
@@ -169,7 +211,7 @@ func compileMultifaceGrowthPlan(def ConfiguredFeatureDefinition) (configuredFeat
 			q := directionPosition(p, dir)
 			for i := int32(0); i < c.Search; i++ {
 				s := e.block(q)
-				if !dripstoneSpace(s) && s.Name != "minecraft:glow_lichen" {
+				if !dripstoneSpace(s) && s.Name != c.Block {
 					break
 				}
 				if try(q, others) {

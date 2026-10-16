@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 // PacketSink is anything that can accept an encoded clientbound packet.
@@ -103,6 +104,18 @@ type surfaceQuery struct {
 	result chan surfaceResult
 }
 
+type spawnScanResult struct {
+	x, y, z int32
+	ok      bool
+}
+
+// spawnScanQuery asks the owning actor to run the vanilla spawn column scan
+// over one loaded chunk. Unloaded chunks report ok=false without generating.
+type spawnScanQuery struct {
+	cx, cz int32
+	result chan spawnScanResult
+}
+
 type saveRegion struct{ result chan error }
 
 type setBlockMsg struct {
@@ -146,6 +159,12 @@ func (r *Region) run() {
 		default:
 		}
 		switch msg := m.(type) {
+		case containerQuery:
+			r.containerQuery(msg)
+		case entityQuery:
+			r.entitiesInChunk(msg)
+		case armorStandQuery:
+			r.interactArmorStand(msg)
 		case generationCanceled:
 			k := chunkKey{msg.cx, msg.cz}
 			delete(r.genQueued, k)
@@ -163,8 +182,17 @@ func (r *Region) run() {
 			}
 		case lightChanged:
 			if ch := r.chunks[chunkKey{msg.cx, msg.cz}]; ch != nil {
-				r.applyLight(ch, msg.data, true)
+				// A queued notification may belong to an earlier load of this
+				// coordinate. Only publish the engine's current snapshot.
+				data := msg.data
+				if r.world.lighting != nil {
+					data = r.world.lighting.Snapshot(light.Position{X: msg.cx, Z: msg.cz})
+				}
+				r.applyLight(ch, data, true)
 			}
+		case unloadRegion:
+			count, err := r.unloadUnused(msg.cutoff)
+			msg.result <- unloadResult{count, err}
 		case blockRead:
 			states := make([]uint32, len(msg.Positions))
 			var err error
@@ -175,8 +203,11 @@ func (r *Region) run() {
 					break
 				}
 				states[i] = ch.GetBlock(int(p.X&15), int(p.Z&15), p.Y)
+				ch.lastAccess = time.Now()
 			}
 			msg.Result <- blockReadResult{States: states, Err: err}
+		case portalChunkQuery:
+			msg.result <- r.portalChunkSnapshot(msg)
 		case saveRegion:
 			msg.result <- r.saveChunks()
 		case chunkEnsure:
@@ -186,6 +217,7 @@ func (r *Region) run() {
 				continue
 			}
 			if r.chunks[k] != nil {
+				r.chunks[k].lastAccess = time.Now()
 				msg.result <- nil
 				continue
 			}
@@ -203,6 +235,7 @@ func (r *Region) run() {
 				continue
 			}
 			if ch := r.chunks[k]; ch != nil {
+				ch.lastAccess = time.Now()
 				deliverChunk(msg.to, msg.cx, msg.cz, r.packets.packet(ch))
 				continue
 			}
@@ -216,6 +249,7 @@ func (r *Region) run() {
 				continue
 			}
 			if ch := r.chunks[k]; ch != nil {
+				ch.lastAccess = time.Now()
 				msg.result <- chunkResult{payload: r.packets.packet(ch)}
 				continue
 			}
@@ -229,11 +263,22 @@ func (r *Region) run() {
 				continue
 			}
 			if ch := r.chunks[k]; ch != nil {
+				ch.lastAccess = time.Now()
 				msg.result <- surfaceResult{y: ch.Height(int(msg.x&15), int(msg.z&15))}
 				continue
 			}
 			r.pendingSurfaces[k] = append(r.pendingSurfaces[k], msg)
 			r.queueGeneration(k)
+
+		case spawnScanQuery:
+			k := chunkKey{msg.cx, msg.cz}
+			if ch := r.chunks[k]; ch != nil {
+				ch.lastAccess = time.Now()
+				x, y, z, ok := findSafeSpawnColumn(ch)
+				msg.result <- spawnScanResult{x: x, y: y, z: z, ok: ok}
+				continue
+			}
+			msg.result <- spawnScanResult{}
 
 		case chunkGenerated:
 			k := chunkKey{msg.cx, msg.cz}
@@ -273,6 +318,7 @@ func (r *Region) run() {
 				r.world.loadedChunks.Add(1)
 			}
 			r.chunks[k] = msg.chunk
+			msg.chunk.lastAccess = time.Now()
 			if r.world.lighting != nil {
 				r.applyLight(msg.chunk, r.world.lighting.Snapshot(light.Position{X: msg.cx, Z: msg.cz}), false)
 			}
@@ -316,6 +362,7 @@ func (r *Region) run() {
 				continue
 			}
 			msg.result <- r.applyBlockEdit(ch, msg)
+			ch.lastAccess = time.Now()
 		}
 	}
 }
@@ -324,6 +371,7 @@ func (r *Region) saveChunks() error {
 	var combined error
 	if r.world.store != nil {
 		for key, ch := range r.chunks {
+			r.world.store.vanilla.refreshStrongholdFlags(ch)
 			if r.world.lighting != nil {
 				r.applyLight(ch, r.world.lighting.Snapshot(light.Position{X: key.x, Z: key.z}), false)
 			}

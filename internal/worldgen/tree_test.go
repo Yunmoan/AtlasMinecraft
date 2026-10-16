@@ -45,6 +45,21 @@ func (w *treeProbeWorld) BlockAt(p FeaturePosition) (SurfaceBlockState, error) {
 	if w.scenario == 10 && p.Y >= 41 && p.Y <= 44 {
 		return SurfaceBlockState{Name: "minecraft:water", Properties: map[string]string{"level": "1"}}, nil
 	}
+	if w.scenario >= 15 && p.Y == 40 {
+		name = "minecraft:mud"
+	}
+	if w.scenario >= 15 && p.Y <= 39 {
+		name = "minecraft:dirt"
+	}
+	if w.scenario == 16 && p.Y >= 41 && p.Y <= 44 {
+		name = "minecraft:water"
+	}
+	if w.scenario == 17 && p.Y >= 41 && p.Y <= 44 {
+		return SurfaceBlockState{Name: "minecraft:water", Properties: map[string]string{"level": "1"}}, nil
+	}
+	if w.scenario == 18 && p.X == w.origin.X && p.Z == w.origin.Z && p.Y == 42 {
+		name = "minecraft:stone"
+	}
 	if w.scenario == 7 && p.X == w.origin.X+1 && p.Z == w.origin.Z && p.Y >= 43 && p.Y <= 45 {
 		name = "minecraft:oak_leaves"
 		if p.Y == 43 {
@@ -66,7 +81,32 @@ func (w *treeProbeWorld) SetBlock(p FeaturePosition, state SurfaceBlockState) er
 func (w *treeProbeWorld) InWorld(p FeaturePosition) bool { return p.Y >= -64 && p.Y < 320 }
 
 func TestTreeFeaturesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/tree_feature_1.21.1.txt")
+	testTreeFeaturesAgainstVanillaJAR(t, "tree_feature_1.21.1.txt", 600, false)
+}
+
+func TestDecoratedTreeFeaturesAgainstVanillaJAR(t *testing.T) {
+	testTreeFeaturesAgainstVanillaJAR(t, "decorated_tree_feature_1.21.1.txt", 840, true)
+}
+
+func TestGiantTreeFeaturesAgainstVanillaJAR(t *testing.T) {
+	testTreeFeaturesAgainstVanillaJAR(t, "giant_tree_feature_1.21.1.txt", 600, false)
+}
+
+func TestBranchingTreeFeaturesAgainstVanillaJAR(t *testing.T) {
+	testTreeFeaturesAgainstVanillaJAR(t, "branching_tree_feature_1.21.1.txt", 240, false)
+}
+
+func TestCherryTreeFeaturesAgainstVanillaJAR(t *testing.T) {
+	testTreeFeaturesAgainstVanillaJAR(t, "cherry_tree_feature_1.21.1.txt", 240, true)
+}
+
+func TestMangroveTreeFeaturesAgainstVanillaJAR(t *testing.T) {
+	testTreeFeaturesAgainstVanillaJAR(t, "mangrove_tree_feature_1.21.1.txt", 304, true)
+}
+
+func testTreeFeaturesAgainstVanillaJAR(t *testing.T, fixture string, expected int, decorated bool) {
+	t.Helper()
+	file, err := os.Open("../../docs/worldgen/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,6 +130,15 @@ func TestTreeFeaturesAgainstVanillaJAR(t *testing.T) {
 			t.Fatal(err)
 		}
 		origin := FeaturePosition{int32(parse(fields[4])), int32(parse(fields[5])), int32(parse(fields[6]))}
+		if decorated {
+			independent := NewLegacyRandom(parse(fields[2]) ^ 0x123456789abcdef0)
+			config = config.WithBeehiveShuffle(func(p []FeaturePosition) {
+				for i := len(p); i > 1; i-- {
+					j := independent.NextIntBound(int32(i))
+					p[i-1], p[j] = p[j], p[i-1]
+				}
+			})
+		}
 		w := &treeProbeWorld{changed: make(map[FeaturePosition]SurfaceBlockState), origin: origin, scenario: int(parse(fields[3]))}
 		random := NewWorldgenRandom(parse(fields[2]))
 		placed, err := PlaceTreeFeature(w, random, origin, config)
@@ -115,15 +164,35 @@ func TestTreeFeaturesAgainstVanillaJAR(t *testing.T) {
 	if err := scanner.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if cases != 600 {
-		t.Fatalf("got %d tree cases, want 600", cases)
+	if cases != expected {
+		t.Fatalf("got %d tree cases, want %d", cases, expected)
 	}
 }
 
 func TestUnsupportedTreeConfigurationsRejected(t *testing.T) {
-	for _, name := range []string{"minecraft:oak_bees_0002", "minecraft:dark_oak", "minecraft:mega_spruce", "minecraft:mangrove"} {
+	for _, name := range []string{"minecraft:crimson_fungus", "minecraft:missing_tree"} {
 		if _, err := LoadTreeConfiguration(name); err == nil {
 			t.Fatalf("unsupported tree %s was accepted", name)
 		}
+	}
+}
+
+func TestVanillaTreeConfigurationCatalog(t *testing.T) {
+	definitions, err := loadFeatureDefinitions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for name, definition := range definitions.Configured {
+		if definition.Type != "minecraft:tree" {
+			continue
+		}
+		if _, err := LoadTreeConfiguration(name); err != nil {
+			t.Errorf("vanilla configured tree %s: %v", name, err)
+		}
+		count++
+	}
+	if count != 31 {
+		t.Fatalf("got %d vanilla tree definitions, want 31", count)
 	}
 }

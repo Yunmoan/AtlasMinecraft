@@ -12,6 +12,14 @@ type BlendedNoise struct {
 
 func NewBlendedNoise(worldSeed int64, xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier float64) *BlendedNoise {
 	random := NewXoroshiro(worldSeed).ForkPositional().FromHashOf("minecraft:terrain")
+	return newBlendedNoise(random, xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier)
+}
+
+func newLegacyBlendedNoise(worldSeed int64, xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier float64) *BlendedNoise {
+	return newBlendedNoise(NewLegacyRandom(worldSeed), xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier)
+}
+
+func newBlendedNoise(random octaveRandom, xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier float64) *BlendedNoise {
 	b := &BlendedNoise{
 		xzMultiplier:         684.412 * xzScale,
 		yMultiplier:          684.412 * yScale,
@@ -25,11 +33,11 @@ func NewBlendedNoise(worldSeed int64, xzScale, yScale, xzFactor, yFactor, smearS
 	return b
 }
 
-func fillBlendedOctaves(random *Xoroshiro, octaves []*ImprovedNoise) {
+func fillBlendedOctaves(random octaveRandom, octaves []*ImprovedNoise) {
 	// PerlinNoise.create(random, IntStream.rangeClosed(-N+1, 0)) builds
 	// octave zero first and then walks toward the lowest octave.
 	for i := len(octaves) - 1; i >= 0; i-- {
-		octaves[i] = NewImprovedNoise(random)
+		octaves[i] = newImprovedNoise(random)
 	}
 }
 

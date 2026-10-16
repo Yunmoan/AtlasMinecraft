@@ -41,14 +41,39 @@ func createJavaWorld(dir string, requestedSeed *int64, flat bool) error {
 		}
 		seed = int64(binary.LittleEndian.Uint64(raw[:]))
 	}
+	// Vanilla selects the initial spawn chunk with the climate-based search
+	// (Climate$SpawnFinder) before any chunk exists; the boot-time scan then
+	// refines the exact column. Flat worlds keep column (0,0), where the
+	// spawn scan always succeeds on the stock layers.
+	spawnX, spawnZ := int32(0), int32(0)
+	if !flat {
+		x, z, err := worldgen.FindSpawnPosition(seed)
+		if err != nil {
+			return err
+		}
+		// setInitialSpawn's fallback stores the center block of the selected
+		// chunk at generator spawn height (sea level + 1).
+		spawnX, spawnZ = (x>>4)*16+8, (z>>4)*16+8
+	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	root := newWorldLevel(filepath.Base(filepath.Clean(dir)), seed, flat)
+	root := newWorldLevelAt(filepath.Base(filepath.Clean(dir)), seed, flat, spawnX, spawnZ)
+	if !flat {
+		levelRoot, _ := root.Object()
+		level, _ := levelRoot.Object("Data")
+		if _, _, err := savedBeehiveShuffleSalt(level); err != nil {
+			return err
+		}
+	}
 	return writeGzipNBTAtomic(filepath.Join(dir, "level.dat"), "", root)
 }
 
 func newWorldLevel(name string, seed int64, flat bool) nbt.Tag {
+	return newWorldLevelAt(name, seed, flat, 0, 0)
+}
+
+func newWorldLevelAt(name string, seed int64, flat bool, spawnX, spawnZ int32) nbt.Tag {
 	stringTag := func(value string) nbt.Tag { return nbt.Tag{Type: nbt.String, Value: value} }
 	compoundTag := func(value nbt.Object) nbt.Tag { return nbt.Tag{Type: nbt.Compound, Value: value} }
 	byteTag := func(value int8) nbt.Tag { return nbt.Tag{Type: nbt.Byte, Value: value} }
@@ -107,8 +132,9 @@ func newWorldLevel(name string, seed int64, flat bool) nbt.Tag {
 		}),
 	}
 	spawnY := int32(64)
-	// Structure starts are not implemented yet; record them as disabled.
-	features := int8(0)
+	// New normal worlds enable supported starts and pieces. Coverage remains
+	// explicit in AtlasWorldgen until all original structure families exist.
+	features := int8(1)
 	if flat {
 		spawnY = -60
 		features = 0
@@ -123,8 +149,8 @@ func newWorldLevel(name string, seed int64, flat bool) nbt.Tag {
 		"LevelName": stringTag(name), "initialized": byteTag(1),
 		"LastPlayed": {Type: nbt.Long, Value: time.Now().UnixMilli()},
 		"Time":       {Type: nbt.Long, Value: int64(0)}, "DayTime": {Type: nbt.Long, Value: int64(6000)},
-		"SpawnX": {Type: nbt.Int, Value: int32(0)}, "SpawnY": {Type: nbt.Int, Value: spawnY},
-		"SpawnZ": {Type: nbt.Int, Value: int32(0)}, "SpawnAngle": {Type: nbt.Float, Value: float32(0)},
+		"SpawnX": {Type: nbt.Int, Value: spawnX}, "SpawnY": {Type: nbt.Int, Value: spawnY},
+		"SpawnZ": {Type: nbt.Int, Value: spawnZ}, "SpawnAngle": {Type: nbt.Float, Value: float32(0)},
 		"raining": byteTag(0), "thundering": byteTag(0),
 		"Difficulty": byteTag(2), "DifficultyLocked": byteTag(0),
 		"GameType": {Type: nbt.Int, Value: int32(1)}, "hardcore": byteTag(0),

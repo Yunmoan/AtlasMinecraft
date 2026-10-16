@@ -31,11 +31,7 @@ func chunkIndex(cx, cz int32) int { return int(cz&31)*32 + int(cx&31) }
 // ReadChunk reads a named-root chunk NBT compound. Missing region files and
 // empty location entries are reported as exists=false.
 func ReadChunk(dir string, cx, cz int32) (string, nbt.Tag, bool, error) {
-	kind, compressed, exists, err := readChunkRecord(dir, cx, cz)
-	if err != nil || !exists {
-		return "", nbt.Tag{}, false, err
-	}
-	return decodeChunkRecord(kind, compressed, cx, cz)
+	return defaultStore.ReadChunk(dir, cx, cz)
 }
 
 // Read only the location, record header and compressed payload. Close all
@@ -163,11 +159,7 @@ func decompress(kind byte, b []byte) ([]byte, error) {
 // preserved by the nbt tree. The caller must not concurrently edit the same
 // region from another process.
 func WriteChunk(dir string, cx, cz int32, name string, root nbt.Tag) error {
-	payload, err := encodeChunkRecord(name, root)
-	if err != nil {
-		return err
-	}
-	return writeChunkRecord(dir, cx, cz, payload)
+	return defaultStore.WriteChunk(dir, cx, cz, name, root)
 }
 
 var chunkCompressors = sync.Pool{New: func() any { return zlib.NewWriter(io.Discard) }}
@@ -198,69 +190,130 @@ func encodeChunkRecord(name string, root nbt.Tag) ([]byte, error) {
 	return payload, nil
 }
 
-func writeChunkRecord(dir string, cx, cz int32, payload []byte) error {
+func writeChunkRecord(dir string, cx, cz int32, payload []byte) (err error) {
 	path := regionPath(dir, cx, cz)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err = os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	old, err := os.ReadFile(path)
+	var header [2 * sector]byte
+	var source *os.File
+	var size int64
+	source, err = os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
-		old = make([]byte, 2*sector)
+		source, err = nil, nil
 	} else if err != nil {
 		return err
 	}
-	if len(old) < 2*sector || len(old) > maxRegionBytes {
-		return errors.New("invalid existing region size")
+	if source != nil {
+		defer func() {
+			if source != nil {
+				source.Close()
+			}
+		}()
+		info, statErr := source.Stat()
+		if statErr != nil {
+			return statErr
+		}
+		size = info.Size()
+		if size < 2*sector || size > maxRegionBytes {
+			return errors.New("invalid existing region size")
+		}
+		if _, err = source.ReadAt(header[:], 0); err != nil {
+			return err
+		}
 	}
+	// Validate and plan the complete replacement before creating it. Only the
+	// two-sector header and a fixed copy buffer live in memory, regardless of
+	// how much of this region has been explored.
+	oldHeader := header
+	clear(header[:sector])
 	idx := chunkIndex(cx, cz)
-	newRegion := make([]byte, 2*sector)
-	copy(newRegion[sector:2*sector], old[sector:2*sector])
+	nextSector := 2
 	for i := 0; i < 1024; i++ {
 		if i == idx {
 			continue
 		}
-		loc := binary.BigEndian.Uint32(old[i*4 : i*4+4])
+		loc := binary.BigEndian.Uint32(oldHeader[i*4:])
 		if loc == 0 {
 			continue
 		}
-		off, count := int(loc>>8), int(loc&255)
-		if off < 2 || count < 1 || off*sector+5 > len(old) {
+		offset, count := int(loc>>8), int(loc&255)
+		if offset < 2 || count < 1 || int64(offset*sector+5) > size {
 			return fmt.Errorf("invalid existing chunk entry %d", i)
 		}
-		newOff := len(newRegion) / sector
-		if newOff > 0xffffff {
-			return errors.New("region offset overflow")
-		}
-		raw := make([]byte, count*sector)
-		copy(raw, old[off*sector:min((off+count)*sector, len(old))])
-		newRegion = append(newRegion, raw...)
-		binary.BigEndian.PutUint32(newRegion[i*4:i*4+4], uint32(newOff<<8|count))
+		binary.BigEndian.PutUint32(header[i*4:], uint32(nextSector<<8|count))
+		nextSector += count
 	}
-	newOff := len(newRegion) / sector
 	count := (len(payload) + 5 + sector - 1) / sector
-	if newOff > 0xffffff || len(newRegion)+count*sector > maxRegionBytes {
+	if count > 255 || (nextSector+count)*sector > maxRegionBytes {
 		return errors.New("region exceeds size limit")
 	}
-	record := make([]byte, count*sector)
-	binary.BigEndian.PutUint32(record[:4], uint32(len(payload)+1))
-	record[4] = 2
-	copy(record[5:], payload)
-	newRegion = append(newRegion, record...)
-	binary.BigEndian.PutUint32(newRegion[idx*4:idx*4+4], uint32(newOff<<8|count))
-	binary.BigEndian.PutUint32(newRegion[sector+idx*4:sector+idx*4+4], uint32(time.Now().Unix()))
+	binary.BigEndian.PutUint32(header[idx*4:], uint32(nextSector<<8|count))
+	binary.BigEndian.PutUint32(header[sector+idx*4:], uint32(time.Now().Unix()))
 	tmp, err := os.CreateTemp(dir, "atlas-region-*.tmp")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
-	if _, err = tmp.Write(newRegion); err == nil {
-		err = tmp.Sync()
-	}
-	if e := tmp.Close(); err == nil {
-		err = e
-	}
-	if err != nil {
+	defer func() {
+		tmp.Close()
+		os.Remove(tmp.Name())
+	}()
+	if _, err = tmp.Write(header[:]); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), path)
+	buffer := make([]byte, 64<<10)
+	var zeros [sector]byte
+	writeZeros := func(n int64) error {
+		for n > 0 {
+			length := min(n, int64(len(zeros)))
+			if _, err := tmp.Write(zeros[:length]); err != nil {
+				return err
+			}
+			n -= length
+		}
+		return nil
+	}
+	for i := 0; i < 1024; i++ {
+		loc := binary.BigEndian.Uint32(oldHeader[i*4:])
+		if i == idx || loc == 0 {
+			continue
+		}
+		at, length := int64(loc>>8)*sector, int64(loc&255)*sector
+		available := min(length, size-at)
+		// Hide File.ReadFrom: its fallback allocates a fresh copy buffer for
+		// every record instead of using our shared one.
+		if _, err = io.CopyBuffer(struct{ io.Writer }{tmp}, io.NewSectionReader(source, at, available), buffer); err != nil {
+			return err
+		}
+		// Retain the previous writer's zero padding for a partial final sector.
+		if err = writeZeros(length - available); err != nil {
+			return err
+		}
+	}
+	var recordHeader [5]byte
+	binary.BigEndian.PutUint32(recordHeader[:4], uint32(len(payload)+1))
+	recordHeader[4] = 2
+	if _, err = tmp.Write(recordHeader[:]); err != nil {
+		return err
+	}
+	if _, err = tmp.Write(payload); err != nil {
+		return err
+	}
+	if err = writeZeros(int64(count*sector - len(payload) - 5)); err != nil {
+		return err
+	}
+	if err = tmp.Sync(); err != nil {
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+	// Windows cannot replace a region while its source handle is still open.
+	if source != nil {
+		if err = source.Close(); err != nil {
+			return err
+		}
+		source = nil
+	}
+	return replaceRegionFile(tmp.Name(), path)
 }

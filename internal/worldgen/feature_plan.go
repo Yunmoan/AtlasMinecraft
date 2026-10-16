@@ -23,6 +23,54 @@ func compileConfiguredFeaturePlan(name string, definition ConfiguredFeatureDefin
 		return nil, fmt.Errorf("feature nesting is too deep")
 	}
 	switch definition.Type {
+	case "minecraft:fossil":
+		return compileFossilPlan(definition)
+	case "minecraft:sculk_patch":
+		return compileSculkPatchPlan(definition)
+	case "minecraft:nether_forest_vegetation":
+		return compileNetherForestPlan(definition)
+	case "minecraft:huge_fungus":
+		return compileHugeFungusPlan(definition)
+	case "minecraft:twisting_vines":
+		return compileTwistingVinesPlan(definition)
+	case "minecraft:weeping_vines":
+		return compileWeepingVinesPlan(definition)
+	case "minecraft:glowstone_blob":
+		return compileGlowstonePlan(definition)
+	case "minecraft:basalt_columns":
+		return compileBasaltColumnsPlan(definition)
+	case "minecraft:basalt_pillar":
+		return compileBasaltPillarPlan(definition)
+	case "minecraft:delta_feature":
+		return compileDeltaPlan(definition)
+	case "minecraft:netherrack_replace_blobs":
+		return compileReplaceBlobsPlan(definition)
+	case "minecraft:scattered_ore":
+		return compileScatteredOrePlan(name, definition)
+	case "minecraft:end_island":
+		return compileEndIslandPlan(definition)
+	case "minecraft:end_platform":
+		return compileEndPlatformPlan(definition)
+	case "minecraft:end_gateway":
+		return compileEndGatewayPlan(definition)
+	case "minecraft:chorus_plant":
+		return compileChorusPlantPlan(definition)
+	case "minecraft:end_spike":
+		return compileEndSpikePlan(definition)
+	case "minecraft:monster_room":
+		return PlaceMonsterRoomFeature, nil
+	case "minecraft:desert_well":
+		return func(region *OverworldFeatureRegion, r *WorldgenRandom, p FeaturePosition) (bool, error) {
+			return PlaceDesertWellFeature(region, r, p)
+		}, nil
+	case "minecraft:bamboo":
+		return compileBambooPlan(definition)
+	case "minecraft:block_pile":
+		return compileBlockPilePlan(definition)
+	case "minecraft:iceberg":
+		return compileIcebergPlan(definition)
+	case "minecraft:seagrass", "minecraft:sea_pickle", "minecraft:kelp", "minecraft:coral_tree", "minecraft:coral_claw", "minecraft:coral_mushroom":
+		return compileOceanPlan(definition)
 	case "minecraft:geode":
 		return compileGeodePlan(definition)
 	case "minecraft:lake":
@@ -114,7 +162,14 @@ func compileConfiguredFeaturePlan(name string, definition ConfiguredFeatureDefin
 			return nil, err
 		}
 		return func(region *OverworldFeatureRegion, random *WorldgenRandom, p FeaturePosition) (bool, error) {
-			return PlaceTreeFeature(region, random, p, config)
+			invocation := config
+			if config.HasBeehiveDecorator() {
+				if region.treeShuffle == nil {
+					return false, fmt.Errorf("tree %s requires frozen independent beehive shuffle for neighboring decoration replay", name)
+				}
+				invocation = config.WithBeehiveShuffle(region.treeShuffle.forTree(name, p, random))
+			}
+			return PlaceTreeFeature(region, random, p, invocation)
 		}, nil
 	case "minecraft:random_selector":
 		var selector struct {

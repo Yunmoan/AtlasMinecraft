@@ -18,6 +18,8 @@ const (
 	NoiseRawCopper
 	NoiseDeepslateIronOre
 	NoiseRawIron
+	NoiseNetherrack
+	NoiseEndStone
 )
 
 func (material NoiseMaterial) BlockName() string {
@@ -25,6 +27,7 @@ func (material NoiseMaterial) BlockName() string {
 		"minecraft:air", "minecraft:stone", "minecraft:water", "minecraft:lava",
 		"minecraft:granite", "minecraft:tuff", "minecraft:copper_ore", "minecraft:raw_copper_block",
 		"minecraft:deepslate_iron_ore", "minecraft:raw_iron_block",
+		"minecraft:netherrack", "minecraft:end_stone",
 	}
 	if int(material) >= len(names) {
 		return ""
@@ -64,18 +67,37 @@ func NewOverworldNoiseGenerator(seed int64) (*OverworldNoiseGenerator, error) {
 }
 
 func (generator *OverworldNoiseGenerator) GenerateNoise(cx, cz int32) (*NoiseChunkResult, error) {
+	return generateNoiseChunk(generator.seed, generator.settings, cx, cz, nil)
+}
+
+func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, beard *StructureBeardifier) (*NoiseChunkResult, error) {
 	if cx < -1875000 || cx >= 1875000 || cz < -1875000 || cz >= 1875000 {
 		return nil, fmt.Errorf("noise chunk %d,%d is outside vanilla's horizontal bounds", cx, cz)
 	}
-	settings := generator.settings
-	sampler := NewNoiseChunkDensitySampler(generator.seed, settings, cx, cz)
+	sampler := NewNoiseChunkDensitySampler(seed, settings, cx, cz)
+	sampler.beardifier = beard
+	finalDensity := settings.Router["final_density"]
+	if beard != nil {
+		finalDensity = &DensityNode{Kind: "add", Children: map[string]*DensityNode{
+			"argument1": finalDensity, "argument2": {Kind: "beardifier"},
+		}}
+		finalDensity.Children["argument2"].evaluation = prepareDensityEvaluation(finalDensity.Children["argument2"])
+		finalDensity.evaluation = prepareDensityEvaluation(finalDensity)
+	}
 	density := &DensityNode{Kind: "cache_all_in_cell", Children: map[string]*DensityNode{
-		"argument": settings.Router["final_density"],
+		"argument": finalDensity,
 	}}
 	density.evaluation = prepareDensityEvaluation(density)
-	rootRandom := NewXoroshiro(generator.seed).ForkPositional()
+	rootRandom := NewXoroshiro(seed).ForkPositional()
 	aquifer := newNoiseAquifer(sampler, settings, rootRandom.FromHashOf("minecraft:aquifer").ForkPositional())
 	oreRandom := rootRandom.FromHashOf("minecraft:ore").ForkPositional()
+	defaultBlock := NoiseStone
+	switch settings.DefaultBlock.Name {
+	case "minecraft:netherrack":
+		defaultBlock = NoiseNetherrack
+	case "minecraft:end_stone":
+		defaultBlock = NoiseEndStone
+	}
 	result := &NoiseChunkResult{
 		X: cx, Z: cz, MinY: settings.MinY, Height: settings.Height,
 		Blocks:       make([]NoiseMaterial, settings.Height*256),
@@ -105,6 +127,8 @@ func (generator *OverworldNoiseGenerator) GenerateNoise(cx, cz int32) (*NoiseChu
 								if err != nil {
 									return nil, err
 								}
+							} else if solid {
+								material = defaultBlock
 							}
 							index := int((y-settings.MinY)*256 + z*16 + x)
 							result.Blocks[index], result.FluidUpdates[index] = material, update

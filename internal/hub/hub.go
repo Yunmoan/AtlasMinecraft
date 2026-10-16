@@ -113,16 +113,44 @@ func (h *Hub) Broadcast(id int32, payload []byte) {
 // ViewersOf returns every player whose view distance covers block (x, z).
 // Satisfies world.HubView.
 func (h *Hub) ViewersOf(x, z int32) []world.PacketSink {
+	return h.viewersInDimension("minecraft:overworld", x, z, false)
+}
+
+// DimensionView routes terrain broadcasts through the same online-player
+// hub while retaining a separate dimension and delivery epoch for each sink.
+type DimensionView struct {
+	Hub       *Hub
+	Dimension string
+}
+
+func (view DimensionView) ViewersOf(x, z int32) []world.PacketSink {
+	return view.Hub.ViewersInDimension(view.Dimension, x, z)
+}
+
+func (h *Hub) ViewersInDimension(dimension string, x, z int32) []world.PacketSink {
+	return h.viewersInDimension(dimension, x, z, true)
+}
+
+func (h *Hub) viewersInDimension(dimension string, x, z int32, scoped bool) []world.PacketSink {
 	cx, cz := x>>4, z>>4
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	sinks := make([]world.PacketSink, 0, len(h.byEID))
 	for _, p := range h.byEID {
+		if p.Dimension() != dimension {
+			continue
+		}
 		pcx, pcz := p.ChunkPos()
 		vd := p.ViewDistance() + 1 // match entity spawn radius
 		dx, dz := int64(pcx)-int64(cx), int64(pcz)-int64(cz)
 		if dx*dx+dz*dz <= int64(vd)*int64(vd) {
-			sinks = append(sinks, p)
+			if scoped {
+				if sink := p.WorldPacketSinkInDimension(dimension); sink != nil {
+					sinks = append(sinks, sink)
+				}
+			} else {
+				sinks = append(sinks, p)
+			}
 		}
 	}
 	return sinks

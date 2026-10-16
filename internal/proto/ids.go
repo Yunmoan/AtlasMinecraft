@@ -71,6 +71,7 @@ const (
 	SEntityMoveLook     = 0x2F
 	SEntityLook         = 0x30
 	SSetEquipment       = 0x5B
+	SSetPassengers      = 0x5F
 	SAbilities          = 0x38
 	SPlayerRemove       = 0x3D
 	SPlayerInfo         = 0x3E
@@ -89,6 +90,8 @@ const (
 	SDeclareCommands    = 0x11
 	SCommandSuggestions = 0x10
 	SContainerContent   = 0x13
+	SCloseContainer     = 0x12
+	SOpenScreen         = 0x33
 	SContainerSlot      = 0x15
 	SCustomPayload      = 0x19
 )
@@ -110,6 +113,7 @@ const (
 	CCloseContainer     = 0x0F
 	CContainerClick     = 0x0E
 	CCustomPayload      = 0x12
+	CInteractEntity     = 0x16
 	CKeepAlive          = 0x18
 	CPlayerPosition     = 0x1A
 	CPlayerPositionLook = 0x1B

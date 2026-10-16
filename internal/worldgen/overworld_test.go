@@ -27,8 +27,11 @@ func TestOverworldGeneratorConcurrentDeterminism(t *testing.T) {
 	if !reflect.DeepEqual(results[0], results[1]) {
 		t.Fatal("concurrent requests generated different blocks or biomes")
 	}
-	if len(results[0].SkippedFeatures) == 0 {
-		t.Fatal("missing coverage of unsupported features")
+	if len(results[0].SkippedFeatures) != 0 {
+		t.Fatalf("validated top-level features unexpectedly skipped: %v", results[0].SkippedFeatures)
+	}
+	if len(results[0].SkippedStages) == 0 {
+		t.Fatal("incomplete world generation stages were advertised as complete")
 	}
 	if _, err := generator.Generate(0, 0); err != nil {
 		t.Fatal(err)

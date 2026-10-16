@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -153,7 +154,7 @@ func TestNewWorldMetadataOpensInVanillaServer(t *testing.T) {
 				if err != nil || loaded.GetBlock(0, 0, markerY) != StateStone {
 					t.Fatalf("vanilla did not preserve generated block: %v", err)
 				}
-				if loaded.biomes != chunk.biomes {
+				if !reflect.DeepEqual(loaded.biomes, chunk.biomes) {
 					t.Fatal("vanilla changed Atlas-generated quart biomes")
 				}
 				for position, id := range trees {

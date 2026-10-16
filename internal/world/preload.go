@@ -68,11 +68,20 @@ func (w *World) PrepareSpawn(ctx context.Context, cx, cz int32, radius int, prog
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	// Pick the final spawn before preloading its neighborhood. The initial
+	// safety search must not shrink when the configured preload radius is zero.
+	initialSpawn := w.store != nil && w.store.vanilla.spawnUninitialized()
+	if err := w.initializeSpawnFromScan(ctx); err != nil {
+		return err
+	}
+	if initialSpawn {
+		x, z := w.SpawnXZ()
+		cx, cz = x>>4, z>>4
+	}
 	chunks := spawnPreparationChunks(cx, cz, radius)
 	if progress != nil {
 		progress(SpawnPreparationProgress{Total: len(chunks)})
 	}
-	// Center readiness also updates a new save's SpawnY before other work.
 	if err := w.ensureChunk(ctx, cx, cz); err != nil {
 		return fmt.Errorf("prepare spawn chunk %d,%d: %w", cx, cz, err)
 	}
@@ -90,6 +99,63 @@ func (w *World) PrepareSpawn(ctx context.Context, cx, cz int32, radius int, prog
 	}
 	// Save the final neighbor-derived light snapshots before reporting readiness.
 	return w.Save()
+}
+
+// initializeSpawnFromScan completes a new save's spawn point the way vanilla's
+// setInitialSpawn does: after the climate search picked the spawn chunk (done
+// at creation), scan the chunks around it in vanilla's spiral order for the
+// first safe column and store its exact position. Chunks are loaded on demand
+// across the full 11x11 search, independent of the preload radius. If no safe
+// column exists, leave the marker unfinished and stop startup so players never
+// join at an unchecked placeholder. Saves without an unfinished AtlasWorldgen
+// marker are untouched.
+func (w *World) initializeSpawnFromScan(ctx context.Context) error {
+	if w.store == nil || !w.store.vanilla.spawnUninitialized() {
+		return nil
+	}
+	spawnX, _, spawnZ, _ := w.SpawnPoint()
+	cx, cz := spawnX>>4, spawnZ>>4
+	var dx, dz, turn, arm int32 = 0, 0, 0, -1
+	for i := int32(0); i < 121; i++ {
+		key := chunkKey{cx + dx, cz + dz}
+		if dx >= -5 && dx <= 5 && dz >= -5 && dz <= 5 {
+			if key.x < -1874998 || key.x >= 1874998 || key.z < -1874998 || key.z >= 1874998 {
+				return fmt.Errorf("initial spawn search is outside world bounds")
+			}
+			if err := w.ensureChunk(ctx, key.x, key.z); err != nil {
+				return fmt.Errorf("load initial spawn search chunk %d,%d: %w", key.x, key.z, err)
+			}
+			result, err := w.scanChunkForSpawn(ctx, key.x, key.z)
+			if err != nil {
+				return err
+			}
+			if result.ok {
+				return w.store.vanilla.initializeSpawn(result.x, result.y, result.z)
+			}
+		}
+		if dx == dz || (dx < 0 && dx == -dz) || (dx > 0 && dx == 1-dz) {
+			turn, arm = -arm, turn
+		}
+		dx += turn
+		dz += arm
+	}
+	return fmt.Errorf("no safe initial spawn found within 5 chunks of %d,%d", cx, cz)
+}
+
+// scanChunkForSpawn runs the vanilla spawn column scan on one loaded chunk.
+func (w *World) scanChunkForSpawn(ctx context.Context, cx, cz int32) (spawnScanResult, error) {
+	result := make(chan spawnScanResult, 1)
+	if err := w.post(ctx, cx, cz, spawnScanQuery{cx: cx, cz: cz, result: result}); err != nil {
+		return spawnScanResult{}, err
+	}
+	select {
+	case res := <-result:
+		return res, nil
+	case <-ctx.Done():
+		return spawnScanResult{}, ctx.Err()
+	case <-w.done:
+		return spawnScanResult{}, ErrWorldClosed
+	}
 }
 
 // PrepareDestination loads the immediate player neighborhood in parallel.

@@ -23,9 +23,12 @@ var commandSpecs = []commandSpec{
 	{"mspt", 2, "/mspt", nil},
 	{"status", 2, "/status (alias: /sysinfo)", []string{"sysinfo"}},
 	{"seed", 2, "/seed", []string{"minecraft:seed"}},
+	{"execute", 2, "/execute in <dimension> run <tp|setblock> ...", []string{"minecraft:execute"}},
 	{"time", 2, "/time <query [daytime|gametime|day]|set <day|noon|night|midnight|time>|add <time>>", []string{"minecraft:time"}},
 	{"weather", 2, "/weather <clear|rain|thunder>", []string{"minecraft:weather"}},
 	{"tp", 2, "/tp [player] <destination player|x y z> (coordinates accept ~ and ^)", []string{"teleport", "minecraft:tp", "minecraft:teleport"}},
+	{"setworldspawn", 2, "/setworldspawn [x y z [angle]]", []string{"minecraft:setworldspawn"}},
+	{"spawnpoint", 2, "/spawnpoint [player] [x y z [angle]]", []string{"minecraft:spawnpoint"}},
 	{"setblock", 2, "/setblock <x y z> <block[state=value]|state_id> [replace|keep]", []string{"minecraft:setblock"}},
 	{"save", 2, "/save (alias: /save-all [flush])", []string{"save-all", "minecraft:save-all"}},
 	{"op", 3, "/op <player>", []string{"minecraft:op"}},
@@ -94,9 +97,16 @@ func declareCommandsPayloadForLevel(level int) []byte {
 			continue
 		}
 		for _, name := range append([]string{spec.name}, spec.aliases...) {
-			executable := spec.name != "op" && spec.name != "deop" && spec.name != "time" && spec.name != "weather" && spec.name != "tp" && spec.name != "setblock"
+			executable := spec.name != "execute" && spec.name != "op" && spec.name != "deop" && spec.name != "time" && spec.name != "weather" && spec.name != "tp" && spec.name != "setblock"
 			root := literal(0, name, executable)
 			switch spec.name {
+			case "execute":
+				in := literal(root, "in", false)
+				for _, dimension := range []string{"minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"} {
+					node := literal(in, dimension, false)
+					run := literal(node, "run", false)
+					argument(run, "command", 5, proto.NewWriter().VarInt(2).Payload(), true, false)
+				}
 			case "help":
 				argument(root, "command", 5, proto.NewWriter().VarInt(0).Payload(), true, true)
 			case "op", "deop":
@@ -123,6 +133,14 @@ func declareCommandsPayloadForLevel(level int) []byte {
 				target := argument(root, "target", 6, []byte{3}, false, true)
 				argument(target, "location", 10, nil, true, false)
 				argument(target, "destination", 6, []byte{3}, true, true)
+			case "setworldspawn":
+				// Parser 8 = minecraft:block_pos, parser 27 = minecraft:angle.
+				pos := argument(root, "pos", 8, nil, false, false)
+				argument(pos, "angle", 27, nil, true, false)
+			case "spawnpoint":
+				targets := argument(root, "targets", 6, []byte{3}, false, true)
+				pos := argument(targets, "pos", 8, nil, false, false)
+				argument(pos, "angle", 27, nil, true, false)
 			case "setblock":
 				position := argument(root, "pos", 8, nil, false, false)
 				block := argument(position, "block", 12, nil, true, false)
@@ -203,9 +221,9 @@ func (s *Server) handleCommandSuggestions(p *player.Player, payload []byte) {
 				candidates = append(candidates, spec.aliases...)
 			}
 		}
-	} else if spec, ok := findCommand(strings.ToLower(fields[0])); ok && spec.level <= s.operatorLevel(p) && (spec.name == "op" || spec.name == "deop" || spec.name == "tp") && len(fields) <= 2 {
+	} else if spec, ok := findCommand(strings.ToLower(fields[0])); ok && spec.level <= s.operatorLevel(p) && (spec.name == "op" || spec.name == "deop" || spec.name == "tp" || spec.name == "spawnpoint") && len(fields) <= 2 {
 		candidates = append(candidates, s.Hub.Names()...)
-		if spec.name == "tp" {
+		if spec.name == "tp" || spec.name == "spawnpoint" {
 			candidates = append(candidates, "@s", "@p")
 		}
 		if spec.name == "deop" && s.Cfg.Operators != nil {

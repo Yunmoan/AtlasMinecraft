@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"math"
+	"strconv"
 	"strings"
 )
 
@@ -36,6 +36,9 @@ func weatherPacket(reason byte, value float32) []byte {
 
 func (s *Server) sendWeather(p *player.Player) {
 	weather := s.World.Weather()
+	if p.Dimension() != "minecraft:overworld" {
+		weather = "clear"
+	}
 	if weather == "clear" {
 		p.SendPacket(proto.SGameStateChange, weatherPacket(2, 0))
 	} else {
@@ -96,6 +99,8 @@ func (s *Server) executeCommand(source *player.Player, line string) string {
 	switch cmd {
 	case "help":
 		return commandHelp(s.operatorLevel(source), args)
+	case "execute":
+		return s.commandExecuteIn(source, args)
 	case "tps", "mspt", "status", "sysinfo":
 		if len(args) != 0 {
 			return "Usage: /" + enteredCommand
@@ -166,12 +171,16 @@ func (s *Server) executeCommand(source *player.Player, line string) string {
 			return err.Error()
 		}
 		s.broadcastWorldState()
-		if err := s.World.Save(); err != nil {
+		if err := s.SaveWorlds(); err != nil {
 			return "Weather changed, but saving failed: " + err.Error()
 		}
 		return "Weather set to " + s.World.Weather()
 	case "tp":
 		return s.commandTeleport(source, args)
+	case "setworldspawn":
+		return s.commandSetWorldSpawn(source, args)
+	case "spawnpoint":
+		return s.commandSpawnpoint(source, args)
 	case "setblock":
 		return s.commandSetBlock(source, args)
 	case "save":
@@ -249,6 +258,10 @@ func (s *Server) commandTime(args []string) string {
 }
 
 func (s *Server) commandTeleport(source *player.Player, args []string) string {
+	return s.commandTeleportIn(source, args, nil)
+}
+
+func (s *Server) commandTeleportIn(source *player.Player, args []string, destinationWorld *world.World) string {
 	usage := "Usage: /tp [player] <destination player|x y z>"
 	var target *player.Player
 	var xyz [3]float64
@@ -266,6 +279,7 @@ func (s *Server) commandTeleport(source *player.Player, args []string) string {
 		var yaw, pitch float32
 		xyz[0], xyz[1], xyz[2], yaw, pitch, _ = destination.Pos()
 		destinationRotation = &[2]float32{yaw, pitch}
+		destinationWorld = s.PlayerWorld(destination)
 		err = validateCommandCoordinates(xyz, false)
 	} else if len(args) == 3 {
 		target = source
@@ -283,37 +297,140 @@ func (s *Server) commandTeleport(source *player.Player, args []string) string {
 	if err != nil {
 		return err.Error()
 	}
-	target.MovementMu.Lock()
-	defer target.MovementMu.Unlock()
-	target.CancelPendingChunks()
-	if err := s.World.PrepareDestination(context.Background(), int32(math.Floor(xyz[0]/16)), int32(math.Floor(xyz[2]/16))); err != nil {
-		cx, cz := target.ChunkPos()
-		s.requestChunksAround(target, cx, cz)
+	if destinationWorld == nil {
+		destinationWorld = s.PlayerWorld(target)
+	}
+	crossDimension := destinationWorld.DimensionName() != target.Dimension()
+	if err := s.teleportToDimension(target, destinationWorld.DimensionName(), xyz, destinationRotation); err != nil {
 		return "Teleport destination unavailable: " + err.Error()
 	}
-	_, _, _, yaw, pitch, _ := target.Pos()
-	if destinationRotation != nil {
-		yaw, pitch = destinationRotation[0], destinationRotation[1]
-	}
-	s.entityMu.Lock()
-	changed := target.SetPos(xyz[0], xyz[1], xyz[2], yaw, pitch, false)
-	s.syncPosition(target)
-	tp := proto.NewWriter().VarInt(target.EID).F64(xyz[0]).F64(xyz[1]).F64(xyz[2]).
-		I8(angleI8(yaw)).I8(angleI8(pitch)).Bool(false).Payload()
-	s.sendTracked(target, proto.SEntityTeleport, tp)
-	s.updateVisibilityLocked(target)
-	s.entityMu.Unlock()
-	if changed {
-		s.handleChunkChange(target)
-	} else {
-		cx, cz := target.ChunkPos()
-		s.requestChunksAround(target, cx, cz)
-		s.updateVisibility(target)
+	if crossDimension {
+		return fmt.Sprintf("Teleported %s to %.2f %.2f %.2f in %s", target.Name, xyz[0], xyz[1], xyz[2], destinationWorld.DimensionName())
 	}
 	return fmt.Sprintf("Teleported %s to %.2f %.2f %.2f", target.Name, xyz[0], xyz[1], xyz[2])
 }
 
+// formatCommandAngle renders a spawn angle like vanilla's float formatting,
+// keeping at least one decimal place.
+func formatCommandAngle(angle float32) string {
+	formatted := strconv.FormatFloat(float64(angle), 'f', -1, 32)
+	if !strings.ContainsAny(formatted, ".eE") {
+		formatted += ".0"
+	}
+	return formatted
+}
+
+// commandSetWorldSpawn implements /setworldspawn [<pos> [<angle>]]. Like
+// vanilla, the position defaults to the source (origin on console) and the
+// angle to 0. The stored spawn is broadcast to every player in play.
+func (s *Server) commandSetWorldSpawn(source *player.Player, args []string) string {
+	usage := "Usage: /setworldspawn [x y z [angle]]"
+	var xyz [3]float64
+	var angle float32
+	var err error
+	switch len(args) {
+	case 0:
+		xyz, err = resolveCoordinates(source, []string{"~", "~", "~"}, true)
+	case 3:
+		xyz, err = resolveCoordinates(source, args, true)
+	case 4:
+		xyz, err = resolveCoordinates(source, args[:3], true)
+		if err == nil {
+			angle, err = parseCommandAngle(source, args[3])
+		}
+	default:
+		return usage
+	}
+	if err != nil {
+		return err.Error()
+	}
+	x, y, z := int32(xyz[0]), int32(xyz[1]), int32(xyz[2])
+	changed, err := s.World.SetSpawn(x, y, z, angle)
+	if err != nil {
+		return "Spawn update failed: " + err.Error()
+	}
+	if changed {
+		payload := proto.NewWriter().I64(proto.PackPosition(x, y, z)).F32(angle).Payload()
+		s.Hub.Each(func(p *player.Player) {
+			if p.PlayReady() && p.Dimension() == "minecraft:overworld" {
+				p.SendPacket(proto.SSpawnPosition, payload)
+			}
+		})
+	}
+	// Vanilla keeps the spawn neighborhood loaded via a region ticket;
+	// preparing it here covers joining players until the next restart.
+	if err := s.World.PrepareDestination(context.Background(), x>>4, z>>4); err != nil {
+		return "Spawn point set, but preparing the spawn area failed: " + err.Error()
+	}
+	return fmt.Sprintf("Set the world spawn point to %d, %d, %d [%s]", x, y, z, formatCommandAngle(angle))
+}
+
+// commandSpawnpoint implements /spawnpoint [<player>] [<x y z> [<angle>]].
+// As in vanilla, an omitted position uses the source's current block
+// position (not the target's), and the stored point is forced.
+func (s *Server) commandSpawnpoint(source *player.Player, args []string) string {
+	usage := "Usage: /spawnpoint [player] [x y z [angle]]"
+	var target *player.Player
+	var xyz [3]float64
+	var angle float32
+	var err error
+	here := func() ([3]float64, error) {
+		return resolveCoordinates(source, []string{"~", "~", "~"}, true)
+	}
+	switch len(args) {
+	case 0:
+		target = source
+		if target == nil {
+			return "Usage: /spawnpoint <player> [x y z [angle]]"
+		}
+		xyz, err = here()
+	case 1:
+		target = s.resolveCommandPlayer(source, args[0])
+		if target == nil {
+			return "Player not found; use /list."
+		}
+		xyz, err = here()
+	case 3:
+		target = source
+		if target == nil {
+			return "Usage: /spawnpoint <player> [x y z [angle]]"
+		}
+		xyz, err = resolveCoordinates(source, args, true)
+	case 4:
+		target = s.resolveCommandPlayer(source, args[0])
+		if target == nil {
+			return "Player not found; use /list."
+		}
+		xyz, err = resolveCoordinates(source, args[1:], true)
+	case 5:
+		target = s.resolveCommandPlayer(source, args[0])
+		if target == nil {
+			return "Player not found; use /list."
+		}
+		xyz, err = resolveCoordinates(source, args[1:4], true)
+		if err == nil {
+			angle, err = parseCommandAngle(source, args[4])
+		}
+	default:
+		return usage
+	}
+	if err != nil {
+		return err.Error()
+	}
+	x, y, z := int32(xyz[0]), int32(xyz[1]), int32(xyz[2])
+	spawnWorld := s.PlayerWorld(source)
+	if err := spawnWorld.SetPlayerSpawn(target.UUID, x, y, z, angle); err != nil {
+		return "Spawn point update failed: " + err.Error()
+	}
+	return fmt.Sprintf("Set spawn point to %d, %d, %d [%s] in %s for %s",
+		x, y, z, formatCommandAngle(angle), spawnWorld.DimensionName(), target.Name)
+}
+
 func (s *Server) commandSetBlock(source *player.Player, args []string) string {
+	return s.commandSetBlockIn(source, args, s.PlayerWorld(source))
+}
+
+func (s *Server) commandSetBlockIn(source *player.Player, args []string, targetWorld *world.World) string {
 	if len(args) != 4 && len(args) != 5 {
 		return "Usage: /setblock <x y z> <block[state=value]|state_id> [replace|keep]"
 	}
@@ -331,9 +448,9 @@ func (s *Server) commandSetBlock(source *player.Player, args []string) string {
 		mode = args[4]
 	}
 	if mode == "keep" {
-		err = s.World.TryPlaceBlock(world.BlockPosition{X: xyz[0], Y: xyz[1], Z: xyz[2]}, world.StateAir, state, nil)
+		err = targetWorld.TryPlaceBlock(world.BlockPosition{X: xyz[0], Y: xyz[1], Z: xyz[2]}, world.StateAir, state, nil)
 	} else if mode == "replace" {
-		err = s.World.SetBlock(xyz[0], xyz[1], xyz[2], state)
+		err = targetWorld.SetBlock(xyz[0], xyz[1], xyz[2], state)
 	} else {
 		return "Usage: /setblock <x y z> <block[state=value]|state_id> [replace|keep]"
 	}
