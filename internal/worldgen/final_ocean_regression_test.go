@@ -20,7 +20,7 @@ import (
 // server save, including vegetation and settled bubble columns. Terrain-only
 // fixtures cannot detect missing scheduled generation updates.
 func TestFinalOceanChunksAgainstVanillaServer(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/final_ocean_chunk_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/final_ocean_chunk_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

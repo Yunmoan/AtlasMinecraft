@@ -24,7 +24,7 @@ func (w *portalPlatformProbe) SetBlock(p FeaturePosition, s SurfaceBlockState) e
 }
 
 func TestPortalGeometryAgainstVanillaJAR(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/portal_geometry_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/portal_geometry_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

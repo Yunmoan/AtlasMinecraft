@@ -12,7 +12,7 @@ import (
 )
 
 func TestGeneratedLeafDistancesAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/leaves_distance_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/leaves_distance_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestGeneratedAdjacentTreesLeafDistances(t *testing.T) {
 }
 
 func TestGeneratedLeavesAgainstVanillaFinalWorld(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/river_edge_final_leaves_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/river_edge_final_leaves_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

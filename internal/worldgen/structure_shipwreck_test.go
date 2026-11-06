@@ -15,7 +15,7 @@ import (
 )
 
 func TestShipwreckStartsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_shipwreck_starts_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_shipwreck_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func (world *shipwreckProbeWorld) ScheduleFluidUpdate(position FeaturePosition) 
 }
 
 func TestShipwreckBlocksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_shipwreck_blocks_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_shipwreck_blocks_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

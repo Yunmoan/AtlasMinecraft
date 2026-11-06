@@ -9,7 +9,7 @@ import (
 )
 
 func TestLegacyNoiseAgainstVanillaJAR(t *testing.T) {
-	f,err:=os.Open("../../docs/worldgen/legacy_noise_1.21.1.txt");if err!=nil { t.Fatal(err) };defer f.Close()
+	f,err:=os.Open("../../testdata/worldgen/legacy_noise_1.21.1.txt");if err!=nil { t.Fatal(err) };defer f.Close()
 	scan:=bufio.NewScanner(f)
 	var n *NormalNoise
 	var random *LegacyRandom

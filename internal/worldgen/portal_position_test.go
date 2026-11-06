@@ -16,7 +16,7 @@ func TestPortalPositionsAgainstVanillaJAR(t *testing.T) {
 	points := [][3]float64{{.5, 1, .5}, {.1, .2, .9}, {0, 0, 0}, {1.5, 2, .3}, {-1, 3, -1}}
 	relatives := [][3]float64{{.5, 0, 0}, {.1, .7, .25}, {1, 1, -.4}}
 	boxes := [][]blockrules.Box{{}, {{0, 0, 0, 1, 1, 1}}, {{0, 0, -2, 1, 3, 2}}, {{0, 0, 0, 1, .5, 1}}, {{-10, -10, -10, 10, 10, 10}}, {{-.8, 0, -2, -.2, 3, 2}, {.8, 0, -2, 1.2, 3, 2}}, {{0, 0, 0, 1, .5, 1}, {0, .5, .5, 1, 1, 1}}, {{-.2, 0, -2, .1999999, 3, 2}, {.8, 0, -2, 1.2, 3, 2}}}
-	f, err := os.Open("../../docs/worldgen/portal_position_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/portal_position_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

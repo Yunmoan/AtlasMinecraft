@@ -16,7 +16,7 @@ import (
 // independently of Atlas's generator and the synthetic block-state oracle.
 func TestGeneratedBubbleColumnsPersistAndPreserveEdits(t *testing.T) {
 	const seed = int64(4511451270791457643)
-	file, err := os.Open("../../docs/worldgen/native_bubble_columns_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/native_bubble_columns_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

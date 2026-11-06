@@ -64,8 +64,8 @@ complete decorated-world equality or graphical-client rendering.
 Rebuild and verify:
 
 ```powershell
-python docs/worldgen/build_bubble_column_probe.py
-python docs/worldgen/build_native_bubble_column_fixture.py artifacts/river-ocean-debug/native-final-server/world
+python tools/worldgen/build_bubble_column_probe.py
+python tools/worldgen/build_native_bubble_column_fixture.py artifacts/river-ocean-debug/native-final-server/world
 & $env:TEMP/atlas-go/go/bin/go.exe test ./internal/worldgen ./internal/world -run '^(TestBubbleColumnsAgainstVanillaJAR|TestGeneratedBubbleColumnsCrossChunkOverlayIsolation|TestGeneratedBubbleColumnsPersistAndPreserveEdits)$' -count=1
 ```
 

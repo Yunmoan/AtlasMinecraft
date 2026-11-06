@@ -14,7 +14,7 @@ import (
 )
 
 func TestGeneratedEntityPacketsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/generated_entity_packets_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/generated_entity_packets_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

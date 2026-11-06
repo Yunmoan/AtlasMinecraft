@@ -14,7 +14,7 @@ import (
 // official constructor snapshot. This catches subtype side effects such as a
 // baby goat's attack attribute, in addition to fields returned by finalization.
 func TestCompleteInitialAnimalSavedStateAgainstVanillaJAR(t *testing.T) {
-	file, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

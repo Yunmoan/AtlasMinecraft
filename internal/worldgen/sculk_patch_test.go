@@ -118,7 +118,7 @@ func sculkPatchProbeRegion(t *testing.T, origin FeaturePosition, mode int) *Over
 }
 
 func TestSculkPatchAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/sculk_patch_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/sculk_patch_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

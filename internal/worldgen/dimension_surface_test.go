@@ -18,7 +18,7 @@ import (
 func TestDimensionSurfaceAgainstVanillaJAR(t *testing.T) {
 	for _,dimension:=range []string{"nether","end"} {
 		t.Run(dimension,func(t *testing.T) {
-			file,err:=os.Open("../../docs/worldgen/"+dimension+"_surface_1.21.1.txt");if err!=nil { t.Fatal(err) };defer file.Close()
+			file,err:=os.Open("../../testdata/worldgen/"+dimension+"_surface_1.21.1.txt");if err!=nil { t.Fatal(err) };defer file.Close()
 			scan:=bufio.NewScanner(file);scan.Buffer(make([]byte,65536),4*1024*1024)
 			count:=0
 			ids:=make(map[string]uint32)

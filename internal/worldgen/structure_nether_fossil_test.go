@@ -27,7 +27,7 @@ func (w *netherFossilProbeWorld) BlockAt(p FeaturePosition) (SurfaceBlockState, 
 func (w *netherFossilProbeWorld) InWorld(p FeaturePosition) bool { return p.Y >= 0 && p.Y < 256 }
 
 func TestNetherFossilBlocksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_nether_fossil_blocks_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_nether_fossil_blocks_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestNetherFossilBlocksAgainstVanillaJAR(t *testing.T) {
 }
 
 func TestNetherFossilStartsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_nether_fossil_starts_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_nether_fossil_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

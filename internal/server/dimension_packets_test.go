@@ -14,7 +14,7 @@ import (
 )
 
 func TestDimensionPacketsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/protocol/dimension_packets_1.21.1.txt")
+	file, err := os.Open("../../testdata/protocol/dimension_packets_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

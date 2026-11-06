@@ -128,7 +128,7 @@ func TestRuinedPortalOriginalTemplatesLoad(t *testing.T) {
 }
 
 func TestRuinedPortalProcessorsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "ruined_portal_processors_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "ruined_portal_processors_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

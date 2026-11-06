@@ -1,7 +1,7 @@
 package world
 
 // ItemBlock maps simple-block item ids to their default block state,
-// generated from PrismarineJS 1.21.1 data (docs/protocol/).
+// generated from PrismarineJS 1.21.1 data (testdata/protocol/).
 // Used for creative-mode block placement.
 var ItemBlock = map[int32]uint32{
 	0:    0,     // minecraft:air

@@ -26,7 +26,7 @@ func TestMountainPlateauCaveSurfaceAgainstVanillaJAR(t *testing.T) {
 }
 
 func testSurfaceChunksAgainstVanillaJAR(t *testing.T, fixture string, wantCount int) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", fixture))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", fixture))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestMountainPlateauCaveCarversAgainstVanillaJAR(t *testing.T) {
 }
 
 func testCarvedChunksAgainstVanillaJAR(t *testing.T, fixture string, wantCount int) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", fixture))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", fixture))
 	if err != nil {
 		t.Fatal(err)
 	}

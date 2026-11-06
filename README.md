@@ -342,7 +342,7 @@ do not produce a leave announcement, and the client's language controls the
 join/leave wording.
 Independent development checks can export protocol fixtures with
 `ATLAS_COMPAT_FIXTURES` and decode them with
-`python docs/protocol/verify_player_entity.py <fixtures-directory>` using the
+`python tools/protocol/verify_player_entity.py <fixtures-directory>` using the
 supplied reference JAR. The reference JAR is never required at server runtime.
 
 Performance commands require operator level 2 or the console. `/tps` reports
@@ -436,13 +436,16 @@ internal/logging/  structured rotating logs
 internal/blockstate/ shared 1.21.1 block-state codec
 internal/worldgen/ vanilla terrain, partial decoration, and JAR reference tests
 internal/registry/ embedded 1.21.1 Registry Data payload (prebuilt NBT)
-docs/protocol/     protocol data sources + build_registries.py
+docs/             technical guides and protocol notes (start at docs/README.md)
+tools/            reference-data generators and verification scripts
+tools/*/probes/   development-only Java reference probes
+testdata/         protocol source data and world-generation reference fixtures
 ```
 
 ## Regenerating the registry payload
 
 ```bash
-python docs/protocol/build_registries.py   # reads docs/protocol/mcmeta/, rewrites internal/registry/registries.bin
+python tools/protocol/build_registries.py   # reads testdata/protocol/mcmeta/, rewrites internal/registry/registries.bin
 ```
 
 ## Not yet (roadmap)
@@ -467,7 +470,7 @@ This is not a full vanilla world simulation yet. The provided JAR is a
 ## Notes
 
 - Protocol facts were pinned against machine-readable 1.21.1 data
-  (`docs/protocol/`), which caught several traps: `unload_chunk` sends Z
+  (`testdata/protocol/`), which caught several traps: `unload_chunk` sends Z
   first; `acknowledge_player_digging` is a bare sequence id since 1.20.3;
   chat components are NBT (not JSON) since 1.20.3; `chunk_batch_finished`
   carries a VarInt.

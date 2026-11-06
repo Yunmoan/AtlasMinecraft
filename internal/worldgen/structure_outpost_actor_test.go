@@ -13,7 +13,7 @@ import (
 )
 
 func TestOutpostTemplateActorsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "structure_outpost_actors_1.21.1.txt"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "structure_outpost_actors_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

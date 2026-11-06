@@ -90,7 +90,7 @@ func originalJigsawSyntheticPalette(t *testing.T) []StructureTemplateBlock {
 }
 
 func TestJigsawAllProcessorListsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "jigsaw_processors_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "jigsaw_processors_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

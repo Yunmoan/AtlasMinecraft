@@ -11,7 +11,7 @@ import (
 )
 
 func TestLegacyRandomMatchesVanilla1211(t *testing.T) {
-	f, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "legacy_random_1.21.1.txt"))
+	f, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "legacy_random_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

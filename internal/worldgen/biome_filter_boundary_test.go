@@ -14,7 +14,7 @@ import (
 // default getBiome and BiomeManager, using nonuniform quart biome sources.
 // Uniform-biome feature fixtures cannot detect sampling the wrong quart.
 func TestBiomeFilterBoundariesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/biome_filter_boundaries_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/biome_filter_boundaries_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

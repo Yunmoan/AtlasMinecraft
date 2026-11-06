@@ -34,7 +34,7 @@ func (world *flatForestRockWorld) InWorld(position FeaturePosition) bool {
 }
 
 func TestForestRockAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/forest_rock_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/forest_rock_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -138,7 +138,7 @@ func TestNetherDecorationsAgainstVanillaJAR(t *testing.T) {
 
 func testNetherDecorationVectors(t *testing.T, fileName, prefix string, compiler func(string) (configuredFeaturePlacer, error), wantCases, wantPositive int, placementCounts ...func() [2]int) {
 	t.Helper()
-	file, err := os.Open("../../docs/worldgen/" + fileName)
+	file, err := os.Open("../../testdata/worldgen/" + fileName)
 	if err != nil {
 		t.Fatal(err)
 	}

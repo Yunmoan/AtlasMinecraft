@@ -10,7 +10,7 @@ import (
 )
 
 func TestJigsawCampfireDefaultsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/village_campfire_defaults_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/village_campfire_defaults_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

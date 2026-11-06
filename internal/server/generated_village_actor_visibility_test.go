@@ -30,7 +30,7 @@ type villagePacketActor struct {
 // The lightweight fixture world exercises production Anvil reads, chunk packet
 // sinks and actor publication without regenerating entire village layouts.
 func TestVillageActorsPacketSinkLifecycle(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/structure_village_actors_1.21.1.txt.gz")
+	file, err := os.Open("../../testdata/worldgen/structure_village_actors_1.21.1.txt.gz")
 	if err != nil {
 		t.Fatal(err)
 	}

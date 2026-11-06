@@ -1,7 +1,7 @@
 package proto
 
 // Packet IDs for Minecraft Java Edition protocol 767 (1.21.1).
-// Extracted from the protocol definition in docs/protocol/.
+// Extracted from the protocol definition in testdata/protocol/.
 
 // Handshaking, serverbound.
 const (

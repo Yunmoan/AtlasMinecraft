@@ -26,7 +26,7 @@ func (w oracleAnimalWorld) SpawnRules(_ string, _ FeaturePosition, _ *Xoroshiro)
 func (w oracleAnimalWorld) MobSpawnOK(_ string, _ [3]float64) (bool, error) { return w.mode != 4, nil }
 
 func TestInitialAnimalSpawnAgainstVanillaJAR(t *testing.T) {
-	file, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "initial_animals_1.21.1.txt"))
+	file, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "initial_animals_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestInitialAnimalStateRulesAgainstVanillaJAR(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "initial_animals_1.21.1.txt"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "initial_animals_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func TestInitialAnimalStateRulesAgainstVanillaJAR(t *testing.T) {
 }
 
 func TestOtherInitialAnimalFinalizationAgainstVanillaJAR(t *testing.T) {
-	file, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestOtherInitialAnimalStateRulesAgainstVanillaJAR(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	file, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

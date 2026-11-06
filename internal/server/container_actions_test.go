@@ -38,7 +38,7 @@ func originalMenuStacks(t *testing.T, encoded string) [65]item.Stack {
 	return slots
 }
 func TestChestMenuActionsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/chest_menu_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/chest_menu_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestChestMenuActionsAgainstVanillaJAR(t *testing.T) {
 	t.Logf("%d actual ChestMenu.clicked vectors, pickup, shift, hotbar/offhand, creative clone, three drag kinds and two-pass pickup-all", vectors)
 }
 func TestChestOpenScreenAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/chest_loot_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/chest_loot_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestChestDropRequestsPreserveItems(t *testing.T) {
 }
 
 func TestChestOffhandSlotAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/chest_loot_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/chest_loot_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

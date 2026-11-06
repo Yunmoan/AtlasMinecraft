@@ -25,7 +25,7 @@ func (world *jigsawFeatureProbeWorld) PlaceJigsawFeature(raw json.RawMessage, ra
 }
 
 func TestJigsawFeaturePoolAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/jigsaw_feature_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/jigsaw_feature_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -143,7 +143,7 @@ func TestJigsawOutpostBlocksAgainstVanillaJAR(t *testing.T) {
 
 func testJigsawBlocksFixture(t *testing.T, filename string, elements map[string]JigsawPoolElement, seed int64) (int, int, map[string]JigsawPoolElement) {
 	t.Helper()
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", filename))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", filename))
 	if err != nil {
 		t.Fatal(err)
 	}

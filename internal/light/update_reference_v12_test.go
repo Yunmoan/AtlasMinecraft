@@ -14,7 +14,7 @@ import (
 // The fixture contains original block states, actual checkBlock edits, and
 // every original SKY/BLOCK sample in all nine columns after each update.
 func TestDynamicLightUpdatesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/light_updates_1.21.1.txt.gz")
+	file, err := os.Open("../../testdata/worldgen/light_updates_1.21.1.txt.gz")
 	if err != nil {
 		t.Fatal(err)
 	}

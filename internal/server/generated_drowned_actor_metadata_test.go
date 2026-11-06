@@ -12,7 +12,7 @@ import (
 )
 
 func TestGeneratedDrownedActorMetadataAgainstVanillaJAR(t *testing.T) {
-	file, err := os.ReadFile("../../docs/worldgen/structure_drowned_actors_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/structure_drowned_actors_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

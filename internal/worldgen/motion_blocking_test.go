@@ -15,7 +15,7 @@ import (
 )
 
 func TestMotionBlockingStatesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/motion_blocking_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/motion_blocking_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestMotionBlockingHeightsAgainstVanillaJAR(t *testing.T) {
 		}
 		return parsed
 	}
-	file, err := os.Open("../../docs/worldgen/motion_blocking_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/motion_blocking_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestMotionBlockingHeightsAgainstVanillaJAR(t *testing.T) {
 	if count != 3072 || len(expected) != 12 {
 		t.Fatalf("got %d height samples in %d chunks, want 3072 in 12", count, len(expected))
 	}
-	carved, err := os.Open("../../docs/worldgen/carver_chunk_1.21.1.txt")
+	carved, err := os.Open("../../testdata/worldgen/carver_chunk_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

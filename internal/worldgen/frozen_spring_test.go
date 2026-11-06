@@ -515,7 +515,7 @@ func TestSculkVeinPlacementAgainstVanillaJAR(t *testing.T) {
 }
 
 func testSurfaceFeatureReference(t *testing.T, fixture, label string, wantCases, wantSuccesses int) {
-	file, err := os.Open("../../docs/worldgen/" + fixture)
+	file, err := os.Open("../../testdata/worldgen/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}

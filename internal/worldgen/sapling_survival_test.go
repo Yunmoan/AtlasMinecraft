@@ -11,7 +11,7 @@ import (
 )
 
 func TestSaplingSurvivalAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/sapling_survival_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/sapling_survival_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

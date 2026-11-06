@@ -9,7 +9,7 @@ import (
 )
 
 func TestPortalProcessorAndPlayerCooldownAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/portal_processor_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/portal_processor_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

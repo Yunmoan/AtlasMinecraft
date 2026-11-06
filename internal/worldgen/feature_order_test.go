@@ -105,7 +105,7 @@ func TestOverworldFeatureScheduleCoversBiomeSource(t *testing.T) {
 }
 
 func TestOverworldFeatureSeedsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/feature_seed_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/feature_seed_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

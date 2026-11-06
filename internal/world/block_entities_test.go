@@ -152,7 +152,7 @@ func TestGeneratedBlockEntitiesPersistAndReplacementRemovesThem(t *testing.T) {
 }
 
 func TestGeneratedBlockEntityPacketsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/block_entity_packets_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/block_entity_packets_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -137,27 +137,27 @@ starts and uses the exact original lowercase `starts` and capitalized
 Requires Python 3 and JDK 21 for the probes; Java is development-only.
 
 ```powershell
-python docs/worldgen/build_structure_data.py --check
-python docs/worldgen/verify_structure_reference.py --probe StructurePlacementProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureBeardifierProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureRingsProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureHutBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe StructurePyramidBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureJungleBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureOrderProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureTransformProbe
-python docs/worldgen/verify_structure_reference.py --probe StructureEntityTransformProbe
-python docs/worldgen/verify_structure_reference.py --probe IglooStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe IglooBlocksProbe
-python docs/worldgen/build_structure_order.py --check
-python docs/worldgen/build_igloo_data.py --check
-python docs/worldgen/build_jigsaw_data.py --check
-python docs/worldgen/build_bastion_start_data.py --check
-python docs/worldgen/verify_structure_reference.py --probe JigsawStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe ShipwreckBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe NetherFossilBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe FortressBlocksProbe
+python tools/worldgen/build_structure_data.py --check
+python tools/worldgen/verify_structure_reference.py --probe StructurePlacementProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureBeardifierProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureRingsProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureHutBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe StructurePyramidBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureJungleBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureOrderProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureTransformProbe
+python tools/worldgen/verify_structure_reference.py --probe StructureEntityTransformProbe
+python tools/worldgen/verify_structure_reference.py --probe IglooStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe IglooBlocksProbe
+python tools/worldgen/build_structure_order.py --check
+python tools/worldgen/build_igloo_data.py --check
+python tools/worldgen/build_jigsaw_data.py --check
+python tools/worldgen/build_bastion_start_data.py --check
+python tools/worldgen/verify_structure_reference.py --probe JigsawStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe ShipwreckBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe NetherFossilBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe FortressBlocksProbe
 go test ./internal/worldgen -run '^(TestStructure|TestScatteredStructure|TestSwampHut|TestDesertPyramid|TestJungleTemple|TestIgloo|TestTemplate)' -count=1 -v
 ```
 

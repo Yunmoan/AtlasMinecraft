@@ -1,5 +1,15 @@
 # Java 1.21.1 world generation reference
 
+Navigation: [all documentation](../README.md) · [development tools](../../tools/README.md) · [reference fixtures](../../testdata/worldgen/).
+
+| Topic | Guide |
+| --- | --- |
+| Structures and placement | [Structure pipeline](structure_pipeline.md), [village blocks](village_blocks_1.21.1.md) |
+| Dimensions and portals | [Dimension pipeline](dimension_pipeline.md), [Nether/End features](nether_end_features_1.21.1.md) |
+| Animals and vegetation | [Initial animals](initial_animals_1.21.1.md), [tree decorators](tree_decorators.md), [sculk/mushrooms](sculk_mushroom_1.21.1.md) |
+| Generated block updates | [Bubble columns](bubble_columns_1.21.1.md) |
+| Diagnosis and performance | [River/ocean regression](river_ocean_regression.md), [Jigsaw performance](jigsaw_performance.md) |
+
 `internal/worldgen` is a pure Go port of selected generation primitives from
 the supplied `jar/server.jar`. The JAR is used only to build and verify test
 vectors. It is not used when Atlas runs.
@@ -43,7 +53,7 @@ bundled server JAR:
 | `BlendedNoise` | `eoe` | `blended_noise.go` |
 
 The 60 `worldgen/noise` parameter files are extracted from the same JAR into
-`internal/worldgen/noise_parameters.json`. The Java probes under this directory
+`internal/worldgen/noise_parameters.json`. The Java probes in `tools/worldgen/probes`
 produce fixed output for multiple seeds, octave settings, positions, and
 coordinate ranges. Go tests compare integer and floating point **bits** against
 those outputs.
@@ -215,17 +225,17 @@ compares the decompressed embedded data directly with freshly produced JAR outpu
 To verify with JDK 21 and Python 3:
 
 ```powershell
-python docs/worldgen/build_noise_parameters.py
-python docs/worldgen/build_density_data.py --check
-python docs/worldgen/build_feature_data.py --check
-python docs/worldgen/build_motion_blocking.py --check
-python docs/worldgen/build_tree_tags.py
-python docs/worldgen/build_vegetation_tags.py
-python docs/worldgen/build_ocean_tags.py
-python docs/worldgen/verify_reference.py
-python docs/worldgen/verify_reference.py --probe VegetationProbe --vegetation-set columns
-python docs/worldgen/verify_reference.py --probe RuleDiskProbe
-python docs/worldgen/verify_reference.py --probe LightEngineProbe
+python tools/worldgen/build_noise_parameters.py
+python tools/worldgen/build_density_data.py --check
+python tools/worldgen/build_feature_data.py --check
+python tools/worldgen/build_motion_blocking.py --check
+python tools/worldgen/build_tree_tags.py
+python tools/worldgen/build_vegetation_tags.py
+python tools/worldgen/build_ocean_tags.py
+python tools/worldgen/verify_reference.py
+python tools/worldgen/verify_reference.py --probe VegetationProbe --vegetation-set columns
+python tools/worldgen/verify_reference.py --probe RuleDiskProbe
+python tools/worldgen/verify_reference.py --probe LightEngineProbe
 go test ./internal/worldgen -timeout=10m
 $env:ATLAS_SERVER_JAR = (Resolve-Path jar/server.jar).Path
 go test ./internal/world -run TestNewWorldMetadataOpensInVanillaServer -v -count=1

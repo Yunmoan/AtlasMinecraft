@@ -16,7 +16,7 @@ const (
 	MaxSectionY = NumSections - 1
 
 	SectionVolume = 4096
-	// docs/protocol/blocks.json covers every 1.21.1 state from 0..26683.
+	// testdata/protocol/blocks.json covers every 1.21.1 state from 0..26683.
 	MaxBlockState = 26683
 
 	// Block state ids for 1.21.1 (PrismarineJS blocks.json defaultState).
