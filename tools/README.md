@@ -14,6 +14,20 @@
 
 ## 常用命令
 
+测试统一入口为仓库根目录的 `test.ps1`，也可直接执行 `python tools/run_tests.py`：
+
+| 测试组 | 命令 | 要求 |
+| --- | --- | --- |
+| 基础 | `./test.ps1 -Suite basic` | Go、Python；运行公共工具测试和无需额外参考集的 Go 测试 |
+| 参考 | `./test.ps1 -Suite reference` | Go、对应参考文件；部分互操作场景要求额外环境变量 |
+| 协议冒烟 | `./test.ps1 -Suite smoke` | 自动构建服务端与模拟客户端，使用独立临时世界 |
+| 性能场景 | `./test.ps1 -Suite performance` | 有界的独立进程性能/协议场景；不自动执行所有微基准 |
+| 全部 | `./test.ps1 -Suite all` | 上述全部输入和环境 |
+
+使用 `-List` 查看测试与缺失输入，`-Match 名称片段` 缩小范围。例如 `./test.ps1 -Suite smoke -Match SpawnRadius`。Go AST 计划工具会沿同包辅助函数调用收集静态文件路径，并在运行前检查；动态计算的路径仍由实际测试验证。测试分组来自当前源码，无需维护易失效的测试名称清单。
+
+所有测试产物集中到 `artifacts/test-*`，临时目录位于 `artifacts/.tmp/tests`。完整参考集没有随仓库全部提供，缺失时参考组会在测试启动前报告所需文件，退出码为 2；这与实现测试失败分开处理。
+
 ```powershell
 # 检查 Go；参考工具还会检查 JAVA_HOME/PATH 中的 JDK 和官方包 SHA-1
 python tools/check_env.py
