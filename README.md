@@ -432,6 +432,8 @@ internal/player/   per-player state + outbound queue
 internal/hub/      player registry, viewer lookups, broadcast
 internal/world/    chunk codec (palette/heightmap/light), normal/flat generation,
                    region actors, worker pool, Java Anvil/NBT saves, item→block map
+internal/chunkwire/ protocol-767 section, heightmap, chunk and light encoding
+internal/javasave/ gzip/NBT file I/O, atomic replacement and recovery copies
 internal/logging/  structured rotating logs
 internal/blockstate/ shared 1.21.1 block-state codec
 internal/worldgen/ vanilla terrain, partial decoration, and JAR reference tests

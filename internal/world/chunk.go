@@ -1,9 +1,9 @@
 package world
 
 import (
+	"atlas/internal/chunkwire"
 	"atlas/internal/light"
 	"atlas/internal/nbt"
-	"atlas/internal/proto"
 	"atlas/internal/registry"
 	"time"
 )
@@ -293,88 +293,22 @@ func (c *Chunk) Height(lx, lz int) int32 { return int32(c.heights[lz<<4|lx]) }
 // length-prefixed, even when bits==0 and the array is empty. Omitting that
 // varint shifts every subsequent section and corrupts the client's world.
 func (c *Chunk) EncodeSections() []byte {
-	w := proto.NewWriterCap(8192)
-	for si := range c.sect {
-		sec := c.sect[si]
-		if sec == nil || sec.nonAir == 0 {
-			// uniform air section
-			w.I16(0).U8(0).VarInt(StateAir).VarInt(0)
-			c.encodeBiomes(w, si)
-			continue
-		}
-		w.I16(sec.nonAir)
-		if sec.bits == 0 {
-			w.U8(0).VarInt(int32(sec.palette[0])).VarInt(0)
-		} else if sec.bits == 15 {
-			// direct encoding: no palette, raw global state ids
-			w.U8(15)
-			w.VarInt(int32(len(sec.data)))
-			for _, l := range sec.data {
-				w.I64(l)
-			}
-		} else {
-			w.U8(sec.bits).VarInt(int32(len(sec.palette)))
-			for _, p := range sec.palette {
-				w.VarInt(int32(p))
-			}
-			w.VarInt(int32(len(sec.data)))
-			for _, l := range sec.data {
-				w.I64(l)
-			}
-		}
-		c.encodeBiomes(w, si)
-	}
-	return w.Payload()
-}
-
-func (c *Chunk) encodeBiomes(w *proto.Writer, si int) {
-	palette := make([]int32, 0, 8)
-	indices := make(map[int32]uint64)
-	for _, id := range c.biomes[si] {
-		if _, ok := indices[id]; !ok {
-			indices[id] = uint64(len(palette))
-			palette = append(palette, id)
+	sections := make([]chunkwire.Section, len(c.sect))
+	for i, section := range c.sect {
+		sections[i].Biomes = c.biomes[i]
+		if section != nil {
+			sections[i].NonAir = section.nonAir
+			sections[i].Bits = section.bits
+			sections[i].Palette = section.palette
+			sections[i].Data = section.data
 		}
 	}
-	if len(palette) == 1 {
-		w.U8(0).VarInt(palette[0]).VarInt(0)
-		return
-	}
-	bits := uint8(1)
-	for 1<<bits < len(palette) {
-		bits++
-	}
-	if bits > 3 {
-		bits = 6
-	}
-	w.U8(bits)
-	if bits <= 3 {
-		w.VarInt(int32(len(palette)))
-		for _, id := range palette {
-			w.VarInt(id)
-		}
-	}
-	perLong := 64 / int(bits)
-	longs := make([]int64, (64+perLong-1)/perLong)
-	for i, id := range c.biomes[si] {
-		v := uint64(id)
-		if bits <= 3 {
-			v = indices[id]
-		}
-		longs[i/perLong] |= int64(v << (uint(i%perLong) * uint(bits)))
-	}
-	w.VarInt(int32(len(longs)))
-	for _, v := range longs {
-		w.I64(v)
-	}
+	return chunkwire.Sections(sections)
 }
 
 // HeightmapNBT builds the heightmap compound (MOTION_BLOCKING +
 // WORLD_SURFACE, both present in vanilla chunk packets).
 func (c *Chunk) HeightmapNBT() []byte {
 	motion, surface, _ := c.anvilHeightmaps()
-	return proto.NewNBT().
-		LongArray("MOTION_BLOCKING", motion).
-		LongArray("WORLD_SURFACE", surface).
-		Finish()
+	return chunkwire.Heightmaps(motion, surface)
 }

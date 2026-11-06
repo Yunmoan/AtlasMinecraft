@@ -1,6 +1,7 @@
 package world
 
 import (
+	"atlas/internal/chunkwire"
 	"atlas/internal/item"
 	"atlas/internal/light"
 	"atlas/internal/proto"
@@ -510,16 +511,15 @@ func (w *World) Close() error {
 // heightmaps NBT, section data, block entities, and sky light.
 func buildChunkDataPacket(cx, cz int32, ch *Chunk) []byte {
 	data := ch.EncodeSections()
-	w := proto.NewWriterCap(len(data) + 6*2048 + 512)
-	w.I32(cx).I32(cz)
-	w.Raw(ch.HeightmapNBT())
-	w.VarInt(int32(len(data))).Raw(data)
-	writeChunkBlockEntities(w, ch)
+	entities := proto.NewWriter()
+	writeChunkBlockEntities(entities, ch)
 
 	lighting := ch.lights
 	if lighting == nil {
 		lighting = detachedLight(ch)
 	}
-	writeLightData(w, lighting)
-	return w.Payload()
+	return chunkwire.Encode(chunkwire.Column{
+		X: cx, Z: cz, Sections: data, Heightmaps: ch.HeightmapNBT(),
+		BlockEntities: entities.Payload(), Light: lighting,
+	})
 }
