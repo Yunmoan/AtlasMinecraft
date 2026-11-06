@@ -44,3 +44,18 @@ func TestLocal(t *testing.T) { os.ReadFile("testdata/fixture.bin") }
 		t.Fatalf("%v: %v", tests, err)
 	}
 }
+
+func TestWorldGenerationHelperUsesIntegrationSuite(t *testing.T) {
+	directory := t.TempDir()
+	source := `package sample
+func generate(t *testing.T) { generator := NewOverworldGenerator(1234); generator.Generate(0,0) }
+func TestVillage(t *testing.T) { generate(t) }
+`
+	if err := os.WriteFile(filepath.Join(directory, "sample_test.go"), []byte(source), 0600); err != nil {
+		t.Fatal(err)
+	}
+	tests, err := packageTests(directory, "./internal/worldgen")
+	if err != nil || len(tests) != 1 || tests[0].Suite != "integration" {
+		t.Fatalf("%v: %v", tests, err)
+	}
+}

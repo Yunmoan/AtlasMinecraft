@@ -13,9 +13,10 @@ from atlas_tools import ROOT
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--suite', choices=('basic', 'reference', 'smoke', 'performance', 'all'), default='basic')
+    parser.add_argument('--suite', choices=('basic', 'integration', 'reference', 'smoke', 'performance', 'all'), default='basic')
     parser.add_argument('--list', action='store_true', help='show selected tests and missing inputs without running them')
     parser.add_argument('--match', default='', help='only test names containing this text')
+    parser.add_argument('--timeout', default='', help='Go timeout per package, e.g. 30m (default: 10m basic, 30m other profiles)')
     args = parser.parse_args()
     go = shutil.which('go')
     if not go:
@@ -69,7 +70,8 @@ def main():
         groups[test['package']].append(test['name'])
     for package, names in sorted(groups.items()):
         print(f'Running {len(names)} {args.suite} tests in {package}', flush=True)
-        result = subprocess.run([go, 'test', package, '-run', '^(' + '|'.join(names) + ')$', '-count=1', '-timeout=10m'], cwd=ROOT)
+        timeout = args.timeout or ('10m' if args.suite == 'basic' else '30m')
+        result = subprocess.run([go, 'test', package, '-run', '^(' + '|'.join(names) + ')$', '-count=1', '-timeout=' + timeout], cwd=ROOT)
         if result.returncode:
             return result.returncode
     print(f'Passed {len(selected)} selected tests.', flush=True)

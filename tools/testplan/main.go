@@ -130,8 +130,21 @@ func packageTests(directory, name string) ([]test, error) {
 			f := &function{fn.Name.Name, entry.Name(), map[string]bool{}, files, env, binary}
 			ast.Inspect(fn.Body, func(n ast.Node) bool {
 				if call, ok := n.(*ast.CallExpr); ok {
+					called := ""
 					if id, ok := call.Fun.(*ast.Ident); ok {
 						f.calls[id.Name] = true
+						called = id.Name
+					} else if selector, ok := call.Fun.(*ast.SelectorExpr); ok {
+						called = selector.Sel.Name
+						if owner, ok := selector.X.(*ast.Ident); ok && owner.Name == "world" && called == "Open" {
+							f.calls["@integration"] = true
+						}
+					}
+					if strings.HasPrefix(called, "Generate") ||
+						(strings.HasPrefix(called, "New") && strings.HasSuffix(called, "Generator")) ||
+						called == "CreateNormalWorld" || called == "CreateFlatWorld" || called == "OpenDimension" ||
+						(name == "./internal/world" && called == "Open") {
+						f.calls["@integration"] = true
 					}
 				}
 				return true
@@ -146,6 +159,7 @@ func packageTests(directory, name string) ([]test, error) {
 		}
 		seen, files, env := map[string]bool{}, map[string]bool{}, map[string]bool{}
 		binary := false
+		integration := false
 		var visit func(string)
 		visit = func(name string) {
 			if seen[name] || functions[name] == nil {
@@ -160,12 +174,16 @@ func packageTests(directory, name string) ([]test, error) {
 				env[value] = true
 			}
 			binary = binary || fn.binary
+			integration = integration || fn.calls["@integration"]
 			for call := range fn.calls {
 				visit(call)
 			}
 		}
 		visit(f.name)
 		suite := "basic"
+		if integration {
+			suite = "integration"
+		}
 		externalFiles := false
 		for path := range files {
 			externalFiles = externalFiles || strings.HasPrefix(path, "testdata/")
