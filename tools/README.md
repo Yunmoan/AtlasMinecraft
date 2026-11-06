@@ -11,6 +11,18 @@
 | `worldgen/diagnose_terrain_stages.py` | 指定种子、区块的地形阶段诊断 |
 | `worldgen/probes/*.java` | 世界生成和游戏交互的参考探针及辅助类 |
 | `worldgen/extract_native_bubble_columns.go` | 从原版世界提取气泡柱坐标 |
+| `worldgen/build_scheduled_tick_probe.py` | 对照原版计划更新队列与 NBT 加载／保存；`--check` 校验固定参考文件 |
+| `worldgen/build_fluid_runtime_fixture.py` | 在原版服务端冻结／逐刻运行 28 个流体、植物、树叶、气泡柱及下落方块场景；提取完整方块、方块实体、下落实体和两套有序计划队列，支持 `--check` 独立重采样 |
+| `worldgen/build_falling_block_probe.py` | 对照原版下落方块回调和完整实体 NBT；`--motion` 校验逐刻运动、碰撞和落地；`--drops` 校验掉落判定、物品 NBT 与两条随机流；`--brushable` 切换到可疑沙／沙砾及刷取重置参考；`--kelp` 捕获海带延迟生存检查和原版物品生成，`--check` 独立重采样 |
+| `worldgen/build_fluid_container_probe.py` | 穷举原版容器状态／流体组合，校验接受结果、更新顺序、随机数和熄火音效包 |
+| `worldgen/build_block_shape_probe.py` | 穷举所有原版方块状态的六向形状回调；`--plants` 增补植物支撑、上下半部和亮度上下文；`--check` 独立重采样 |
+| `worldgen/build_block_tick_probe.py` | 提取原版全部方块的计划更新方法来源、全状态叶距查询和树叶延迟更新参考结果 |
+| `worldgen/build_tree_tick_probe.py` | 对照 2,824 个原版树生成案例，检查边界更新请求顺序和 ProtoChunkTicks 打包结果；支持 `--check` |
+| `worldgen/build_template_tick_probe.py` | 对照原版模板边缘及最终六向更新，覆盖 386 状态（含考古方块、海带、海草）、12 周边环境和跨区块／空腔形状；逐项比较方块、回调、随机数后续值和原版 ProtoChunkTicks 打包，支持 `--check` |
+| `worldgen/build_lake_tick_probe.py` | 对照 512 个原版熔岩湖案例及洞穴空气计划请求，包含越过建筑高度的请求；支持 `--check` |
+| `worldgen/build_bubble_tick_probe.py` | 对照气泡柱、岩浆块、灵魂沙的延迟更新／放置回调和全部状态的生成后处理标记；支持 `--check` |
+| `worldgen/build_postprocessing_probe.py` | 原版噪声填充、雕刻和 21 类洞穴地物的后处理列表，逐项保留顺序和重复位置；支持 `--check` |
+| `worldgen/build_final_ocean_fixture.py` | 冻结原版世界并推进 100 刻，保存前后完整区块和初始方块／流体队列；`--preset ocean-ruins` 提取冷／暖海遗迹，`--preset shipwrecks` 提取海底／搁浅沉船，均包含完整方块实体；`--check` 独立重采样，`--trace-decoration` 观察原版装饰、激活及保存入口的内存队列，并在结构模式发布完整有序调度记录 |
 | `inspect-save/`、`terrain-scan/` | 独立 Go 存档检查和地形扫描工具；以命令参数为准 |
 
 ## 常用命令

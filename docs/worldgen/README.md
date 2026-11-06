@@ -2,6 +2,8 @@
 
 Navigation: [all documentation](../README.md) · [development tools](../../tools/README.md) · [reference fixtures](../../testdata/worldgen/).
 
+术语统一见[术语表](../../GLOSSARY.md)：Feature 译为“地物”，Configured Feature 为“已配置地物”，Placed Feature 为“已放置地物”。英文正文及原版类型、代码标识符保留英文名称；地物与结构（Structure）是不同概念。
+
 Source organization follows the generation pipeline: `randomsource/` owns the
 standalone Xoroshiro, legacy and WorldgenRandom algorithms and their reference
 tests; `*_noise.go` implements noise sampling; `biome*` handles climate/biome
@@ -12,17 +14,86 @@ generation callers do not need to understand the extraction.
 
 | Topic | Guide |
 | --- | --- |
-| Structures and placement | [Structure pipeline](structure_pipeline.md), [village blocks](village_blocks_1.21.1.md) |
+| Structures and placement | [Structure pipeline](structure_pipeline.md), [village blocks](village_blocks_1.21.1.md), [ocean monuments](ocean_monuments_1.21.1.md), [woodland mansions](woodland_mansions_1.21.1.md) |
 | Dimensions and portals | [Dimension pipeline](dimension_pipeline.md), [Nether/End features](nether_end_features_1.21.1.md) |
 | Animals and vegetation | [Initial animals](initial_animals_1.21.1.md), [tree decorators](tree_decorators.md), [sculk/mushrooms](sculk_mushroom_1.21.1.md) |
-| Generated block updates | [Bubble columns](bubble_columns_1.21.1.md) |
-| Diagnosis and performance | [River/ocean regression](river_ocean_regression.md), [Jigsaw performance](jigsaw_performance.md) |
+| Generated block updates | [Template updates](template_updates_1.21.1.md), [Postprocessing lists](postprocessing_1.21.1.md), [falling blocks](falling_blocks_1.21.1.md), [bubble columns](bubble_columns_1.21.1.md), [fluid execution](fluid_simulation_1.21.1.md) |
+| Diagnosis and performance | [River/ocean regression](river_ocean_regression.md), [final ocean reference](final_ocean_reference_1.21.1.md), [Jigsaw performance](jigsaw_performance.md) |
 
 `internal/worldgen` is a pure Go port of selected generation primitives from
 the supplied `jar/server.jar`. The JAR is used only to build and verify test
 vectors. It is not used when Atlas runs.
 
-Generation version 12 adds stronghold ring starts, all twelve piece types and
+Generation version 19 restores the immediate water request from shipwreck
+template waterlogging. Two complete native frozen saves match all 196,608
+states, three chest records and 1,107 ordered block/fluid requests; the earlier
+sorted-set primitive gate could not detect the insertion-order defect. See
+[shipwreck fitting](shipwreck_runtime_reference_1.21.1.md).
+
+Generation version 18 retains falling-block, brushable-block, leaf, bubble and
+liquid callbacks from template edge/finalization passes. Native probes match
+27,792 cases, 2,442,730 ordered requests and 766,346 packed requests; production recorder
+checks cover cross-chunk ownership and delegated recording. See
+[template update evidence and limits](template_updates_1.21.1.md).
+Ocean ruins now execute placement in the current decoration context, so shape
+callbacks see plants already placed by neighboring chunks. Two real, frozen
+structure-bearing server saves provide complete arrays, block entities and
+ordered queues; see [ocean-ruin fitting](ocean_ruin_runtime_reference_1.21.1.md).
+Brushable reset and falling execution now pass independent native and reload
+checks; see [brushable runtime](brushable_runtime_1.21.1.md). The subsequent
+[kelp destruction/drop port](kelp_runtime_1.21.1.md) passes both saved 100-tick
+block arrays. A direct native scheduler observer now also matches all 2,515
+ordered dispatches and both chunks' initial/final live queues. This caught and
+fixed missing neighbor notification when a shape update destroys a waterlogged
+plant. Item lifecycle and general destruction loot/events remain incomplete.
+
+Generation version 16 preserves PostProcessing append order and duplicates from
+noise, carvers and features through structure caches and Anvil. Native probes
+match 24 terrain-stage lists (44,678 entries) and 10,752 feature placements
+(56,449 entries), including 9,384 repeated entries across those fixtures.
+See [postprocessing evidence and remaining limits](postprocessing_1.21.1.md).
+
+Runtime falling-block execution now replaces instant sand/gravel column settling.
+Native callbacks and motion traces, airborne reload/recovery, and 28 real-server
+scenes at 17 checkpoints are checked. Both ocean samples match all 217 ordered
+activation block requests and their complete arrays after 100 ticks. Specialized
+entity interactions and default clock integration remain unfinished; see
+[falling-block evidence and limits](falling_blocks_1.21.1.md).
+Failed landings/timeouts now create persisted items with native game-rule and
+random-stream behavior; 1,200 original decisions and atomic write-failure/retry
+checks pass. Item lifecycle after creation remains unfinished.
+
+Generation version 15 removes early bubble-column settling, adds the original
+delayed bubble/magma/soul-sand handlers, preserves lake cave-air requests and
+marks magma/mushroom writes for activation. All 196,608 frozen ocean states and
+133 generation block requests match, and both complete arrays still match after
+100 explicit ticks. The live-server gate now checks 28 scenes at 17 checkpoints.
+See [bubble lifecycle and remaining boundaries](bubble_columns_1.21.1.md).
+
+Generation version 14 preserves TreeFeature boundary block/fluid requests through
+generation queues, structure caches and Anvil, and removes early global leaf
+settling. Leaves now update through explicit runtime block ticks. The original
+probe checks 2,824 trees and 402,367 ordered requests; real frozen saves match
+47 leaves and 41 pending leaf requests, while both complete ocean arrays still
+match after 100 ticks. See [generation updates](fluid_simulation_1.21.1.md).
+Other generation block-request sources, arbitrary mixed activation queues,
+specialized falling-entity behavior and the default server clock remain incomplete.
+
+Generation version 13 adds ocean monuments and woodland mansions to normal
+Overworld generation, including their layout, block placement and persistent
+marker entities. All 29 Overworld structure definitions now have runtime start
+and placement implementations. See the [monument](ocean_monuments_1.21.1.md) and
+[mansion](woodland_mansions_1.21.1.md) reference and integration boundaries.
+This does not establish complete decorated-world equivalence, generation tick
+parity or entity AI.
+Version 13 also preserves the generation-only WG heightmaps after CARVERS.
+The [final ocean comparison](final_ocean_reference_1.21.1.md) documents the
+original-server snapshots and the 158 generation differences this fixes.
+Explicit world fluid execution now resolves the remaining ten lava-flow blocks;
+both complete final arrays match after 100 game ticks. This path is not yet
+enabled by the default server clock, and intermediate tick parity is unproven.
+
+Generation version 12 added stronghold ring starts, all twelve piece types and
 normal chunk/Anvil integration. It also adds existing armor-stand equipment
 interaction and single-chest menus, and fixes dynamic-light packet ordering.
 See [the version-12 validation report](../../artifacts/worldgen-v12-validation.md)
@@ -331,21 +402,21 @@ join starts, terrain, blocks and canonical saved references in the runtime
 pipeline. Nether fortresses, Nether fossils and Nether ruined portals have
 dimension generation, references and Anvil reopen checks. End cities include
 all 20 templates, rotated/clipped block placement, loot requests, Shulkers and
-Elytra item frames. Generated source-water columns above magma/soul sand settle
-into bubble columns; generated leaves settle their distance across neighboring
-tree bounds. These are generation postprocessing passes, not a general fluid,
-leaf-decay or scheduled-tick implementation. The remaining Overworld structure
-families still require their own complete starts, processors and pieces.
+Elytra item frames. Leaves and bubble columns update through explicit runtime
+scheduled execution after generation. All 29 Overworld structure definitions
+have start/placement implementations, with coverage boundaries in their guides.
+Full scheduled-block behavior, random leaf decay and default ticking tickets
+remain incomplete.
 All 37 Nether and 5 End feature plans and their three-dimension
 runtime access are integrated. Generated crystals and supported structure NPCs
 are persisted in independent entity Anvil regions and delivered after terrain;
 Eighteen initial animal types and supported structure actors are generated;
 AI, physics, interactions and spawning beyond that coverage remain incomplete.
 Initial spawn uses the JAR-verified climate search and vanilla's
-11x11 chunk spiral, with additional Atlas clearance and hazard checks. Generation coverage is version 11;
-[the machine-readable report](../../artifacts/worldgen-feature-coverage-v11.json)
-lists 151/151, 37/37 and 5/5 feature plans plus integrated/remaining structures,
-not a world-equivalence percentage.
+11x11 chunk spiral, with additional Atlas clearance and hazard checks. The
+[historical version-11 coverage report](../../artifacts/worldgen-feature-coverage-v11.json)
+lists 151/151, 37/37 and 5/5 feature plans and that version's structure coverage;
+it is neither the current generation version nor a world-equivalence percentage.
 Fixed-order decoration
 replay has not been proven equivalent to vanilla's neighboring chunk ordering;
 the terrain-stage JAR matches are not a claim of identical full worlds.

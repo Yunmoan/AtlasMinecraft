@@ -17,6 +17,7 @@ Atlas 在一个 Go 进程中实现 Minecraft Java 1.21.1 的连接协议、部�
 | 区块和光照的网络编码 | [`chunkwire/encode.go`](../internal/chunkwire/encode.go) |
 | 主世界生成和维度生成 | [`worldgen/overworld.go`](../internal/worldgen/overworld.go)、[生成文档](worldgen/README.md) |
 | 不依赖世界状态的随机算法 | [`worldgen/randomsource`](../internal/worldgen/randomsource/) |
+| 计划更新的顺序、去重与存档延迟 | [`tickqueue`](../internal/tickqueue/)、[`scheduled_tick_owner.go`](../internal/world/scheduled_tick_owner.go)、[`fluid_runtime.go`](../internal/world/fluid_runtime.go)、[流体与调度对照](worldgen/fluid_simulation_1.21.1.md)；同一所有者管理方块／流体队列，显式按阶段执行并保存；生成保留树边界及熔岩湖请求，叶距与气泡柱在运行时更新，尚未接入默认服务端时钟 |
 
 ## 主要依赖
 
@@ -67,7 +68,7 @@ flowchart TD
 
 1. `server` 处理握手，区分状态查询与登录。
 2. 开启正版模式时完成加密协商和 Mojang 会话验证，然后设置压缩并发送登录结果。
-3. 配置阶段发送注册数据、特征标记等信息，等待客户端确认。
+3. 配置阶段发送注册数据、功能标记（feature flags）等信息，等待客户端确认。
 4. 恢复玩家数据，准备当前位置附近区块，再完成位置同步和游戏阶段初始化。
 5. 通过 Hub 管理在线状态；实体可见性等待相关地形实际交付，避免玩家先看到悬空实体。
 

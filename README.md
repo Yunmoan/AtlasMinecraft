@@ -1,5 +1,7 @@
 # Atlas
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 A from-scratch Minecraft **Java Edition 1.21.1 (protocol 767)** server written in **Go** — no JVM, zero external dependencies, built entirely on the standard library.
 
 ## Quick start
@@ -76,8 +78,9 @@ current working directory, so launch it from `run/` to use the local save.
   across region boundaries. Fences, bars and panes update their connections.
   Visible players receive mainhand, offhand and armor equipment updates.
 - Initial block updates remove unsupported grass/flowers and both halves of
-  double plants. Sand/red sand/gravel settle vertically in one durable column
-  edit; animated falling entities and drops are not implemented yet.
+  double plants. Sand/red sand/gravel enqueue delayed gravity updates. Explicit
+  scheduled execution supports falling entities and item creation/persistence;
+  default clock/ticket integration and the subsequent item lifecycle remain incomplete.
 - Chat (system-chat relay), keep-alive heartbeat with mismatch kick
 - Java world save: block edits, world age/daytime/weather, player position,
   inventory and creative flight state survive restart; joining players receive their own
@@ -113,8 +116,9 @@ current working directory, so launch it from `run/` to use the local save.
   trail ruins, trial chambers, ancient cities, pillager outposts, all five village variants and strongholds have actual
   starts, blocks, block entities, loot seeds and saved references. Supported
   structure NPCs and 18 initial animal types are generated and persisted separately from terrain.
-  Remaining structure families and neighboring decoration/light-stage ordering
-  are incomplete. 151 of 151 top-level Overworld
+  Ocean monuments and woodland mansions complete the 29 Overworld structure
+  definitions' start/placement coverage. Neighboring decoration/light-stage ordering
+  remains incomplete. 151 of 151 top-level Overworld
   placed-feature plans are enabled; this is implementation coverage, not a
   percentage of vanilla world equivalence. The complete decorated world is
   not yet equivalent to vanilla.
@@ -122,8 +126,11 @@ current working directory, so launch it from `run/` to use the local save.
   Nether caves and all 37/37 Nether and 5/5 End feature plans. Nether fortresses,
   Nether fossils, Nether ruined portals and Bastions join the actual chunk/save pipeline.
   End cities include loot chests, Shulkers and Elytra item frames. Generated
-  bubble columns and cross-tree leaf distances settle after decoration.
-  Remaining Overworld structure families and general generation ticks remain incomplete. Players can
+  bubble columns and cross-tree leaf distances retain delayed requests and update
+  through explicit scheduled execution after generation.
+  All Overworld structure families are enabled. Generation fluid requests retain
+  their original type, priority and order in `fluid_ticks`; broad block-handler
+  coverage, default clock/ticket integration and full-world equivalence remain incomplete. Players can
   switch dimensions and retain their dimension, position, inventory and edits
   across logout/restart. Generated End crystals and supported structure NPCs
   are saved in independent dimension entity regions and sent after terrain.

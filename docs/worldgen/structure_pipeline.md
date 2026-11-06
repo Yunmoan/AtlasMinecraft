@@ -40,6 +40,8 @@ launch Java or require an installed JDK.
 | Nether fossil base-column sampling/descent, biome gate, 14 templates/all rotations and expanded clipping | 192 starts and 3,024 block calls | `GenerateNetherFossilStructureStart`, `PostProcessNetherFossilBlocks` |
 | Bastion pre-assembly start template, transformed center, biome gate and RNG | 480 cases | `GenerateBastionGenerationStub` |
 | Jigsaw pool expansion, junctions, projection, priority, collision, expansion hack and independent trial-chamber aliases | 1,920 original full-start fixtures across ten structure families | `GenerateJigsawStructureStart` |
+| Ocean-monument biome admission, hidden room graph, all child rooms and exterior, clipped block placement, fluid ticks, elder guardians and RNG continuation | 504 starts, 112 layouts, 192 block calls and 18 finalized actors | `GenerateOceanMonumentStructureStart`, `PostProcessOceanMonumentBlocks`, `FinalizeMonumentEntity` |
+| Woodland-mansion floor plans, ordered template assembly, base-height/biome admission, clipped templates, block entities, marker actors and cobblestone foundations | 260 grids, 84 layouts, 224 starts, 7,008 block calls, 54 finalized actors and 144 foundations | `GenerateMansionStructureStart`, `PostProcessMansionBlocks`, `PostProcessMansionFoundation` |
 
 Ring generation is a world-level prerequisite. The measured six-seed Go test
 took 27.43 seconds total, approximately 4.5 seconds per world's 128 relocated
@@ -75,8 +77,8 @@ machine, rather than whole-server throughput or multi-player performance.
 5. Postprocess complete supported pieces in their original structure step
    before that step's configured features. Their per-chunk random seeds,
    clipping, mirrors / rotations, fluid ticks, light postprocessing, chests,
-   loot tables, archaeology and entity spawning must all be preserved. The three
-   supported piece placers cover blocks and saved loot-table seeds. Hut witch /
+   loot tables, archaeology and entity spawning must all be preserved. Supported
+   piece placers cover blocks and saved loot-table seeds. Hut witch /
    cat and igloo villager/zombie-villager requests join the runtime entity
    pipeline, with TCP and entity-Anvil restart tests. Their AI and interactions
    are separate incomplete stages.
@@ -94,16 +96,16 @@ yaw arithmetic have independent exact-bit coverage; the laboratory villager
 and zombie-villager retain their full NBT through runtime creation and entity
 Anvil saving. TCP checks do not establish graphical-client rendering or AI.
 
-The version-10 runtime enables 20 of 29 Overworld-native structure definitions,
+The version-13 runtime enables all 29 Overworld-native structure definitions,
 all four Nether definitions and the End City definition. Bastions, ancient
 cities, trail ruins and trial chambers have integrated starts and block placers.
-The independent Jigsaw start API also covers outposts and all five villages;
-their start APIs alone do not enable those structures in normal chunks.
+Outposts and all five villages joined the runtime in version 11, strongholds
+in version 12, and ocean monuments and woodland mansions in version 13.
 `build_jigsaw_data.py` extracts 186 pools, 40 processor lists and 968 referenced
 templates. One missing vanilla ancient-city asset explicitly retains the original
-empty-template fallback. Strongholds have placement coverage but no piece
-assembly. The remaining Overworld families are strongholds, villages,
-pillager outposts, ocean monuments and woodland mansions. Mineshafts and End
+empty-template fallback. See [ocean-monument validation](ocean_monuments_1.21.1.md)
+and [woodland-mansion validation](woodland_mansions_1.21.1.md)
+for the latest reference and integration boundaries. Mineshafts and End
 cities now have runtime starts, pieces, block placement and saved references.
 
 `StructureOrderProbe` uses the original vanilla resource manager and
