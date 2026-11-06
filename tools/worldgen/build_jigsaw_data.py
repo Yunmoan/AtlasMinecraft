@@ -5,7 +5,9 @@ import json
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 OUTPUT = ROOT / "internal/worldgen/jigsaw_data"
 
 
@@ -13,7 +15,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
+    with zipfile.ZipFile(common.reference_jar()) as bundle:
         version = json.loads(bundle.read("version.json"))
         if version["id"] != "1.21.1" or version["world_version"] != 3955:
             raise ValueError("expected Minecraft Java 1.21.1 server JAR")

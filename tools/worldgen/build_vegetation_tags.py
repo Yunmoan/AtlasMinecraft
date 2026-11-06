@@ -4,8 +4,10 @@ import json
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
+from _bootstrap import common
+
+ROOT = common.ROOT
+with zipfile.ZipFile(common.reference_jar()) as bundle:
     with zipfile.ZipFile(io.BytesIO(bundle.read("META-INF/versions/1.21.1/server-1.21.1.jar"))) as jar:
         def resolve(name):
             result = set()

@@ -14,34 +14,15 @@ import time
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
 
 
-def atomic_write(path: Path, encoded: bytes) -> None:
-    """Publish a complete fixture without exposing a partial file to Go tests."""
-    descriptor, name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
-    temporary = Path(name)
-    published = False
-    try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(encoded)
-            stream.flush()
-            os.fsync(stream.fileno())
-        for attempt in range(60):
-            try:
-                os.replace(temporary, path)
-                published = True
-                break
-            except PermissionError:
-                if attempt == 59:
-                    raise PermissionError(f"fixture is still open; complete unpublished reference retained at {temporary}")
-                time.sleep(0.2)
-    finally:
-        if published:
-            temporary.unlink(missing_ok=True)
+atomic_write = common.atomic_write
 
 
 def main() -> None:
@@ -94,57 +75,48 @@ def main() -> None:
     fixtures["JigsawOutpostBlocksProbe"] = "jigsaw_outpost_blocks_1.21.1.txt"
     fixtures["MineshaftStartsProbe"] = "structure_mineshaft_starts_1.21.1.txt"
     fixtures["MineshaftBlocksProbe"] = "structure_mineshaft_blocks_1.21.1.txt"
-    with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
-        version = json.loads(bundle.read("version.json"))
-        if version["id"] != "1.21.1" or version["world_version"] != 3955:
-            raise ValueError("expected Minecraft Java 1.21.1 server JAR")
-        with tempfile.TemporaryDirectory(prefix="atlas-structure-ref-") as temp:
-            target = Path(temp)
-            inner = target / "server.jar"
-            inner.write_bytes(bundle.read("META-INF/versions/1.21.1/server-1.21.1.jar"))
-            jars = [inner]
-            for name in bundle.namelist():
-                if name.startswith("META-INF/libraries/") and name.endswith(".jar"):
-                    jar = target / f"library-{len(jars)}.jar"
-                    jar.write_bytes(bundle.read(name))
-                    jars.append(jar)
-            classpath = os.pathsep.join(map(str, jars))
-            sources = [str(PROBE_DIR / f"{args.probe}.java")]
-            if args.probe in ("StructurePyramidBlocksProbe", "StructureJungleBlocksProbe"):
-                sources.append(str(PROBE_DIR / "StructureHutBlocksProbe.java"))
-            if args.probe in ("IglooStartsProbe", "IglooBlocksProbe", "FortressBlocksProbe", "BastionStubProbe", "JigsawStartsProbe") or args.probe.startswith(("BuriedTreasure", "NetherFossil")):
-                sources.append(str(PROBE_DIR / "IglooProbeSupport.java"))
-            if args.probe.startswith("RuinedPortal"):
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java"))
-            if args.probe == "JigsawBlocksProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawProcessorsProbe.java"))
-            if args.probe == "JigsawProcessorsProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java"))
-            if args.probe == "JigsawBlockEntitiesProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java", "JigsawProcessorsProbe.java"))
-            if args.probe in ("JigsawOverworldBlocksProbe", "JigsawOutpostBlocksProbe"):
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java", "JigsawProcessorsProbe.java"))
-            if args.probe == "StructureSetSelectionProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java"))
-            if args.probe.startswith("Mineshaft"):
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java"))
-            if args.probe == "MineshaftBlocksProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("RuinedPortalBlocksProbe.java", "OceanRuinProbeSupport.java", "OceanRuinProcessorsProbe.java", "OceanRuinBlocksProbe.java"))
-            if args.probe.startswith("Shipwreck"):
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java", "RuinedPortalBlocksProbe.java", "ShipwreckProbeSupport.java"))
-            if args.probe.startswith("OceanRuin"):
-                sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java", "OceanRuinProbeSupport.java"))
-            if args.probe == "OceanRuinBlocksProbe":
-                sources.extend(str(PROBE_DIR / name) for name in ("RuinedPortalBlocksProbe.java", "OceanRuinProcessorsProbe.java"))
-            subprocess.run(["javac", "-proc:none", "-cp", classpath, "-d", temp, *sources], check=True)
-            process = subprocess.run(["java", "-cp", os.pathsep.join([temp, classpath]),
-                                      f"atlasprobe.{args.probe}", *args.probe_arg], cwd=target, capture_output=True)
-            if args.stderr_log:
-                atomic_write(args.stderr_log, process.stderr)
-            if process.returncode:
-                raise SystemExit(process.stderr.decode("utf-8", errors="replace") +
-                                 process.stdout.decode("utf-8", errors="replace")[-3000:])
-            actual = process.stdout.decode("utf-8").replace("\r\n", "\n")
+    common.java_tools()
+    with tempfile.TemporaryDirectory(prefix="atlas-structure-ref-") as temp:
+        target = Path(temp)
+        jars = common.reference_jars(target)
+        inner = jars[0]
+        classpath = os.pathsep.join(map(str, jars))
+        sources = [str(PROBE_DIR / f"{args.probe}.java")]
+        if args.probe in ("StructurePyramidBlocksProbe", "StructureJungleBlocksProbe"):
+            sources.append(str(PROBE_DIR / "StructureHutBlocksProbe.java"))
+        if args.probe in ("IglooStartsProbe", "IglooBlocksProbe", "FortressBlocksProbe", "BastionStubProbe", "JigsawStartsProbe") or args.probe.startswith(("BuriedTreasure", "NetherFossil")):
+            sources.append(str(PROBE_DIR / "IglooProbeSupport.java"))
+        if args.probe.startswith("RuinedPortal"):
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java"))
+        if args.probe == "JigsawBlocksProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawProcessorsProbe.java"))
+        if args.probe == "JigsawProcessorsProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java"))
+        if args.probe == "JigsawBlockEntitiesProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java", "JigsawProcessorsProbe.java"))
+        if args.probe in ("JigsawOverworldBlocksProbe", "JigsawOutpostBlocksProbe"):
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "JigsawBlocksProbe.java", "JigsawProcessorsProbe.java"))
+        if args.probe == "StructureSetSelectionProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java"))
+        if args.probe.startswith("Mineshaft"):
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java"))
+        if args.probe == "MineshaftBlocksProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("RuinedPortalBlocksProbe.java", "OceanRuinProbeSupport.java", "OceanRuinProcessorsProbe.java", "OceanRuinBlocksProbe.java"))
+        if args.probe.startswith("Shipwreck"):
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java", "RuinedPortalBlocksProbe.java", "ShipwreckProbeSupport.java"))
+        if args.probe.startswith("OceanRuin"):
+            sources.extend(str(PROBE_DIR / name) for name in ("IglooProbeSupport.java", "RuinedPortalProbeSupport.java", "RuinedPortalStartsProbe.java", "OceanRuinProbeSupport.java"))
+        if args.probe == "OceanRuinBlocksProbe":
+            sources.extend(str(PROBE_DIR / name) for name in ("RuinedPortalBlocksProbe.java", "OceanRuinProcessorsProbe.java"))
+        subprocess.run(["javac", "-proc:none", "-cp", classpath, "-d", temp, *sources], check=True)
+        process = subprocess.run(["java", "-cp", os.pathsep.join([temp, classpath]),
+                                  f"atlasprobe.{args.probe}", *args.probe_arg], cwd=target, capture_output=True)
+        if args.stderr_log:
+            atomic_write(args.stderr_log, process.stderr)
+        if process.returncode:
+            raise SystemExit(process.stderr.decode("utf-8", errors="replace") +
+                             process.stdout.decode("utf-8", errors="replace")[-3000:])
+        actual = process.stdout.decode("utf-8").replace("\r\n", "\n")
     fixture = args.output or FIXTURES / fixtures[args.probe]
     if args.probe == "RuinedPortalClassifiersProbe":
         embedded = ROOT / "internal/worldgen" / fixture.name

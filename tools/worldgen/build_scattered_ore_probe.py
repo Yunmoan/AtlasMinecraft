@@ -2,7 +2,9 @@ from pathlib import Path
 import os
 import subprocess
 
-root=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 source=(root/'tools/worldgen/probes/NetherDecorationProbe.java').read_text().replace('NetherDecorationProbe','ScatteredOreProbe')
 begin=source.index('String[] names=')
 end=source.index('for(String name:names)',begin)
@@ -27,7 +29,7 @@ source=source.replace('{"nylium","aM"}', '{"nylium","aM"},{"base_stone_nether","
 source=source.replace('nether_decoration minecraft:','scattered_ore minecraft:')
 path=root/'tools/worldgen/probes/ScatteredOreProbe.java';path.write_text(source)
 target=root/'artifacts/worldgen-probes'
-classpath=os.pathsep.join([str(target),str(root/'vanilla/server-inner.jar')]+[str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(target))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(target),str(path)],check=True)
 with(root/'testdata/worldgen/scattered_ore_1.21.1.txt').open('w')as out:
     subprocess.run(['java','-cp',classpath,'atlasprobe.ScatteredOreProbe'],stdout=out,check=True)

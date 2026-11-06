@@ -2,10 +2,11 @@ from pathlib import Path
 import os
 import subprocess
 
-root = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 target = root / 'artifacts/worldgen-probes'
-cp = os.pathsep.join([str(target), str(root / 'vanilla/server-inner.jar')] +
-                     [str(p) for p in (root / 'vanilla/libraries').rglob('*.jar')])
+cp = common.reference_classpath(str(target))
 subprocess.run(['javac', '-proc:none', '-cp', cp, '-d', str(target),
                 str(root / 'tools/worldgen/probes/BubbleColumnProbe.java')], check=True, cwd=root)
 fixture = root / 'testdata/worldgen/bubble_columns_1.21.1.txt'

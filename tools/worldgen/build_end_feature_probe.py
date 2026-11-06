@@ -2,7 +2,9 @@ from pathlib import Path
 import os
 import subprocess
 
-root=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 source=(root/'tools/worldgen/probes/NetherDecorationProbe.java').read_text().replace('NetherDecorationProbe','EndFeatureProbe')
 source=source.replace('getField("f").get(null));','getField("g").get(null));')
 source=source.replace('biomes.get("minecraft:nether_wastes")','biomes.get("minecraft:the_end")')
@@ -77,7 +79,7 @@ source=source[:end]+'''
 '''+source[end:]
 path=root/'tools/worldgen/probes/EndFeatureProbe.java';path.write_text(source)
 target=root/'artifacts/worldgen-probes'
-classpath=os.pathsep.join([str(target),str(root/'vanilla/server-inner.jar')]+[str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(target))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(target),str(path)],check=True)
 with(root/'testdata/worldgen/end_features_1.21.1.txt').open('w')as out:
     subprocess.run(['java','-cp',classpath,'atlasprobe.EndFeatureProbe'],stdout=out,check=True)

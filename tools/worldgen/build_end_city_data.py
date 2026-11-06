@@ -5,12 +5,14 @@ import json
 from pathlib import Path
 import zipfile
 
-ROOT=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 OUTPUT=ROOT/'internal/worldgen/end_city_data'
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--check',action='store_true');args=parser.parse_args()
-    with zipfile.ZipFile(ROOT/'jar/server.jar') as bundle:
+    with zipfile.ZipFile(common.reference_jar()) as bundle:
         version=json.loads(bundle.read('version.json'))
         assert version['id']=='1.21.1' and version['world_version']==3955
         inner=bundle.read('META-INF/versions/1.21.1/server-1.21.1.jar')

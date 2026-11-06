@@ -12,10 +12,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from _bootstrap import common
+
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
-ROOT = HERE.parents[1]
+ROOT = common.ROOT
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,20 +26,11 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=FIXTURES)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    common.java_tools()
     with tempfile.TemporaryDirectory(prefix="atlas-terrain-ref-") as temp:
         directory = Path(temp)
-        with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
-            version = json.loads(bundle.read("version.json"))
-            if version["id"] != "1.21.1" or version["world_version"] != 3955:
-                raise ValueError("expected Minecraft 1.21.1 / 3955")
-            inner = directory / "server.jar"
-            inner.write_bytes(bundle.read("META-INF/versions/1.21.1/server-1.21.1.jar"))
-            jars = [inner]
-            for member in bundle.namelist():
-                if member.startswith("META-INF/libraries/") and member.endswith(".jar"):
-                    jar = directory / f"library-{len(jars)}.jar"
-                    jar.write_bytes(bundle.read(member))
-                    jars.append(jar)
+        jars = common.reference_jars(directory)
+        inner = jars[0]
         classpath = os.pathsep.join(map(str, jars))
         subprocess.run([shutil.which("javac"), "-proc:none", "-cp", classpath, "-d", temp,
                         str(PROBE_DIR / "NoiseChunkProbe.java"), str(PROBE_DIR / "SurfaceChunkProbe.java")], check=True)

@@ -4,8 +4,10 @@ import json
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-with zipfile.ZipFile(ROOT / "jar" / "server.jar") as bundle:
+from _bootstrap import common
+
+ROOT = common.ROOT
+with zipfile.ZipFile(common.reference_jar()) as bundle:
     version = json.loads(bundle.read("version.json"))
     if version["id"] != "1.21.1" or version["world_version"] != 3955:
         raise ValueError("expected the Java 1.21.1 server JAR")

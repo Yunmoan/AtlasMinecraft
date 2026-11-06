@@ -13,10 +13,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from _bootstrap import common
+
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
-ROOT = HERE.parents[1]
+ROOT = common.ROOT
 PROBES = {
     "ReferenceProbe": "xoroshiro_1.21.1.txt",
     "ImprovedNoiseProbe": "improved_noise_1.21.1.txt",
@@ -106,24 +108,15 @@ def main() -> None:
     parser.add_argument("--tree-set", choices=("base", "decorated", "giant", "branching", "cherry", "mangrove"), default="base")
     args = parser.parse_args()
     probes = {args.probe: PROBES[args.probe]} if args.probe else PROBES
-    javac, java = shutil.which("javac"), shutil.which("java")
+    java, javac = common.java_tools()
     if not javac or not java:
         raise SystemExit("JDK 21 java and javac must be on PATH")
 
     with tempfile.TemporaryDirectory(prefix="atlas-worldgen-ref-") as temp:
         temporary = Path(temp)
-        with zipfile.ZipFile(ROOT / "jar" / "server.jar") as bundle:
-            version = json.loads(bundle.read("version.json"))
-            if version["id"] != "1.21.1" or version["world_version"] != 3955:
-                raise ValueError("expected Minecraft Java 1.21.1 server JAR")
-            inner = temporary / "server-1.21.1.jar"
-            inner.write_bytes(bundle.read("META-INF/versions/1.21.1/server-1.21.1.jar"))
-            libraries = []
-            for member in bundle.namelist():
-                if member.startswith("META-INF/libraries/") and member.endswith(".jar"):
-                    path = temporary / f"library-{len(libraries)}.jar"
-                    path.write_bytes(bundle.read(member))
-                    libraries.append(path)
+        jars = common.reference_jars(temporary)
+        inner = jars[0]
+        libraries = jars[1:]
         classpath = os.pathsep.join(map(str, [inner, *libraries]))
         sources = [str(PROBE_DIR / f"{name}.java") for name in probes]
         if "PortalForcerProbe" in probes or "PortalPositionProbe" in probes:

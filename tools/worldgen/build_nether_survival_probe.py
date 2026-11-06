@@ -2,7 +2,9 @@ from pathlib import Path
 import os
 import subprocess
 
-root=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 source=(root/'tools/worldgen/probes/NetherForestProbe.java').read_text().replace('NetherForestProbe','NetherSurvivalProbe')
 source=source.replace('{"nylium","aM"}', '{"nylium","aM"},{"soul_fire_base_blocks","aU"}')
 begin=source.index('Object registries=')
@@ -39,7 +41,7 @@ source=source[:begin]+'''Class<?> pos=Class.forName("jd"),state=Class.forName("d
 '''
 path=root/'tools/worldgen/probes/NetherSurvivalProbe.java';path.write_text(source)
 target=root/'artifacts/worldgen-probes'
-classpath=os.pathsep.join([str(target),str(root/'vanilla/server-inner.jar')]+[str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(target))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(target),str(path)],check=True)
 with(root/'testdata/worldgen/nether_survival_1.21.1.txt').open('w')as out:
     subprocess.run(['java','-cp',classpath,'atlasprobe.NetherSurvivalProbe'],stdout=out,check=True)

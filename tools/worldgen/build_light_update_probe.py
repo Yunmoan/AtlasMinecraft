@@ -6,13 +6,14 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-root = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 parser = argparse.ArgumentParser()
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 with tempfile.TemporaryDirectory(prefix='atlas-light-update-') as work:
-    cp = os.pathsep.join([work, str(root / 'vanilla/server-inner.jar')] +
-                        [str(p) for p in (root / 'vanilla/libraries').rglob('*.jar')])
+    cp = common.reference_classpath(work)
     subprocess.run(['javac', '-proc:none', '-cp', cp, '-d', work,
                     str(root / 'tools/worldgen/probes/LightUpdateProbe.java')], check=True, cwd=work)
     result = subprocess.run(['java', '-cp', cp, 'atlasprobe.LightUpdateProbe'],

@@ -4,7 +4,9 @@ import os
 import subprocess
 import sys
 
-ROOT=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE=Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
@@ -12,7 +14,7 @@ TARGET=ROOT/'artifacts/worldgen-probes'
 sys.path.insert(0,str(HERE))
 from verify_structure_reference import atomic_write
 
-classpath=os.pathsep.join([str(TARGET),str(ROOT/'vanilla/server-inner.jar')]+[str(p) for p in (ROOT/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(TARGET))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(TARGET),*[str(PROBE_DIR /name) for name in ('InitialAnimalSpawnProbe.java','GeneratedEntityProbe.java','BastionActorProbe.java')]],check=True,cwd=ROOT)
 process=subprocess.run(['java','-cp',classpath,'atlasprobe.BastionActorProbe'],check=True,capture_output=True,cwd=ROOT)
 fixture=FIXTURES /'structure_bastion_actors_1.21.1.txt'

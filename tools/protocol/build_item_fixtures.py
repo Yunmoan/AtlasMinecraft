@@ -6,19 +6,16 @@ import subprocess
 import tempfile
 import zipfile
 
+from _bootstrap import common
+
 HERE = Path(__file__).resolve().parent
 PROBE_DIR = HERE / "probes"
-ROOT = HERE.parents[1]
+ROOT = common.ROOT
 DEST = ROOT / "internal/item"
 with tempfile.TemporaryDirectory(prefix="atlas-item-wire-") as temp:
     work = Path(temp)
-    classpath = []
-    with zipfile.ZipFile(ROOT / "jar/server.jar") as jar:
-        for name in jar.namelist():
-            if name.endswith(".jar") and name.startswith(("META-INF/libraries/", "META-INF/versions/")):
-                dest = work / f"library-{len(classpath)}.jar"
-                dest.write_bytes(jar.read(name))
-                classpath.append(str(dest))
+    classpath = [str(path) for path in common.reference_jars(work)]
+    common.java_tools()
     cp = os.pathsep.join(classpath)
     subprocess.run([shutil.which("javac"), "-proc:none", "-cp", cp, "-d", temp, str(PROBE_DIR / "ItemStackProbe.java")], check=True, cwd=work)
     subprocess.run([shutil.which("java"), "-cp", os.pathsep.join([temp, cp]), "atlasprobe.ItemStackProbe",

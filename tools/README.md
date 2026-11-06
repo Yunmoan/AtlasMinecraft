@@ -15,6 +15,10 @@
 ## 常用命令
 
 ```powershell
+# 检查 Go；参考工具还会检查 JAVA_HOME/PATH 中的 JDK 和官方包 SHA-1
+python tools/check_env.py
+python tools/check_env.py --reference
+
 # 从已有协议源数据生成注册表、物品表
 python tools/protocol/build_registries.py
 python tools/protocol/build_items.py
@@ -29,7 +33,9 @@ python tools/worldgen/verify_structure_reference.py --probe StructurePlacementPr
 python tools/protocol/diff_registries.py capture-mine
 ```
 
-Python 工具使用标准库。调用官方参考代码的工具还需要 JDK 21 的 `java`、`javac`，以及 `jar/server.jar`（Minecraft Java 1.21.1）。部分构建脚本使用事先解包的 `vanilla/server-inner.jar` 和 `vanilla/libraries`。Go 提取工具需要 Go。
+Python 工具使用标准库。调用官方参考代码的工具还需要 JDK 21+ 的 `java`、`javac`，以及 `jar/server.jar`（Minecraft Java 1.21.1）。优先使用 `JAVA_HOME` 指向的完整 JDK，否则查找 `PATH`。公共工具会验证官方包的 SHA-1、版本和 DataVersion，并将探针使用的 JAR 准备到 `artifacts/reference-java`。Go 提取工具需要 Go。
+
+`atlas_tools.py` 集中管理环境查找、参考包解压、classpath 和原子文件写入；两个主题目录的 `_bootstrap.py` 只负责直接执行脚本时的导入路径。公共工具测试：`python -m unittest discover -s tools -p "test_*.py"`。
 
 参考输入和结果位于 [`testdata`](../testdata/README.md)，运行时内嵌资源位于 `internal`，临时日志和编译结果位于 `artifacts`。部分参考集需先运行对应 `build_*` 工具生成；目录整理不会补充尚未生成的测试数据。
 

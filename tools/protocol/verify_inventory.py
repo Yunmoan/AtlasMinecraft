@@ -7,21 +7,18 @@ import subprocess
 import tempfile
 import zipfile
 
+from _bootstrap import common
+
 HERE = Path(__file__).resolve().parent
 PROBE_DIR = HERE / "probes"
-ROOT = HERE.parents[1]
+ROOT = common.ROOT
 parser = argparse.ArgumentParser()
 parser.add_argument("player_file", type=Path)
 args = parser.parse_args()
 with tempfile.TemporaryDirectory(prefix="atlas-inventory-reference-") as temp:
     work = Path(temp)
-    classpath = []
-    with zipfile.ZipFile(ROOT / "jar/server.jar") as jar:
-        for name in jar.namelist():
-            if name.endswith(".jar") and name.startswith(("META-INF/libraries/", "META-INF/versions/")):
-                dest = work / f"library-{len(classpath)}.jar"
-                dest.write_bytes(jar.read(name))
-                classpath.append(str(dest))
+    classpath = [str(path) for path in common.reference_jars(work)]
+    common.java_tools()
     cp = os.pathsep.join(classpath)
     subprocess.run([shutil.which("javac"), "-proc:none", "-cp", cp, "-d", temp, str(PROBE_DIR / "PlayerInventoryProbe.java")], check=True, cwd=work)
     subprocess.run([shutil.which("java"), "-cp", os.pathsep.join([temp, cp]), "atlasprobe.PlayerInventoryProbe", str(args.player_file.resolve())], check=True, cwd=work)

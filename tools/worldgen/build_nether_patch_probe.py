@@ -2,7 +2,9 @@ from pathlib import Path
 import os
 import subprocess
 
-root=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 source=(root/'tools/worldgen/probes/NetherDecorationProbe.java').read_text().replace('NetherDecorationProbe','NetherPatchProbe')
 begin=source.index('String[] names=');end=source.index(';',begin)
 source=source[:begin]+'String[] names={"patch_fire","patch_soul_fire","patch_crimson_roots"}'+source[end:]
@@ -31,7 +33,7 @@ begin=source.index(needle)
 source=source[:begin]+'if(args.length>0)System.out.printf("nether_patch_placed minecraft:%s %d %d %d %d %d %d %d %d %d %s%n",name,seed,scenario,origin[0],origin[1],origin[2],counts[0],counts[1],changed.size(),Class.forName("dzx").getMethod("g").invoke(random),hash);else '+source[begin:]
 path=root/'tools/worldgen/probes/NetherPatchProbe.java';path.write_text(source)
 target=root/'artifacts/worldgen-probes'
-classpath=os.pathsep.join([str(target),str(root/'vanilla/server-inner.jar')]+[str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(target))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(target),str(path)],check=True)
 with(root/'testdata/worldgen/nether_patch_1.21.1.txt').open('w')as out:
     subprocess.run(['java','-cp',classpath,'atlasprobe.NetherPatchProbe'],stdout=out,check=True)

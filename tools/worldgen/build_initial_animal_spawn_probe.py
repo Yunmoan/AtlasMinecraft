@@ -4,10 +4,11 @@ import json
 import re
 import subprocess
 
-root = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 target = root / "artifacts/worldgen-probes"
-classpath = os.pathsep.join([str(target), str(root / "vanilla/server-inner.jar")] +
-                          [str(p) for p in (root / "vanilla/libraries").rglob("*.jar")])
+classpath = common.reference_classpath(str(target))
 subprocess.run(["javac", "-proc:none", "-cp", classpath, "-d", str(target),
                 str(root / "tools/worldgen/probes/InitialAnimalSpawnProbe.java")], check=True, cwd=root)
 fixture = root / "testdata/worldgen/initial_animals_1.21.1.txt"

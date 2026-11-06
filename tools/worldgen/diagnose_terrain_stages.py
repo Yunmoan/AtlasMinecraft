@@ -14,7 +14,9 @@ import tempfile
 import zipfile
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE = Path(__file__).resolve().parent
 PROBE_DIR = HERE / "probes"
 
@@ -43,7 +45,7 @@ def main() -> None:
             for cx in range(args.cx - args.radius, args.cx + args.radius + 1)
             for cz in range(args.cz - args.radius, args.cz + args.radius + 1)
         ]
-    java, javac = shutil.which("java"), shutil.which("javac")
+    java, javac = common.java_tools()
     if not java or not javac:
         raise SystemExit("JDK 21 java and javac must be on PATH")
     output = args.output.resolve()
@@ -55,18 +57,9 @@ def main() -> None:
     ), encoding="utf-8")
     with tempfile.TemporaryDirectory(prefix="atlas-terrain-diag-") as temp:
         temporary = Path(temp)
-        with zipfile.ZipFile(ROOT / "jar/server.jar") as bundle:
-            version = json.loads(bundle.read("version.json"))
-            if version["id"] != "1.21.1" or version["world_version"] != 3955:
-                raise ValueError("expected Minecraft Java 1.21.1 server JAR")
-            inner = temporary / "server-1.21.1.jar"
-            inner.write_bytes(bundle.read("META-INF/versions/1.21.1/server-1.21.1.jar"))
-            libraries = []
-            for member in bundle.namelist():
-                if member.startswith("META-INF/libraries/") and member.endswith(".jar"):
-                    path = temporary / f"library-{len(libraries)}.jar"
-                    path.write_bytes(bundle.read(member))
-                    libraries.append(path)
+        jars = common.reference_jars(temporary)
+        inner = jars[0]
+        libraries = jars[1:]
         classpath = os.pathsep.join(map(str, [inner, *libraries]))
         names = ("NoiseChunkProbe", "SurfaceChunkProbe", "CarverChunkProbe")
         subprocess.run([javac, "-proc:none", "-cp", classpath, "-d", temp,

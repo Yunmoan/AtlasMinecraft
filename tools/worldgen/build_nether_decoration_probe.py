@@ -3,7 +3,9 @@ from pathlib import Path
 import os
 import subprocess
 
-root = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 source = (root / 'tools/worldgen/probes/NetherForestProbe.java').read_text()
 source = source.replace('NetherForestProbe', 'NetherDecorationProbe')
 source = source.replace('Nether forest vegetation and huge fungi', 'Nether vines, glowstone and geological decorations')
@@ -42,7 +44,7 @@ source = source.replace('atlas-nether-forest-world','atlas-nether-decoration-wor
 path=root/'tools/worldgen/probes/NetherDecorationProbe.java'
 path.write_text(source)
 target=root/'artifacts/worldgen-probes'
-classpath=os.pathsep.join([str(target),str(root/'vanilla/server-inner.jar')]+[str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(target))
 subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(target),str(path)],check=True)
 with (root/'testdata/worldgen/nether_decoration_1.21.1.txt').open('w') as out:
     subprocess.run(['java','-cp',classpath,'atlasprobe.NetherDecorationProbe'],stdout=out,check=True)

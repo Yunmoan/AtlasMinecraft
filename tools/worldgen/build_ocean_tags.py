@@ -4,14 +4,16 @@ import json
 import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 OUTPUT = ROOT / "internal/worldgen/ocean_tags.json"
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    with zipfile.ZipFile(ROOT / "vanilla/server-inner.jar") as jar:
+    with zipfile.ZipFile(common.reference_server()) as jar:
         def expand(name):
             result = []
             for entry in json.loads(jar.read(f"data/minecraft/tags/block/{name}.json"))["values"]:

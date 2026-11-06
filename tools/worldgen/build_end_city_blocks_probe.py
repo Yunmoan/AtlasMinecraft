@@ -5,7 +5,9 @@ import os
 import subprocess
 import sys
 
-ROOT=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE=Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
@@ -16,7 +18,7 @@ from verify_structure_reference import atomic_write
 parser=argparse.ArgumentParser()
 parser.add_argument('--check',action='store_true')
 args=parser.parse_args()
-classpath=os.pathsep.join([str(TARGET),str(ROOT/'vanilla/server-inner.jar')]+[str(p) for p in (ROOT/'vanilla/libraries').rglob('*.jar')])
+classpath=common.reference_classpath(str(TARGET))
 compiler=subprocess.run(['javac','-proc:none','-cp',classpath,'-d',str(TARGET),*[str(PROBE_DIR /n) for n in ('InitialAnimalSpawnProbe.java','GeneratedEntityProbe.java','GeneratedEntityPacketProbe.java','IglooProbeSupport.java','AtlasProbeGameEventDispatcher.java','EndCityBlocksProbe.java')]],capture_output=True,cwd=ROOT)
 atomic_write(TARGET/'end-city-blocks-javac-v10.txt',compiler.stdout+compiler.stderr)
 compiler.check_returncode()

@@ -6,7 +6,9 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
@@ -20,8 +22,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     TARGET.mkdir(parents=True, exist_ok=True)
-    classpath = os.pathsep.join([str(TARGET), str(ROOT / 'vanilla/server-inner.jar')] +
-                               [str(p) for p in (ROOT / 'vanilla/libraries').rglob('*.jar')])
+    classpath = common.reference_classpath(str(TARGET))
     compiler = subprocess.run(['javac', '-proc:none', '-cp', classpath, '-d', str(TARGET),
                                *[str(PROBE_DIR / name) for name in ('IglooProbeSupport.java',
                                  'RuinedPortalProbeSupport.java', 'VillageCampfireBlockEntityProbe.java')]],

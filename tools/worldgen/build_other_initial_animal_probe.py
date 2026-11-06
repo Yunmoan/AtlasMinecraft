@@ -4,9 +4,11 @@ import subprocess
 import json
 import zipfile
 
-root=Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+root = common.ROOT
 target=root / "artifacts/worldgen-probes"
-cp=os.pathsep.join([str(target),str(root / "vanilla/server-inner.jar")]+[str(p) for p in (root / "vanilla/libraries").rglob("*.jar")])
+cp=common.reference_classpath(str(target))
 subprocess.run(["javac","-proc:none","-cp",cp,"-d",str(target),str(root / "tools/worldgen/probes/InitialAnimalSpawnProbe.java"),str(root / "tools/worldgen/probes/OtherInitialAnimalProbe.java")],check=True,cwd=root)
 fixture=root / "testdata/worldgen/other_initial_animals_1.21.1.txt"
 temporary=fixture.with_suffix(".txt.tmp")
@@ -30,7 +32,7 @@ for line in fixture.read_text().splitlines():
     elif p[0]=='animal_registry':
         registries.setdefault(p[1],{})[p[2]]=int(p[3])
 assert len(types)==12 and len(states)==26684
-with zipfile.ZipFile(root/'vanilla/server-inner.jar') as jar:
+with zipfile.ZipFile(common.reference_server()) as jar:
     def members(name):
         result=[]
         for value in json.loads(jar.read('data/minecraft/tags/block/'+name+'.json'))['values']:

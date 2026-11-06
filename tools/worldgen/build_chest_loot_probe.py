@@ -7,14 +7,16 @@ import subprocess
 import tempfile
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[2]
+from _bootstrap import common
+
+ROOT = common.ROOT
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE.parents[1] / "testdata/worldgen"
 PROBE_DIR = HERE / "probes"
 TARGET = ROOT / 'artifacts/container-v12'
 
 def original_assets():
-    with zipfile.ZipFile(ROOT / 'vanilla/server-inner.jar') as jar:
+    with zipfile.ZipFile(common.reference_server()) as jar:
         def read(name):
             return json.loads(jar.read('data/minecraft/' + name + '.json'))
         def tag(kind, name):
@@ -39,14 +41,14 @@ def main():
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     TARGET.mkdir(parents=True, exist_ok=True)
-    cp = os.pathsep.join([str(TARGET), str(ROOT / 'vanilla/server-inner.jar')] + [str(p) for p in (ROOT / 'vanilla/libraries').rglob('*.jar')])
+    cp = common.reference_classpath(str(TARGET))
     compile = subprocess.run(['javac', '-proc:none', '-cp', cp, '-d', str(TARGET), *[str(PROBE_DIR / n) for n in ['IglooProbeSupport.java', 'RuinedPortalProbeSupport.java', 'AtlasChestMenuPlayer.java', 'ChestLootProbe.java']]], capture_output=True, cwd=TARGET)
     (TARGET / 'chest-loot-javac.txt').write_bytes(compile.stdout+compile.stderr)
     compile.check_returncode()
     with tempfile.TemporaryDirectory(prefix='atlas-chest-loot-') as work:
         block_flags = Path(work) / 'conductor.bin'
         instruments = Path(work) / 'instruments.json'
-        run = subprocess.run(['java','-Xmx512m','-cp',cp,'atlasprobe.ChestLootProbe',str(block_flags),str(ROOT/'vanilla/server-inner.jar'),str(instruments),str(TARGET)],capture_output=True,cwd=work)
+        run = subprocess.run(['java','-Xmx512m','-cp',cp,'atlasprobe.ChestLootProbe',str(block_flags),str(common.reference_server()),str(instruments),str(TARGET)],capture_output=True,cwd=work)
         (TARGET / 'chest-loot.stdout.txt').write_bytes(run.stdout)
         (TARGET / 'chest-loot.stderr.txt').write_bytes(run.stderr)
         run.check_returncode()

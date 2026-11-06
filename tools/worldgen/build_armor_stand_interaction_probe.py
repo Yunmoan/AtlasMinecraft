@@ -1,21 +1,23 @@
 from pathlib import Path
 import argparse, os, subprocess, tempfile
 
+from _bootstrap import common
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 
-root = Path(__file__).resolve().parents[2]
+root = common.ROOT
 target = root / 'artifacts/worldgen-probes'
-jdk = Path(r'C:\Program Files\Microsoft\jdk-21.0.7.6-hotspot\bin')
-cp = os.pathsep.join([str(target), str(root/'vanilla/server-inner.jar')] + [str(p) for p in (root/'vanilla/libraries').rglob('*.jar')])
+java, javac = common.java_tools()
+cp = common.reference_classpath(str(target))
 sources = ['InitialAnimalSpawnProbe', 'GeneratedEntityPacketProbe', 'AtlasProbeGameEventDispatcher', 'AtlasArmorStandPlayer', 'ArmorStandInteractionProbe']
-subprocess.run([str(jdk/'javac.exe'), '-proc:none', '-cp', cp, '-d', str(target)] + [str(root/f'tools/worldgen/probes/{s}.java') for s in sources], check=True)
+subprocess.run([javac, '-proc:none', '-cp', cp, '-d', str(target)] + [str(root/f'tools/worldgen/probes/{s}.java') for s in sources], check=True)
 fixture = root/'testdata/worldgen/armor_stand_interaction_1.21.1.txt'
 with tempfile.TemporaryDirectory(prefix='atlas-armor-oracle-') as cwd:
     tmp = Path(cwd)/'armor_stand_interaction.txt'
     with tmp.open('w', encoding='utf-8') as output:
-        subprocess.run([str(jdk/'java.exe'), f'-Datlas.root={root}', '-cp', cp, 'atlasprobe.ArmorStandInteractionProbe'], check=True, cwd=cwd, stdout=output)
+        subprocess.run([java, f'-Datlas.root={root}', '-cp', cp, 'atlasprobe.ArmorStandInteractionProbe'], check=True, cwd=cwd, stdout=output)
     result = b'\n'.join(line for line in tmp.read_bytes().splitlines() if line.startswith(b'armor_')) + b'\n'
     slots = b'\n'.join(line[len(b'armor_item_slot '):] for line in result.splitlines() if line.startswith(b'armor_item_slot ')) + b'\n'
     slot_fixture = root/'internal/world/armor_stand_item_slots_1.21.1.txt'
