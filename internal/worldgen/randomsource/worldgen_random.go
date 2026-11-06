@@ -1,4 +1,4 @@
-package worldgen
+package randomsource
 
 import "math"
 
@@ -11,9 +11,21 @@ type WorldgenRandom struct {
 	hasGaussian bool
 }
 
+// Snapshot includes the Gaussian cache used by deterministic decorator salts.
+// Reading it does not advance either stream or change the cached value.
+type Snapshot struct {
+	Lo, Hi      uint64
+	Gaussian    float64
+	HasGaussian bool
+}
+
+func (random *WorldgenRandom) Snapshot() Snapshot {
+	return Snapshot{random.source.lo, random.source.hi, random.gaussian, random.hasGaussian}
+}
+
 // XoroshiroState is a read-only snapshot for independent feature randomness.
-func (random *WorldgenRandom) XoroshiroState() (lo,hi uint64) {
-	return random.source.lo,random.source.hi
+func (random *WorldgenRandom) XoroshiroState() (lo, hi uint64) {
+	return random.source.lo, random.source.hi
 }
 
 // SetSeed matches WorldgenRandom.setSeed: its inherited Gaussian cache survives

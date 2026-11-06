@@ -31,7 +31,7 @@ func ProcessOceanRuinTemplateBlocks(template *StructureTemplate, origin FeatureP
 		}
 		blocks = append(blocks, block)
 	}
-	random := NewLegacyRandom(worldSeed).ForkPositional().AtPosition(origin)
+	random := legacyAtPosition(NewLegacyRandom(worldSeed).ForkPositional(), origin)
 	indices := make([]int, len(blocks))
 	for index := range indices {
 		indices[index] = index

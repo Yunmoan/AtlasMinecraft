@@ -1,4 +1,4 @@
-package worldgen
+package randomsource
 
 import "unicode/utf16"
 

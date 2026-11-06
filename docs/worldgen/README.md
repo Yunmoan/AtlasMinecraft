@@ -2,6 +2,14 @@
 
 Navigation: [all documentation](../README.md) · [development tools](../../tools/README.md) · [reference fixtures](../../testdata/worldgen/).
 
+Source organization follows the generation pipeline: `randomsource/` owns the
+standalone Xoroshiro, legacy and WorldgenRandom algorithms and their reference
+tests; `*_noise.go` implements noise sampling; `biome*` handles climate/biome
+selection; feature families and `structure_*` provide decoration and structures;
+`overworld.go` and `dimension_*.go` assemble those stages. The top-level random
+types and constructors remain compatible aliases/entry points so existing
+generation callers do not need to understand the extraction.
+
 | Topic | Guide |
 | --- | --- |
 | Structures and placement | [Structure pipeline](structure_pipeline.md), [village blocks](village_blocks_1.21.1.md) |
