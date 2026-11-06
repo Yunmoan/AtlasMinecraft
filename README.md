@@ -387,13 +387,17 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 
 ## Architecture (the interesting part)
 
+Module responsibilities, ownership and login/edit/chunk request flows are
+documented in [the architecture guide](docs/architecture.md). Domain terms are
+defined in [the glossary](GLOSSARY.md).
+
 ```
                     ┌────────────────────────── TCP :25565
                     │  net.Listener (accept loop)
                     ▼
         ┌───────────────────────┐
         │ per-connection         │  read loop (this file's goroutine)
-        │ goroutine pair         │  writer loop drains p.Out (buffered 512)
+        │ goroutine pair         │  writer loop drains bounded p.Out
         └──────────┬────────────┘  slow client ⇒ disconnect, never blocks
                    │
              ┌─────▼─────┐
@@ -404,7 +408,7 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
     │ Region actors — the world is sharded into     │
     │ 32×32-chunk regions, ONE goroutine each.      │
     │ Chunk state is touched only by its owner —    │
-    │ no locks on world data, ever.                 │
+    │ shared world managers synchronize access.     │
     └──────────────┬───────────────────────────────┘
                    │ genJob (chan)
         ┌──────────▼──────────┐
@@ -414,7 +418,7 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 
 - **Region actors**: block edits and chunk requests are messages; the owning
   region goroutine applies them and fans out block-change packets via
-  `Hub.ViewersOf`. Cross-region interaction needs no shared state.
+  `Hub.ViewersOf`. Cross-region edits use world coordination and region messages.
 - **Backpressure**: every outbound queue is bounded; a lagging client is
   kicked instead of stalling a region actor.
 - **Generation boundary**: normal chunks run the verified terrain stages and

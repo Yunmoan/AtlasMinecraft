@@ -48,9 +48,9 @@ const (
 type chunkKey struct{ x, z int32 }
 
 // Region is an actor goroutine owning a 32x32-chunk slice of the world.
-// All chunk state is touched only by the region's goroutine — no locks —
-// and cross-region interaction happens purely through the Hub's viewer
-// lookup, which is coordinate-based and lock-free per message.
+// Chunk state is touched only by the region's goroutine. Shared world,
+// viewer and lighting managers have their own synchronization; cross-region
+// edits are coordinated through world operations and region messages.
 type Region struct {
 	world *World
 
