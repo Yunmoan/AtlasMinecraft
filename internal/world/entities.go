@@ -55,6 +55,12 @@ var officialEndCityActorDefaults string
 //go:embed village_actor_defaults_1.21.1.txt
 var officialVillageActorDefaults string
 
+//go:embed monument_actor_defaults_1.21.1.txt
+var officialMonumentActorDefaults string
+
+//go:embed mansion_actor_defaults_1.21.1.txt
+var officialMansionActorDefaults string
+
 type entityQuery struct {
 	cx, cz int32
 	result chan entityResult
@@ -117,7 +123,7 @@ func cloneEntityData(data nbt.Object) (nbt.Object, error) {
 // embedded constructor snapshots every time a generation request is realized.
 var generatedEntityDefaultIndex = sync.OnceValues(func() (map[string][]byte, error) {
 	index := make(map[string][]byte)
-	for _, source := range []string{officialEntityDefaults, officialAnimalDefaults, officialOtherAnimalDefaults, officialBastionActorDefaults, officialDrownedActorDefaults, officialOutpostActorDefaults, officialVehicleDefaults, officialEndCityActorDefaults, officialVillageActorDefaults} {
+	for _, source := range []string{officialEntityDefaults, officialAnimalDefaults, officialOtherAnimalDefaults, officialBastionActorDefaults, officialDrownedActorDefaults, officialOutpostActorDefaults, officialVehicleDefaults, officialEndCityActorDefaults, officialVillageActorDefaults, officialMonumentActorDefaults, officialMansionActorDefaults} {
 		for _, line := range strings.Split(source, "\n") {
 			fields := strings.Fields(line)
 			if len(fields) != 2 {

@@ -16,12 +16,15 @@ TARGET = ROOT / 'artifacts/worldgen-probes'
 parser = argparse.ArgumentParser()
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
-classpath = common.reference_classpath(str(TARGET))
-compiled = subprocess.run(['javac', '-proc:none', '-cp', classpath, '-d', str(TARGET), str(PROBE_DIR /'TreeFeatureProbe.java'), str(PROBE_DIR /'VillageFeaturePoolProbe.java')], capture_output=True, cwd=ROOT)
+classes = TARGET / 'village-feature-classes'
+classes.mkdir(parents=True, exist_ok=True)
+java, javac = common.java_tools()
+classpath = common.reference_classpath(classes)
+compiled = subprocess.run([javac, '-proc:none', '-cp', classpath, '-d', str(classes), str(PROBE_DIR /'TreeFeatureProbe.java'), str(PROBE_DIR /'VillageFeaturePoolProbe.java')], capture_output=True, cwd=ROOT)
 atomic_write(TARGET/'village-features-javac-v11.txt', compiled.stdout + compiled.stderr)
 compiled.check_returncode()
 with tempfile.TemporaryDirectory(prefix='atlas-village-features-') as scratch:
-    process = subprocess.run(['java', '-Xmx768m', '-cp', classpath, 'atlasprobe.VillageFeaturePoolProbe'], capture_output=True, cwd=scratch)
+    process = subprocess.run([java, '-Xmx768m', '-cp', classpath, 'atlasprobe.VillageFeaturePoolProbe'], capture_output=True, cwd=scratch)
 atomic_write(TARGET/'village-features-v11.stderr.txt', process.stderr)
 atomic_write(TARGET/'village-features-v11.stdout.txt', process.stdout)
 process.check_returncode()

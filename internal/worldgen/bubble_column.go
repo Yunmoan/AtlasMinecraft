@@ -2,6 +2,45 @@ package worldgen
 
 import "fmt"
 
+func scheduleBubbleBlock(world FeatureBlockWorld, p FeaturePosition, name string, delay int32) error {
+	scheduler, ok := world.(interface {
+		ScheduleBlockTick(FeaturePosition, string, int32, int32) error
+	})
+	if !ok {
+		return fmt.Errorf("bubble update requires block tick scheduling")
+	}
+	return scheduler.ScheduleBlockTick(p, name, delay, 0)
+}
+
+// MagmaBlock and SoulSandBlock schedule unconditionally in onPlace.
+func NotifyBubbleBlockPlacement(world FeatureBlockWorld, p FeaturePosition, state SurfaceBlockState) error {
+	if state.Name == "minecraft:magma_block" || state.Name == "minecraft:soul_sand" {
+		return scheduleBubbleBlock(world, p, state.Name, 20)
+	}
+	return nil
+}
+
+func updateBubbleNeighborShape(world FeatureBlockWorld, p FeaturePosition, state SurfaceBlockState, face int, neighbor SurfaceBlockState) (SurfaceBlockState, error) {
+	if state.Name != "minecraft:bubble_column" {
+		if face == 1 && neighbor.Name == "minecraft:water" {
+			return state, scheduleBubbleBlock(world, p, state.Name, 20)
+		}
+		return state, nil
+	}
+	if err := runtimePlantWaterTick(world, p); err != nil {
+		return state, err
+	}
+	below, err := world.BlockAt(treeOffset(p, 0, -1, 0))
+	if err != nil {
+		return state, err
+	}
+	survives := below.Name == "minecraft:bubble_column" || below.Name == "minecraft:magma_block" || below.Name == "minecraft:soul_sand"
+	if !survives || face == 0 || face == 1 && neighbor.Name != "minecraft:bubble_column" && bubbleColumnCanOccupy(neighbor) {
+		return state, scheduleBubbleBlock(world, p, state.Name, 5)
+	}
+	return state, nil
+}
+
 // UpdateBubbleColumn reproduces BubbleColumnBlock.updateColumn's block-state
 // changes when the magma/soul-sand or bubble-column tick runs. It does not
 // simulate fluid flow, scheduled-tick timing or entity movement.
@@ -71,51 +110,4 @@ func bubbleColumnSameState(a, b SurfaceBlockState) bool {
 		drag = "true"
 	}
 	return drag == b.Properties["drag"]
-}
-
-// PostProcessGeneratedBubbleColumns settles just the generated magma/soul-sand
-// bubble ticks after decoration and before the detached final chunk is saved.
-// Sources live in the sparse state map; no full-volume scan or neighbor chunk
-// request is needed. A feature written across a chunk border is included in
-// its destination's final state map. Only vertical columns are affected.
-func PostProcessGeneratedBubbleColumns(chunk *NoiseChunkResult) (int, error) {
-	if chunk == nil || chunk.Height <= 0 || len(chunk.Blocks) != int(chunk.Height)*256 {
-		return 0, fmt.Errorf("bubble postprocessing requires a complete chunk")
-	}
-	world := generatedBubbleColumnWorld{chunk}
-	changed := 0
-	for index, support := range chunk.SurfaceBlocks {
-		if support.Name != "minecraft:magma_block" && support.Name != "minecraft:soul_sand" {
-			continue
-		}
-		if index < 0 || index >= len(chunk.Blocks) {
-			return changed, fmt.Errorf("bubble source index %d outside chunk", index)
-		}
-		position := FeaturePosition{chunk.X*16 + int32(index&15), chunk.MinY + int32(index/256) + 1, chunk.Z*16 + int32((index>>4)&15)}
-		n, err := UpdateBubbleColumn(world, position, support)
-		if err != nil {
-			return changed, err
-		}
-		changed += n
-	}
-	return changed, nil
-}
-
-type generatedBubbleColumnWorld struct{ chunk *NoiseChunkResult }
-
-func (world generatedBubbleColumnWorld) BlockAt(p FeaturePosition) (SurfaceBlockState, error) {
-	return world.chunk.BlockStateAt(p.X-world.chunk.X*16, p.Y, p.Z-world.chunk.Z*16)
-}
-
-func (world generatedBubbleColumnWorld) SetBlock(p FeaturePosition, state SurfaceBlockState) error {
-	if !world.InWorld(p) {
-		return fmt.Errorf("bubble column write outside generated chunk at %v", p)
-	}
-	world.chunk.setSurfaceState(p.X-world.chunk.X*16, p.Y, p.Z-world.chunk.Z*16, state)
-	return nil
-}
-
-func (world generatedBubbleColumnWorld) InWorld(p FeaturePosition) bool {
-	return p.X>>4 == world.chunk.X && p.Z>>4 == world.chunk.Z &&
-		p.Y >= world.chunk.MinY && p.Y < world.chunk.MinY+world.chunk.Height
 }

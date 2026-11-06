@@ -114,6 +114,8 @@ type setBlockMsg struct {
 	expected      *uint32
 	upper         *uint32
 	upperExpected *uint32
+	raw           bool // level mutation: callbacks run outside the region actor
+	flags         int32
 	changed       chan []BlockPosition
 	result        chan error
 }
@@ -152,6 +154,8 @@ func (r *Region) run() {
 		default:
 		}
 		switch msg := m.(type) {
+		case fallingEntityOperation:
+			r.runFallingEntityOperation(msg)
 		case containerQuery:
 			r.containerQuery(msg)
 		case entityQuery:
@@ -199,6 +203,8 @@ func (r *Region) run() {
 				ch.lastAccess = time.Now()
 			}
 			msg.Result <- blockReadResult{States: states, Err: err}
+		case fluidCampfireDowse:
+			msg.result <- r.dowseCampfire(msg.p)
 		case portalChunkQuery:
 			msg.result <- r.portalChunkSnapshot(msg)
 		case saveRegion:
@@ -307,6 +313,8 @@ func (r *Region) run() {
 				r.world.loadedChunks.Add(1)
 			}
 			r.chunks[k] = msg.chunk
+			msg.chunk.scheduledTicks = r.world.scheduledTicks.register(msg.chunk)
+			r.world.fallingEntities.register(msg.chunk)
 			msg.chunk.lastAccess = time.Now()
 			if r.world.lighting != nil {
 				r.applyLight(msg.chunk, r.world.lighting.Snapshot(light.Position{X: msg.cx, Z: msg.cz}), false)
@@ -360,6 +368,9 @@ func (r *Region) saveChunks() error {
 	var combined error
 	if r.world.store != nil {
 		for key, ch := range r.chunks {
+			if ch.scheduledTicks != nil && ch.scheduledTicks.needsSave() {
+				ch.dirty = true
+			}
 			r.world.store.vanilla.refreshStrongholdFlags(ch)
 			if r.world.lighting != nil {
 				r.applyLight(ch, r.world.lighting.Snapshot(light.Position{X: key.x, Z: key.z}), false)

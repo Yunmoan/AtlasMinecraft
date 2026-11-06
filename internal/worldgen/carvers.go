@@ -244,11 +244,11 @@ func (pass *carvingPass) carveEllipsoid(x, y, z, radius, verticalRadius float64,
 				if !carverReplaceable[state.Name] {
 					continue
 				}
-				if blockY <= result.MinY+8 {
-					result.setSurfaceState(localX, blockY, localZ, SurfaceBlockState{Name: "minecraft:lava"})
-					continue
+				material, solid, update := NoiseLava, false, result.aquiferShouldSchedule
+				if blockY > result.MinY+8 {
+					material, solid, update = pass.aquifer.compute(blockX, blockY, blockZ, 0)
+					result.aquiferShouldSchedule = update
 				}
-				material, solid, update := pass.aquifer.compute(blockX, blockY, blockZ, 0)
 				if pass.aquifer.err != nil {
 					pass.err = pass.aquifer.err
 					return
@@ -258,6 +258,9 @@ func (pass *carvingPass) carveEllipsoid(x, y, z, radius, verticalRadius float64,
 				}
 				result.setSurfaceState(localX, blockY, localZ, SurfaceBlockState{Name: material.BlockName()})
 				result.FluidUpdates[index] = update && material != NoiseAir
+				if update && material != NoiseAir {
+					result.PostProcessingOrder = append(result.PostProcessingOrder, index)
+				}
 				if wasSurface && blockY > result.MinY && result.surfaceState(localX, blockY-1, localZ).Name == "minecraft:dirt" {
 					pass.restoreCarvedSurface(localX, blockY-1, localZ, material != NoiseAir)
 					if pass.err != nil {
@@ -329,6 +332,10 @@ func (pass *carvingPass) restoreCarvedSurface(x, y, z int32, fluid bool) {
 	}
 	if state != nil {
 		result.setSurfaceState(x, y, z, *state)
+		if generationFluidType(*state) != "minecraft:empty" {
+			index, _ := result.Index(x, y, z)
+			result.PostProcessingOrder = append(result.PostProcessingOrder, index)
+		}
 	}
 }
 

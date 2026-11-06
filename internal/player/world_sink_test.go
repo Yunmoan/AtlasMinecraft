@@ -80,3 +80,22 @@ func TestWorldSinkFullQueueDoesNotMarkPartialBatchDelivered(t *testing.T) {
 		t.Fatal("full queue did not disconnect slow client")
 	}
 }
+
+func TestSoundSinkUsesDimensionThreeDimensionalRadiusAndEpoch(t *testing.T) {
+	p := New("sound", [16]byte{}, 1, nil)
+	p.SetPos(.5, 64.5, .5, 0, 0, true)
+	if p.SoundPacketSink("minecraft:the_nether", .5, 64.5, .5, 16) != nil {
+		t.Fatal("sound crossed dimensions")
+	}
+	if p.SoundPacketSink("minecraft:overworld", .5, 80.5, .5, 16) != nil {
+		t.Fatal("sound included exact radius boundary")
+	}
+	sink := p.SoundPacketSink("minecraft:overworld", .5, 80.49, .5, 16)
+	if sink == nil || !sink.Current() {
+		t.Fatal("sound omitted nearby listener without a delivered source chunk")
+	}
+	p.ResetWorld("minecraft:the_nether", [3]float64{.5, 64.5, .5}, 0, 0, nil)
+	if sink.Current() {
+		t.Fatal("delayed sound survived a dimension change")
+	}
+}

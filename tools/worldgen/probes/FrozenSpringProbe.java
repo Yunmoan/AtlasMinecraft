@@ -79,6 +79,8 @@ public final class FrozenSpringProbe {
         Method emptyFluid=Class.forName("epe").getMethod("c"),stateID=Class.forName("dfy").getMethod("i",state);
         String[] names={"ice_spike","freeze_top_layer","spring_water","spring_lava_overworld","spring_lava_frozen","spring_nether_open","spring_nether_closed"};
         boolean caves=args.length>0&&args[0].startsWith("caves");
+        boolean lakeTicks=args.length>0&&args[0].equals("caves_lake_ticks");
+        boolean orderedPost=args.length>0&&args[0].equals("caves_postprocessing");
         boolean oceans=args.length>0&&args[0].startsWith("oceans");
         boolean icebergs=args.length>0&&args[0].startsWith("icebergs");
         boolean land=args.length>0&&args[0].equals("land");
@@ -87,6 +89,7 @@ public final class FrozenSpringProbe {
         boolean sculk=args.length>0&&args[0].startsWith("sculk");
         boolean placedMode=(caves||oceans||icebergs||rooms||sculk)&&args[0].endsWith("_placed");
         if(caves) names=new String[]{"pointed_dripstone","underwater_magma","dripstone_cluster","large_dripstone","glow_lichen","cave_vine","cave_vine_in_moss","spore_blossom","moss_patch","moss_patch_ceiling","moss_patch_bonemeal","lush_caves_clay","clay_with_dripleaves","clay_pool_with_dripleaves","moss_vegetation","dripleaf","azalea_tree","rooted_azalea_tree","vines","lake_lava","amethyst_geode"};
+        if(lakeTicks) names=new String[]{"lake_lava"};
         Map<String,int[]> order=new HashMap<>();
         order.put("large_dripstone",new int[]{2,3});order.put("underwater_magma",new int[]{6,26});order.put("dripstone_cluster",new int[]{7,2});order.put("pointed_dripstone",new int[]{7,3});order.put("glow_lichen",new int[]{9,0});order.put("lush_caves_ceiling_vegetation",new int[]{9,22});order.put("cave_vines",new int[]{9,23});order.put("lush_caves_clay",new int[]{9,24});order.put("lush_caves_vegetation",new int[]{9,25});order.put("spore_blossom",new int[]{9,27});
         order.put("rooted_azalea_tree",new int[]{9,26});order.put("classic_vines_cave_feature",new int[]{9,28});order.put("vines",new int[]{9,76});order.put("lake_lava_underground",new int[]{1,0});order.put("lake_lava_surface",new int[]{1,1});order.put("amethyst_geode",new int[]{2,2});
@@ -113,6 +116,7 @@ public final class FrozenSpringProbe {
             int mode=scenario;
             int[] origin=mode==154?new int[]{-1,41,-16}:mode==155?new int[]{15,41,15}:mode==156?new int[]{8,319,8}:mode==157?new int[]{8,-64,8}:mode==166?new int[]{29999952,41,29999952}:mode==167?new int[]{-29999952,41,-29999952}:mode==125?new int[]{-1,41,-16}:mode==126?new int[]{15,41,15}:mode==141?new int[]{8,318,8}:mode==142?new int[]{8,-64,8}:mode==143?new int[]{29999952,41,29999952}:mode==144?new int[]{-29999952,41,-29999952}:mode==113||mode==89||mode==65?new int[]{-1,41,-16}:mode==114||mode==90||mode==66?new int[]{15,41,15}:mode==119||mode==80?new int[]{8,319,8}:mode==120||mode==81?new int[]{8,-64,8}:mode==122||mode==101||mode==82?new int[]{29999952,41,29999952}:mode==123||mode==102||mode==83?new int[]{-29999952,41,-29999952}:mode==62?new int[]{8,-60,8}:mode>=56?new int[]{8,41,8}:mode==50?new int[]{-1,45,-16}:mode==49||mode==51?new int[]{8,51,8}:mode>=48?new int[]{8,45,8}:mode==1||mode==32 ? new int[]{-1,41,-16}:mode==2||mode==33 ? new int[]{15,41,15}:mode==8||mode==34 ? new int[]{8,319,8}:mode==9||mode==35 ? new int[]{8,-64,8}:mode==10 ? new int[]{29999952,41,29999952}:mode==11 ? new int[]{-29999952,41,-29999952}:new int[]{8,41,8};
             Map<String,Object> changed=new HashMap<>();Set<String> ticks=new TreeSet<>();
+            List<String> blockRequests=new ArrayList<>();
             Map<String,Object> entities=new HashMap<>();
             Map<String,Object> postChunks=new HashMap<>();
             java.util.function.Function<int[],Object> read=p->{
@@ -255,6 +259,12 @@ public final class FrozenSpringProbe {
                     if(m.equals("t"))return Class.forName("jm").getMethod("a",Object.class).invoke(null,biome);
                     if(m.equals("a")&&values.length==3&&state.isInstance(values[1])){
                         if(p[1]<-64||p[1]>=320)return false;String k=p[0]+" "+p[1]+" "+p[2];changed.put(k,values[1]);
+                        // WorldGenRegion automatically marks hasPostProcess
+                        // states, independently of feature-explicit markers.
+                        if((boolean)Class.forName("dtb$a").getMethod("q",Class.forName("dcc"),pos).invoke(values[1],proxy,values[0])) {
+                            Object chunk=Class.forName("dcz").getMethod("y",pos).invoke(proxy,values[0]);
+                            Class.forName("duy").getMethod("e",pos).invoke(chunk,values[0]);
+                        }
                         if(well||rooms){Object b=Class.forName("jz").getMethod("a",Class.forName("akr")).invoke(blockRegistry,Class.forName("akr").getMethod("a",String.class).invoke(null,"minecraft:suspicious_sand"));
                             if(Class.forName("dtb$a").getMethod("b").invoke(values[1])==b){if(!entities.containsKey(k))entities.put(k,Class.forName("dql").getConstructor(pos,state).newInstance(values[0],values[1]));}else if(rooms){
                                 Object block=Class.forName("dtb$a").getMethod("b").invoke(values[1]);
@@ -265,9 +275,15 @@ public final class FrozenSpringProbe {
                         }
                         return true;
                     }
-                    // Tree shape notifications schedule gameplay leaf/fluid ticks;
-                    // the tree oracle checks generation edits, as TreeFeatureProbe does.
-                    if(method.getReturnType()==void.class){if(!name.equals("azalea_tree")&&!name.equals("rooted_azalea_tree")&&!(values.length>1&&Class.forName("dfy").isInstance(values[1])))ticks.add(p[0]+" "+p[1]+" "+p[2]);return null;}
+                    if(lakeTicks&&m.equals("a")&&values.length>=3&&Class.forName("dfy").isInstance(values[1])&&values[2] instanceof Integer) {
+                        String block=Class.forName("jz").getMethod("b",Object.class).invoke(blockRegistry,values[1]).toString();
+                        if(values.length!=3)throw new UnsupportedOperationException("unexpected lake priority overload");
+                        blockRequests.add(block+" "+p[0]+" "+p[1]+" "+p[2]+" "+values[2]+" 0");
+                    }
+                    // This legacy column counts fluid requests plus explicit/
+                    // automatic postprocessing. Block requests have separate
+                    // ordered references, including tree boundary requests.
+                    if(method.getReturnType()==void.class){if(!(values.length>1&&Class.forName("dfy").isInstance(values[1])))ticks.add(p[0]+" "+p[1]+" "+p[2]);return null;}
                 }
                 throw new UnsupportedOperationException(method.toString());
             });
@@ -290,10 +306,11 @@ public final class FrozenSpringProbe {
                 positions.forEach(p->{try{result[0]|=(boolean)Class.forName("ebq").getMethod("a",Class.forName("dds"),Class.forName("duz"),Class.forName("ayw"),pos).invoke(configured,world,generator,random,p);}catch(Exception ex){throw new RuntimeException(ex);}});
                 placed=result[0];
             } else placed=(boolean)Class.forName("ebq").getMethod("a",Class.forName("dds"),Class.forName("duz"),Class.forName("ayw"),pos).invoke(features.get("minecraft:"+name),world,generator,random,start);
+            Map<String,List<Integer>> postLists=new TreeMap<>();
             for(var entry:postChunks.entrySet()) {
                 String[] coords=entry.getKey().split(" ");int cx=Integer.parseInt(coords[0]),cz=Integer.parseInt(coords[1]);
                 Object[] sections=(Object[])Class.forName("duy").getMethod("n").invoke(entry.getValue());
-                for(int section=0;section<sections.length;section++)if(sections[section]!=null)for(Object packed:(Iterable<?>)sections[section]) {int v=((Short)packed)&65535;ticks.add((cx*16+(v&15))+" "+(-64+section*16+((v>>4)&15))+" "+(cz*16+((v>>8)&15)));}
+                for(int section=0;section<sections.length;section++)if(sections[section]!=null)for(Object packed:(Iterable<?>)sections[section]) {int v=((Short)packed)&65535;ticks.add((cx*16+(v&15))+" "+(-64+section*16+((v>>4)&15))+" "+(cz*16+((v>>8)&15)));postLists.computeIfAbsent(cx+" "+cz+" "+section,k->new ArrayList<>()).add(v);}
             }
             List<String> output=new ArrayList<>();for(var entry:changed.entrySet())output.add(entry.getKey()+" "+stateID.invoke(null,entry.getValue()));output.sort(String::compareTo);
             String hash=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(String.join("\n",output).getBytes(StandardCharsets.UTF_8)));
@@ -312,7 +329,16 @@ public final class FrozenSpringProbe {
                     values.add(entry.getKey()+" "+id+" "+tail+" "+Class.forName("ub").getMethod("i",String.class).invoke(tag,"LootTableSeed"));
                 }else values.add(entry.getKey()+" "+Class.forName("ub").getMethod("l",String.class).invoke(tag,"id")+" "+Class.forName("ub").getMethod("l",String.class).invoke(tag,"LootTable")+" "+Class.forName("ub").getMethod("i",String.class).invoke(tag,"LootTableSeed"));
             }values.sort(String::compareTo);entityHash=" "+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(String.join("\n",values).getBytes(StandardCharsets.UTF_8)));}
-            System.out.printf("%s minecraft:%s %d %d %d %d %d %d %d %d %s %d%s%n",sculk?(placedMode?"sculk_placement":"sculk_feature"):rooms?(placedMode?"room_placement":"room_feature"):well?"well_feature":land?"land_feature":icebergs?(placedMode?"iceberg_placement":"iceberg_feature"):oceans?(placedMode?"ocean_placement":"ocean_feature"):placedMode?"cave_placement":caves?"cave_feature":"frozen_spring",name,seed,scenario,origin[0],origin[1],origin[2],placed?1:0,changed.size(),Class.forName("dzx").getMethod("g").invoke(random),hash,ticks.size(),entityHash);
+            long next=(long)Class.forName("dzx").getMethod("g").invoke(random);
+            System.out.printf("%s minecraft:%s %d %d %d %d %d %d %d %d %s %d%s%n",sculk?(placedMode?"sculk_placement":"sculk_feature"):rooms?(placedMode?"room_placement":"room_feature"):well?"well_feature":land?"land_feature":icebergs?(placedMode?"iceberg_placement":"iceberg_feature"):oceans?(placedMode?"ocean_placement":"ocean_feature"):placedMode?"cave_placement":caves?"cave_feature":"frozen_spring",name,seed,scenario,origin[0],origin[1],origin[2],placed?1:0,changed.size(),next,hash,ticks.size(),entityHash);
+            if(lakeTicks) {
+                Map<String,Object> row=new LinkedHashMap<>();row.put("seed",seed);row.put("scene",scenario);row.put("origin",origin);row.put("placed",placed);row.put("count",changed.size());row.put("hash",hash);row.put("next",next);row.put("requests",blockRequests);
+                System.out.println("lake_ticks "+new com.google.gson.Gson().toJson(row));
+            }
+            if(orderedPost) {
+                Map<String,Object> row=new LinkedHashMap<>();row.put("feature","minecraft:"+name);row.put("seed",seed);row.put("scene",scenario);row.put("origin",origin);row.put("placed",placed);row.put("count",changed.size());row.put("hash",hash);row.put("next",next);row.put("sections",postLists);
+                System.out.println("feature_postprocessing "+new com.google.gson.Gson().toJson(row));
+            }
         }
     }
     private static Map<String,Object> registry(Object lookup,String field)throws Exception {

@@ -3,6 +3,7 @@ package anvil
 import (
 	"atlas/internal/nbt"
 	"encoding/binary"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -137,6 +138,35 @@ func TestReadChunkRejectsInvalidRecordBounds(t *testing.T) {
 			}
 			if _, _, exists, err := ReadChunk(dir, 0, 0); err == nil || exists {
 				t.Fatalf("invalid chunk accepted: exists=%v err=%v", exists, err)
+			}
+		})
+	}
+}
+
+// Vanilla's RegionFile constructor can create a zero-length file while reading
+// an empty entity region. Partial headers with any bytes remain corrupt.
+func TestReadEmptyNativeRegion(t *testing.T) {
+	for _, size := range []int{0, 1, sector, 2*sector - 1} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.WriteFile(filepath.Join(dir, "r.-1.-1.mca"), make([]byte, size), 0644); err != nil {
+				t.Fatal(err)
+			}
+			_, _, exists, err := ReadChunk(dir, -1, -1)
+			if exists || (err == nil) != (size == 0) {
+				t.Fatalf("size=%d exists=%v err=%v", size, exists, err)
+			}
+			root := nbt.Tag{Type: nbt.Compound, Value: nbt.Object{"xPos": {Type: nbt.Int, Value: int32(-1)}}}
+			if err := WriteChunk(dir, -1, -1, "", root); (err == nil) != (size == 0) {
+				t.Fatalf("write size=%d err=%v", size, err)
+			}
+			if size == 0 {
+				_, got, exists, err := ReadChunk(dir, -1, -1)
+				obj, _ := got.Object()
+				x, ok := obj.Number("xPos")
+				if err != nil || !exists || !ok || x != -1 {
+					t.Fatalf("write into empty native region: %v %v", got, err)
+				}
 			}
 		})
 	}

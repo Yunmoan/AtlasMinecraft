@@ -5,6 +5,7 @@ import (
 	"atlas/internal/item"
 	"atlas/internal/light"
 	"atlas/internal/proto"
+	"atlas/internal/worldgen"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -20,27 +21,30 @@ import (
 // of chunk-generation workers. Callers never touch chunk state directly;
 // they post messages to the owning region's mailbox.
 type World struct {
-	mu            sync.Mutex
-	regions       map[chunkKey]*Region
-	generation    *generationQueue
-	hub           HubView
-	store         *Store
-	stateMu       sync.RWMutex
-	saveMu        sync.Mutex
-	blockUpdateMu sync.Mutex // edits plus neighbor propagation; actors never acquire it
-	meta          worldMeta
-	seed          int64
-	workers       int
-	loadChunk     func(int32, int32) (*Chunk, error)
-	done          chan struct{}
-	wg            sync.WaitGroup
-	closeOnce     sync.Once
-	closeErr      error
-	lighting      *light.Engine
-	lightErr      error
-	loadedChunks  atomic.Int64
-	activeJobs    atomic.Int64
-	dimension     dimensionSettings
+	mu              sync.Mutex
+	regions         map[chunkKey]*Region
+	generation      *generationQueue
+	hub             HubView
+	store           *Store
+	stateMu         sync.RWMutex
+	saveMu          sync.Mutex
+	blockUpdateMu   sync.Mutex // edits plus neighbor propagation; actors never acquire it
+	meta            worldMeta
+	seed            int64
+	workers         int
+	loadChunk       func(int32, int32) (*Chunk, error)
+	done            chan struct{}
+	wg              sync.WaitGroup
+	closeOnce       sync.Once
+	closeErr        error
+	lighting        *light.Engine
+	lightErr        error
+	loadedChunks    atomic.Int64
+	activeJobs      atomic.Int64
+	dimension       dimensionSettings
+	scheduledTicks  *scheduledTickOwner
+	tickRandom      *worldgen.LegacyRandom // runtime stream, independent of terrain RNG
+	fallingEntities fallingEntityOrder
 }
 
 var ErrWorldClosed = errors.New("world is closed")
@@ -74,13 +78,14 @@ func newWorld(hub HubView, genWorkers int, store *Store, meta worldMeta) *World 
 		genWorkers = 1
 	}
 	w := &World{
-		regions:    make(map[chunkKey]*Region),
-		generation: newGenerationQueue(),
-		hub:        hub,
-		store:      store,
-		meta:       meta,
-		workers:    genWorkers,
-		done:       make(chan struct{}),
+		regions:        make(map[chunkKey]*Region),
+		generation:     newGenerationQueue(),
+		hub:            hub,
+		store:          store,
+		meta:           meta,
+		scheduledTicks: newScheduledTickOwner(meta.Age),
+		workers:        genWorkers,
+		done:           make(chan struct{}),
 	}
 	w.dimension, _ = builtinDimension("minecraft:overworld")
 	if store != nil {
@@ -371,10 +376,14 @@ func (w *World) Time() (age, dayTime int64) {
 }
 
 func (w *World) AdvanceTime(ticks int64) {
+	w.blockUpdateMu.Lock()
+	defer w.blockUpdateMu.Unlock()
 	w.stateMu.Lock()
 	w.meta.Age += ticks
 	w.meta.DayTime += ticks
+	age := w.meta.Age
 	w.stateMu.Unlock()
+	w.scheduledTicks.setTime(age)
 }
 
 func (w *World) SetDayTime(ticks int64) {
@@ -437,6 +446,8 @@ func (w *World) SetWeather(weather string) error {
 
 // Save flushes world metadata. Block edits are durable when SetBlock returns.
 func (w *World) Save() error {
+	w.blockUpdateMu.Lock()
+	defer w.blockUpdateMu.Unlock()
 	w.saveMu.Lock()
 	defer w.saveMu.Unlock()
 	if w.store == nil {

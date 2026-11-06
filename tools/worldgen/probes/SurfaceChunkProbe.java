@@ -180,6 +180,16 @@ public final class SurfaceChunkProbe {
                     Class.forName("dyk$a"), Class.forName("eaa"))
                     .newInstance(4, randomState, cx * 16, cz * 16, noiseSettings, beardifier, settings,
                         fluidPicker, blender);
+                if(args.length>3&&args[3].equals("postprocessing")) {
+                    // Run the original NoiseBasedChunkGenerator.doFill, using
+                    // the original noise chunk with an empty beardifier. This
+                    // bypasses only StructureManager construction, not its
+                    // traversal or markPosForPostprocessing implementation.
+                    Class.forName("duy").getMethod("a",java.util.function.Function.class).invoke(protoChunk,(java.util.function.Function<Object,Object>)ignored->noiseChunk);
+                    Method fill=Class.forName("dzb").getDeclaredMethod("a",Class.forName("eaa"),Class.forName("ddq"),Class.forName("dzm"),Class.forName("duy"),int.class,int.class);
+                    fill.setAccessible(true);fill.invoke(generator,blender,null,randomState,protoChunk,-8,48);
+                    dumpPostprocessing(protoChunk,seed,cx,cz,"noise");
+                }
                 Object fixedBiome = Proxy.newProxyInstance(getterClass.getClassLoader(), new Class<?>[] {getterClass},
                     (proxy, method, arguments) -> biomeName.equals("natural")
                         ? naturalBiomeAt.invoke(naturalBiomeSource, arguments[0], arguments[1], arguments[2], climateSampler)
@@ -262,12 +272,25 @@ public final class SurfaceChunkProbe {
                         carveStarts, carveReturns, maskBits, maskByCarver[0], maskByCarver[1], maskByCarver[2],
                         Base64.getEncoder().encodeToString(compressedMask.toByteArray()),
                         Base64.getEncoder().encodeToString(compressedOutput.toByteArray()));
+                    if(args.length>3&&args[3].equals("postprocessing"))dumpPostprocessing(protoChunk,seed,cx,cz,"carved");
                 } else {
                     System.out.printf("surface_chunk %d %d %d %s %s%n", seed, cx, cz, biomeName,
                         Base64.getEncoder().encodeToString(compressedOutput.toByteArray()));
                 }
             }
         }
+    }
+
+    private static void dumpPostprocessing(Object chunk,long seed,int cx,int cz,String stage)throws Exception {
+        java.util.Map<String,Object> row=new java.util.LinkedHashMap<>();
+        row.put("seed",seed);row.put("x",cx);row.put("z",cz);row.put("stage",stage);
+        java.util.List<java.util.List<Integer>> lists=new java.util.ArrayList<>();
+        for(Object section:(Object[])Class.forName("duy").getMethod("n").invoke(chunk)) {
+            java.util.List<Integer> entries=new java.util.ArrayList<>();
+            if(section!=null)for(Object packed:(Iterable<?>)section)entries.add(((Short)packed)&65535);
+            lists.add(entries);
+        }
+        row.put("sections",lists);System.out.println("terrain_postprocessing "+new com.google.gson.Gson().toJson(row));
     }
 
     private static void expandTag(ZipFile server, String tag, Set<String> blocks) throws Exception {

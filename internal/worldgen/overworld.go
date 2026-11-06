@@ -12,7 +12,7 @@ const overworldCacheLimit = 128
 
 // OverworldGenerationVersion distinguishes newly generated chunks from earlier
 // Atlas coverage without rewriting or regenerating any existing full chunks.
-const OverworldGenerationVersion int32 = 12
+const OverworldGenerationVersion int32 = 19
 
 // GeneratedOverworldChunk contains terrain, quart biomes and the decoration
 // coverage for one chunk. Unsupported features are explicit, never presented
@@ -291,7 +291,10 @@ func cloneTerrain(source *NoiseChunkResult) *NoiseChunkResult {
 	// Keep the returned chunk fully independent of the cached template.
 	chunk.Blocks = append([]NoiseMaterial(nil), source.Blocks...)
 	chunk.FluidUpdates = append([]bool(nil), source.FluidUpdates...)
+	chunk.FluidTicks = append([]PendingFluidTick(nil), source.FluidTicks...)
+	chunk.BlockTicks = append([]PendingBlockTick(nil), source.BlockTicks...)
 	chunk.PostProcessing = append([]bool(nil), source.PostProcessing...)
+	chunk.PostProcessingOrder = append([]int(nil), source.PostProcessingOrder...)
 	chunk.SurfaceBlocks = make(map[int]SurfaceBlockState, len(source.SurfaceBlocks))
 	for index, state := range source.SurfaceBlocks {
 		if state.Properties != nil {
@@ -316,17 +319,11 @@ func (generator *OverworldGenerator) Generate(cx, cz int32) (*GeneratedOverworld
 	if err != nil {
 		return nil, err
 	}
-	if err := finalizeGeneratedLeafDistances(region, cx, cz); err != nil {
-		return nil, err
-	}
 	unsupportedAnimals, err := generator.generateInitialAnimals(region, cx, cz)
 	if err != nil {
 		return nil, err
 	}
 	result := &GeneratedOverworldChunk{Terrain: region.cloneChunk(cx, cz), Biomes: bases[featureChunkPosition{cx, cz}].biomes, BlockEntities: region.BlockEntitiesInChunk(cx, cz), SkippedFeatures: skipped, PendingEntities: region.PendingEntitiesInChunk(cx, cz)}
-	if _, err := PostProcessGeneratedBubbleColumns(result.Terrain); err != nil {
-		return nil, err
-	}
 	if generator.structures != nil {
 		if err := generator.commitStrongholdChunk(starts, cx, cz); err != nil {
 			return nil, err
@@ -395,6 +392,7 @@ func (generator *OverworldGenerator) decorateRegion(bases map[featureChunkPositi
 	if err != nil {
 		return nil, nil, err
 	}
+	region.BeginFeatureStage()
 	// Feature writes use sparse private overlays. The returned target alone is
 	// materialized and fully detached from all immutable terrain templates.
 	region.borrowed = make(map[featureChunkPosition]bool, len(chunks))
@@ -416,6 +414,7 @@ func (generator *OverworldGenerator) decorateRegion(bases map[featureChunkPositi
 	for dx := int32(-1); dx <= 1; dx++ {
 		for dz := int32(-1); dz <= 1; dz++ {
 			sx, sz := cx+dx, cz+dz
+			region.shapeRandom = NewStructureRegionRandom(generator.seed, sx, sz)
 			region.treeShuffle.sourceX, region.treeShuffle.sourceZ = sx, sz
 			present := make(map[string]bool)
 			for nx := int32(-1); nx <= 1; nx++ {

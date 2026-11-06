@@ -112,7 +112,7 @@ func TestConcurrentPreloadRequestsGenerateChunkOnce(t *testing.T) {
 }
 
 func testGenerationWorld(workers int, load func(int32, int32) (*Chunk, error)) *World {
-	w := &World{regions: make(map[chunkKey]*Region), generation: newGenerationQueue(), hub: noViewers{}, done: make(chan struct{}), workers: workers, loadChunk: load}
+	w := &World{regions: make(map[chunkKey]*Region), generation: newGenerationQueue(), hub: noViewers{}, done: make(chan struct{}), workers: workers, loadChunk: load, scheduledTicks: newScheduledTickOwner(0)}
 	for i := 0; i < workers; i++ {
 		w.wg.Add(1)
 		go w.genWorker()

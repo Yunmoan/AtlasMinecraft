@@ -187,7 +187,7 @@ func finalizeIglooTemplateShape(world FeatureBlockWorld, placed []FeaturePositio
 
 type structureTemplateShapeUpdater func(FeatureBlockWorld, FeaturePosition, SurfaceBlockState, string, SurfaceBlockState) (SurfaceBlockState, error)
 
-func finalizeStructureTemplateShape(world FeatureBlockWorld, placed []FeaturePosition, updateShape structureTemplateShapeUpdater) error {
+func updateStructureTemplateEdges(world FeatureBlockWorld, placed []FeaturePosition, updateShape structureTemplateShapeUpdater) error {
 	if len(placed) == 0 {
 		return nil
 	}
@@ -212,14 +212,14 @@ func finalizeStructureTemplateShape(world FeatureBlockWorld, placed []FeaturePos
 		if err != nil {
 			return err
 		}
-		updated, err := updateShape(world, p, state, direction, neighbor)
+		updated, err := updateTemplateShape(world, p, state, direction, neighbor, updateShape)
 		if err != nil {
 			return err
 		}
 		if err := iglooSetShapeIfChanged(world, p, state, updated); err != nil {
 			return err
 		}
-		outside, err := updateShape(world, q, neighbor, iglooOpposite(direction), updated)
+		outside, err := updateTemplateShape(world, q, neighbor, iglooOpposite(direction), updated, updateShape)
 		if err != nil {
 			return err
 		}
@@ -265,6 +265,13 @@ func finalizeStructureTemplateShape(world FeatureBlockWorld, placed []FeaturePos
 			}
 		}
 	}
+	return nil
+}
+
+func finalizeStructureTemplateShape(world FeatureBlockWorld, placed []FeaturePosition, updateShape structureTemplateShapeUpdater) error {
+	if err := updateStructureTemplateEdges(world, placed, updateShape); err != nil {
+		return err
+	}
 	for _, p := range placed {
 		state, err := world.BlockAt(p)
 		if err != nil {
@@ -276,7 +283,7 @@ func finalizeStructureTemplateShape(world FeatureBlockWorld, placed []FeaturePos
 			if err != nil {
 				return err
 			}
-			updated, err = updateShape(world, p, updated, direction, neighbor)
+			updated, err = updateTemplateShape(world, p, updated, direction, neighbor, updateShape)
 			if err != nil {
 				return fmt.Errorf("template shape at %v: %w", p, err)
 			}

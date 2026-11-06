@@ -8,13 +8,10 @@ import (
 )
 
 func shipwreckTemplateUpdateShape(world FeatureBlockWorld, p FeaturePosition, state SurfaceBlockState, direction string, neighbor SurfaceBlockState) (SurfaceBlockState, error) {
-	schedule := state.Properties["waterlogged"] == "true"
 	if state.Name == "minecraft:water" || state.Name == "minecraft:lava" {
-		_, source := ruinedPortalFluid(state)
-		_, neighborSource := ruinedPortalFluid(neighbor)
-		schedule = source || neighborSource
+		return updateLiquidNeighborShape(world, p, state, neighbor)
 	}
-	if schedule {
+	if state.Properties["waterlogged"] == "true" {
 		if scheduler, ok := world.(interface{ ScheduleFluidUpdate(FeaturePosition) error }); ok {
 			if err := scheduler.ScheduleFluidUpdate(p); err != nil {
 				return state, err
@@ -170,18 +167,10 @@ func PostProcessShipwreckBlocks(world StructureBlockEntityWorld, piece *Structur
 		}
 		_, container := full.Properties["waterlogged"]
 		container = container && full.Properties["type"] != "double"
-		if container && (old.Name == "minecraft:water" || old.Properties["waterlogged"] == "true") {
-			state = stateWithProperty(state, "waterlogged", "true")
-		}
 		if err := world.SetBlock(p, state); err != nil {
 			return result, err
 		}
 		placed = append(placed, p)
-		if container {
-			if _, source := ruinedPortalFluid(state); !source {
-				pendingLiquid = append(pendingLiquid, p)
-			}
-		}
 		if block.NBT != nil && state.Name == "minecraft:chest" {
 			// Original template loads consume a loot seed even before a data
 			// marker assigns the loot table; the seed is absent from saved NBT.
@@ -192,6 +181,20 @@ func PostProcessShipwreckBlocks(world StructureBlockEntityWorld, piece *Structur
 				return result, err
 			}
 			entities[p] = data
+		}
+		if container && state.Properties["waterlogged"] != "true" {
+			fluid, err := FluidStateForBlock(old)
+			if err != nil {
+				return result, err
+			}
+			if fluid.Type == FluidWater {
+				if err := fillShipwreckWaterContainer(world, p, state); err != nil {
+					return result, err
+				}
+			}
+			if !fluid.Source() {
+				pendingLiquid = append(pendingLiquid, p)
+			}
 		}
 	}
 	for changed := true; changed && len(pendingLiquid) > 0; {
@@ -218,7 +221,7 @@ func PostProcessShipwreckBlocks(world StructureBlockEntityWorld, piece *Structur
 			}
 			if source {
 				if kind == "water" && state.Properties["waterlogged"] != "true" {
-					if err := world.SetBlock(p, stateWithProperty(state, "waterlogged", "true")); err != nil {
+					if err := fillShipwreckWaterContainer(world, p, state); err != nil {
 						return result, err
 					}
 				}
@@ -271,6 +274,19 @@ func PostProcessShipwreckBlocks(world StructureBlockEntityWorld, piece *Structur
 		entities[p] = data
 	}
 	return result, nil
+}
+
+// StructureTemplate calls SimpleWaterloggedBlock.placeLiquid before its edge
+// shape pass. That callback both writes WATERLOGGED and schedules water; later
+// shape requests cannot replace this first insertion's place in the queue.
+func fillShipwreckWaterContainer(world FeatureBlockWorld, p FeaturePosition, state SurfaceBlockState) error {
+	if err := world.SetBlock(p, stateWithProperty(state, "waterlogged", "true")); err != nil {
+		return err
+	}
+	if scheduler, ok := world.(interface{ ScheduleFluidUpdate(FeaturePosition) error }); ok {
+		return scheduler.ScheduleFluidUpdate(p)
+	}
+	return nil
 }
 
 func structureTemplateHeight(world FeatureBlockWorld, kind string, x, z int32) (int32, error) {

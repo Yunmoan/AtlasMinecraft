@@ -116,8 +116,12 @@ func TestGeneratedBubbleColumnsPersistAndPreserveEdits(t *testing.T) {
 	}
 	load := func(w *World) {
 		for c := range counts {
-			if _, err := w.LoadChunk(c[0], c[1]); err != nil {
-				t.Fatalf("load generated bubble chunk %v: %v", c, err)
+			for dx := int32(-2); dx <= 2; dx++ {
+				for dz := int32(-2); dz <= 2; dz++ {
+					if _, err := w.LoadChunk(c[0]+dx, c[1]+dz); err != nil {
+						t.Fatalf("load generated bubble neighborhood %v: %v", c, err)
+					}
+				}
 			}
 		}
 	}
@@ -138,6 +142,27 @@ func TestGeneratedBubbleColumnsPersistAndPreserveEdits(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = w.Close() })
 	load(w)
+	eligible := func(x, z int32) bool {
+		for c := range counts {
+			if x >= c[0]-1 && x <= c[0]+1 && z >= c[1]-1 && z <= c[1]+1 {
+				return true
+			}
+		}
+		return false
+	}
+	// Generation saves water and magma postprocessing markers. Only actual
+	// scheduled world execution produces the final native bubble columns.
+	for tick := 0; tick <= 100; tick++ {
+		if tick > 0 {
+			w.AdvanceTime(1)
+		}
+		if err := w.TickScheduled(eligible); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Save(); err != nil {
+		t.Fatal(err)
+	}
 	assertLoaded(w)
 	if got := readSaved(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("newly generated Anvil bubbles differ from official save: got=%v want=%v", got, want)

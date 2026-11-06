@@ -1,0 +1,51 @@
+generation_fluid_request minecraft:empty -17 -63 47 10000 -3 100 1
+generation_fluid_request minecraft:flowing_water -17 -63 47 10037 -2 99 2
+generation_fluid_request minecraft:water -17 -63 47 10074 -1 98 3
+generation_fluid_request minecraft:flowing_lava -17 -63 47 10111 0 97 4
+generation_fluid_request minecraft:lava -17 -63 47 10148 1 96 5
+generation_fluid_request minecraft:empty -16 -63 47 10185 2 95 6
+generation_fluid_request minecraft:flowing_water -16 -63 47 10222 3 94 7
+generation_fluid_request minecraft:water -16 -63 47 10259 -3 93 8
+generation_fluid_request minecraft:flowing_lava -16 -63 47 10296 -2 92 9
+generation_fluid_request minecraft:lava -16 -63 47 10333 -1 91 10
+generation_fluid_request minecraft:empty -17 -63 47 10370 0 90 10
+generation_fluid_request minecraft:flowing_water -17 -63 47 10407 1 89 10
+generation_fluid_request minecraft:water -17 -63 47 10444 2 88 10
+generation_fluid_request minecraft:flowing_lava -17 -63 47 10481 3 87 10
+generation_fluid_request minecraft:lava -17 -63 47 10518 -3 86 10
+generation_fluid_request minecraft:empty -16 -63 47 10555 -2 85 10
+generation_fluid_request minecraft:flowing_water -16 -63 47 10592 -1 84 10
+generation_fluid_request minecraft:water -16 -63 47 10629 0 83 10
+generation_fluid_request minecraft:flowing_lava -16 -63 47 10666 1 82 10
+generation_fluid_request minecraft:lava -16 -63 47 10703 2 81 10
+generation_fluid_request minecraft:empty -17 -63 47 10740 3 80 10
+generation_fluid_request minecraft:flowing_water -17 -63 47 10777 -3 79 10
+generation_fluid_request minecraft:water -17 -63 47 10814 -2 78 10
+generation_fluid_request minecraft:flowing_lava -17 -63 47 10851 -1 77 10
+generation_fluid_request minecraft:lava -17 -63 47 10888 0 76 10
+generation_fluid_request minecraft:empty -16 -63 47 10925 1 75 10
+generation_fluid_request minecraft:flowing_water -16 -63 47 10962 2 74 10
+generation_fluid_request minecraft:water -16 -63 47 10999 3 73 10
+generation_fluid_request minecraft:flowing_lava -16 -63 47 11036 -3 72 10
+generation_fluid_request minecraft:lava -16 -63 47 11073 -2 71 10
+generation_fluid_saved 0 minecraft:empty -17 -63 47 0 -3
+generation_fluid_saved 0 minecraft:flowing_water -17 -63 47 0 -2
+generation_fluid_saved 0 minecraft:water -17 -63 47 0 -1
+generation_fluid_saved 0 minecraft:flowing_lava -17 -63 47 0 0
+generation_fluid_saved 0 minecraft:lava -17 -63 47 0 1
+generation_fluid_saved 0 minecraft:empty -16 -63 47 0 2
+generation_fluid_saved 0 minecraft:flowing_water -16 -63 47 0 3
+generation_fluid_saved 0 minecraft:water -16 -63 47 0 -3
+generation_fluid_saved 0 minecraft:flowing_lava -16 -63 47 0 -2
+generation_fluid_saved 0 minecraft:lava -16 -63 47 0 -1
+generation_fluid_saved 99999 minecraft:empty -17 -63 47 0 -3
+generation_fluid_saved 99999 minecraft:flowing_water -17 -63 47 0 -2
+generation_fluid_saved 99999 minecraft:water -17 -63 47 0 -1
+generation_fluid_saved 99999 minecraft:flowing_lava -17 -63 47 0 0
+generation_fluid_saved 99999 minecraft:lava -17 -63 47 0 1
+generation_fluid_saved 99999 minecraft:empty -16 -63 47 0 2
+generation_fluid_saved 99999 minecraft:flowing_water -16 -63 47 0 3
+generation_fluid_saved 99999 minecraft:water -16 -63 47 0 -3
+generation_fluid_saved 99999 minecraft:flowing_lava -16 -63 47 0 -2
+generation_fluid_saved 99999 minecraft:lava -16 -63 47 0 -1
+generation_fluid_states H4sIAAAAAAAA/+2Y0Y7DIAwEqa///81V0tNVaZVCLjasycyKlfrQ2mADSUtpwhpV7Lbl/rOlLdwzpDuts7iaAABAhrNHuBnHOkAcPJwBAOjQ97U5n1hfhNCi5Czvt99G93wQOqGZqO3N3zmH7eBq/OBRze9iOtATrjEPdIx79P/l0YHoYqtpO/l1e+L4WAdooelQ6xk49HR+z6H2yMCYe6Cp1SMEXWTxlwWU+fsMBG7EwQPAE86oKGyfL18afcV85rbkixBCKbSerziO4ziO4ziO4ziO485eUQe8/j7pluT62U6OwfJcD0VlI+383UuncChm978WCNpeCnNM7kGl2Udh0tk9rGx51cLh3wxKVqCDsjulkXVqo+uB1UEiKjZ4vFrsk9GLM6tY31jBtRndf0hLnv2i0aehfS7w6JvdKY2sUxpZpzSyvsP7Ukdi5QHwpUhAPGgAAA==

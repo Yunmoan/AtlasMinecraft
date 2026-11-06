@@ -5,6 +5,7 @@ import (
 	"atlas/internal/light"
 	"atlas/internal/nbt"
 	"atlas/internal/registry"
+	"atlas/internal/worldgen"
 	"time"
 )
 
@@ -183,22 +184,26 @@ func (s *Section) grow() {
 
 // Chunk is a 16x384x16 column.
 type Chunk struct {
-	cx, cz        int32
-	heights       [256]int16 // motion-blocking top, absolute Y of first air above ground
-	sect          []*Section
-	biomes        [][64]int32
-	anvilName     string
-	anvilRoot     nbt.Tag
-	entities      []WorldEntity
-	fromAnvil     bool
-	dirty         bool
-	dirtySections []bool
-	minY, maxY    int32
-	hasSky        bool
-	lights        *light.Data
-	lightStale    bool
-	blockRevision uint64
-	lastAccess    time.Time // region actor only; lighting changes do not keep it alive
+	cx, cz            int32
+	heights           [256]int16 // motion-blocking top, absolute Y of first air above ground
+	sect              []*Section
+	biomes            [][64]int32
+	anvilName         string
+	anvilRoot         nbt.Tag
+	entities          []WorldEntity
+	fromAnvil         bool
+	dirty             bool
+	dirtySections     []bool
+	minY, maxY        int32
+	hasSky            bool
+	lights            *light.Data
+	lightStale        bool
+	blockRevision     uint64
+	lastAccess        time.Time            // region actor only; lighting changes do not keep it alive
+	scheduledTicks    *chunkScheduledTicks // immutable handle; scheduling state has its own owner lock
+	tickSaveRevision  uint64
+	tickSaveTime      int64
+	brushableProgress map[BlockPosition]worldgen.BrushableProgress // loaded entity state, never serialized
 }
 
 func NewChunk(cx, cz int32) *Chunk {

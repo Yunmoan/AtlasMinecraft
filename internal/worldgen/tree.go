@@ -730,6 +730,13 @@ func (tree *treePlacement) updateLeafDistances() {
 		pending[0].add(p)
 	}
 	visited := make(map[FeaturePosition]bool)
+	// TreeFeature.updateLeaves pre-fills roots and decorations in its voxel
+	// shape. They also block traversal into those positions.
+	for _, positions := range []map[FeaturePosition]bool{tree.roots, tree.decorations} {
+		for p := range positions {
+			visited[p] = true
+		}
+	}
 	directions := []FeaturePosition{{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}}
 	for level := 0; level < 7; {
 		if pending[level].size == 0 {
@@ -747,16 +754,12 @@ func (tree *treePlacement) updateLeafDistances() {
 				continue
 			}
 			state := tree.block(next)
-			distance, err := strconv.Atoi(state.Properties["distance"])
-			if treeTags["leaves"][state.Name] && state.Properties["distance"] == "" {
-				distance, err = 7, nil
-			}
-			if treeTags["logs"][state.Name] {
-				distance, err = 0, nil
-			}
-			if err != nil {
+			// Native getOptionalDistanceAt tests the specific leaf property,
+			// not any property named "distance" (e.g. scaffolding).
+			if !treeTags["logs"][state.Name] && blockTickHandlers[state.Name] != "dki" {
 				continue
 			}
+			distance := scheduledLeafDistance(state)
 			distance = min(distance, level+1)
 			if distance < 7 {
 				pending[distance].add(next)
@@ -764,4 +767,16 @@ func (tree *treePlacement) updateLeafDistances() {
 			}
 		}
 	}
+	if tree.err != nil {
+		return
+	}
+	shape := make([]FeaturePosition, 0, len(visited))
+	for p := range visited {
+		shape = append(shape, p)
+	}
+	world := generationShapeWorld{tree.world}
+	tree.err = updateStructureTemplateEdges(world, shape, func(w FeatureBlockWorld, p FeaturePosition, state SurfaceBlockState, direction string, neighbor SurfaceBlockState) (SurfaceBlockState, error) {
+		face := map[string]int{"down": 0, "up": 1, "north": 2, "south": 3, "west": 4, "east": 5}[direction]
+		return UpdateFluidNeighborShape(w, p, state, face, neighbor)
+	})
 }

@@ -95,6 +95,9 @@ func compileLakePlan(def ConfiguredFeatureDefinition) (configuredFeaturePlacer, 
 					}
 					e.set(p, s)
 					if y >= 4 {
+						if err := region.ScheduleBlockTick(p, "minecraft:cave_air", 0, 0); err != nil {
+							return false, err
+						}
 						if err := markFeatureAbove(region, p); err != nil {
 							return false, err
 						}

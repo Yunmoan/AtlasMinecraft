@@ -71,13 +71,23 @@ func TestBubbleColumnsAgainstVanillaJAR(t *testing.T) {
 		hash := sha256.Sum256([]byte(strings.Join(rows, "\n")))
 		return hex.EncodeToString(hash[:])
 	}
-	checked, postprocessed, neighborRows := 0, 0, 0
+	checked, neighborRows := 0, 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		f := strings.Fields(scanner.Text())
 		if len(f) == 6 && f[0] == "bubble_neighbor" {
-			// These rows record the JAR's actual neighbor scheduling rules.
-			// This generation stage settles the tick result, not tick timing.
+			p := FeaturePosition{8, 39, 8}
+			w := blockShapeProbeWorld{fluidStepProbeWorld: &fluidStepProbeWorld{blocks: map[FeaturePosition]SurfaceBlockState{p: states[f[1]]}, floor: -64}}
+			face := map[string]int{"down": 0, "up": 1, "north": 2, "south": 3, "west": 4, "east": 5}[f[2]]
+			if _, err := UpdateFluidNeighborShape(w, p, states[f[1]], face, states[f[3]]); err != nil {
+				t.Fatal(err)
+			}
+			if len(w.events) != int(parse(f[4])) {
+				t.Fatalf("%s: events %v", scanner.Text(), w.events)
+			}
+			if len(w.events) > 0 && w.events[0] != fmt.Sprintf("block_tick 8 39 8 minecraft:%s %s 0", f[1], f[5]) {
+				t.Fatalf("%s: %v", scanner.Text(), w.events)
+			}
 			neighborRows++
 			continue
 		}
@@ -117,46 +127,6 @@ func TestBubbleColumnsAgainstVanillaJAR(t *testing.T) {
 				world.blocks[FeaturePosition{p.X, y, p.Z}] = states["bubble_down"]
 			}
 		}
-		// The production entry point must also match the independent vectors
-		// when starting from either generated source block.
-		if name == "magma_block" || name == "soul_sand" {
-			chunk := &NoiseChunkResult{X: p.X >> 4, Z: p.Z >> 4, MinY: -64, Height: 384, Blocks: make([]NoiseMaterial, 384*256)}
-			initial := make(map[int]SurfaceBlockState)
-			for q, state := range world.blocks {
-				if q.X>>4 != chunk.X || q.Z>>4 != chunk.Z || q.Y < -64 || q.Y >= 320 {
-					continue
-				}
-				index, _ := chunk.Index(q.X&15, q.Y, q.Z&15)
-				initial[index] = state
-				chunk.setSurfaceState(q.X&15, q.Y, q.Z&15, state)
-			}
-			n, err := PostProcessGeneratedBubbleColumns(chunk)
-			if err != nil {
-				t.Fatal(err)
-			}
-			edits := make(map[FeaturePosition]SurfaceBlockState)
-			for index, state := range chunk.SurfaceBlocks {
-				old := initial[index]
-				oldID, err := blockstate.BlockStateID(old.Name, old.Properties)
-				if err != nil {
-					t.Fatal(err)
-				}
-				newID, err := blockstate.BlockStateID(state.Name, state.Properties)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if oldID != newID {
-					edits[FeaturePosition{chunk.X*16 + int32(index&15), chunk.MinY + int32(index/256), chunk.Z*16 + int32((index>>4)&15)}] = state
-				}
-			}
-			if n != wantCount || len(edits) != wantCount || hashEdits(edits) != wantHash {
-				t.Fatalf("postprocess %s mode=%d at %v: changed=%d hash=%s, JAR changed=%d hash=%s", name, mode, p, n, hashEdits(edits), wantCount, wantHash)
-			}
-			if n, err := PostProcessGeneratedBubbleColumns(chunk); err != nil || n != 0 {
-				t.Fatalf("bubble postprocess is not idempotent: changed=%d error=%v", n, err)
-			}
-			postprocessed++
-		}
 		n, err := UpdateBubbleColumn(world, p, states[name])
 		if err != nil {
 			t.Fatal(err)
@@ -169,71 +139,8 @@ func TestBubbleColumnsAgainstVanillaJAR(t *testing.T) {
 	if err := scanner.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if checked != 960 || postprocessed != 384 || neighborRows != 48 {
-		t.Fatalf("incomplete bubble coverage: direct=%d postprocessed=%d neighbor=%d", checked, postprocessed, neighborRows)
+	if checked != 960 || neighborRows != 48 {
+		t.Fatalf("incomplete bubble coverage: direct=%d neighbor=%d", checked, neighborRows)
 	}
-	t.Logf("matched %d actual JAR column updates, including %d generated-chunk postprocessing cases", checked, postprocessed)
-}
-
-func BenchmarkGeneratedBubbleColumns(b *testing.B) {
-	chunk := &NoiseChunkResult{X: 0, Z: 10, MinY: -64, Height: 384, Blocks: make([]NoiseMaterial, 384*256)}
-	chunk.setSurfaceState(15, 20, 15, SurfaceBlockState{Name: "minecraft:magma_block"})
-	for y := int32(21); y <= 62; y++ {
-		chunk.Blocks[(y+64)*256+15*16+15] = NoiseWater
-	}
-	b.ResetTimer()
-	for range b.N {
-		// Reset just this column, excluding terrain allocation and setup.
-		for y := int32(21); y <= 62; y++ {
-			delete(chunk.SurfaceBlocks, int((y+64)*256+15*16+15))
-		}
-		if n, err := PostProcessGeneratedBubbleColumns(chunk); err != nil || n != 42 {
-			b.Fatalf("bubble postprocess changed=%d, error=%v", n, err)
-		}
-	}
-}
-
-func TestGeneratedBubbleColumnsCrossChunkOverlayIsolation(t *testing.T) {
-	// A decoration source at (0,0) can write into the corner of (1,1).
-	// Each destination is finalized from its private replay; processing it
-	// must preserve the cached terrain and the other destination's result.
-	source := &NoiseChunkResult{X: 0, Z: 0, MinY: -64, Height: 384, Blocks: make([]NoiseMaterial, 384*256), SurfaceBlocks: make(map[int]SurfaceBlockState)}
-	target := &NoiseChunkResult{X: 1, Z: 1, MinY: -64, Height: 384, Blocks: make([]NoiseMaterial, 384*256), SurfaceBlocks: make(map[int]SurfaceBlockState)}
-	for y := int32(40); y < 48; y++ {
-		target.Blocks[(y+64)*256] = NoiseWater
-	}
-	region, err := NewOverworldFeatureRegion(source, target)
-	if err != nil {
-		t.Fatal(err)
-	}
-	region.borrowed = map[featureChunkPosition]bool{{0, 0}: true, {1, 1}: true}
-	if err := region.SetBlock(FeaturePosition{16, 39, 16}, SurfaceBlockState{Name: "minecraft:soul_sand"}); err != nil {
-		t.Fatal(err)
-	}
-	sourceResult, targetResult := region.cloneChunk(0, 0), region.cloneChunk(1, 1)
-	if n, err := PostProcessGeneratedBubbleColumns(sourceResult); err != nil || n != 0 {
-		t.Fatalf("source chunk should have no bubble changes: %d, %v", n, err)
-	}
-	if n, err := PostProcessGeneratedBubbleColumns(targetResult); err != nil || n != 8 {
-		t.Fatalf("cross-chunk source was not finalized: changed=%d, error=%v", n, err)
-	}
-	for y := int32(40); y < 48; y++ {
-		generated, err := targetResult.BlockStateAt(0, y, 0)
-		if err != nil || generated.Name != "minecraft:bubble_column" || generated.Properties["drag"] != "false" {
-			t.Fatalf("target column at Y=%d: %v, %v", y, generated, err)
-		}
-		cached, _ := target.BlockStateAt(0, y, 0)
-		replayed, _ := region.BlockAt(FeaturePosition{16, y, 16})
-		if cached.Name != "minecraft:water" || replayed.Name != "minecraft:water" {
-			t.Fatalf("bubble processing mutated cached/replay water at Y=%d: cached=%v replay=%v", y, cached, replayed)
-		}
-	}
-	// Properties must be private too, so a consumer cannot change every
-	// bubble in the column by changing one returned state's map.
-	first, _ := targetResult.BlockStateAt(0, 40, 0)
-	first.Properties["drag"] = "true"
-	second, _ := targetResult.BlockStateAt(0, 41, 0)
-	if second.Properties["drag"] != "false" {
-		t.Fatal("generated bubble states share mutable property maps")
-	}
+	t.Logf("matched %d actual JAR column updates", checked)
 }

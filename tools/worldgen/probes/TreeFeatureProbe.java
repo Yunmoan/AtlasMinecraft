@@ -16,6 +16,29 @@ import java.util.stream.Stream;
 
 /** Runs the actual configured tree feature, including leaf-distance updates. */
 public final class TreeFeatureProbe {
+    // Real ProtoChunkTicks packs every generation delay as zero and retains
+    // the first request for each registered type/position within each chunk.
+    static java.util.List<java.util.Map<String,Object>> packedTicks(java.util.List<java.util.Map<String,Object>> requests)throws Exception {
+        var queues=new java.util.LinkedHashMap<String,Object>();
+        for(int i=0;i<requests.size();i++){
+            var r=requests.get(i);String kind=(String)r.get("kind");int x=(int)r.get("x"),y=(int)r.get("y"),z=(int)r.get("z");String key=kind+" "+(x>>4)+" "+(z>>4);
+            Object queue=queues.get(key);if(queue==null){queue=Class.forName("eyr").getConstructor().newInstance();queues.put(key,queue);}
+            Object registry=Class.forName("lt").getField(kind.equals("block")?"e":"c").get(null);
+            Object type=Class.forName("jz").getMethod("a",Class.forName("akr")).invoke(registry,Class.forName("akr").getMethod("a",String.class).invoke(null,r.get("type")));
+            Object p=Class.forName("jd").getConstructor(int.class,int.class,int.class).newInstance(x,y,z);
+            Object priority=Class.forName("eyx").getMethod("a",int.class).invoke(null,r.get("priority"));
+            Object tick=Class.forName("eyt").getConstructor(Object.class,Class.forName("jd"),long.class,Class.forName("eyx"),long.class).newInstance(type,p,100L+(int)r.get("delay"),priority,(long)i);
+            Class.forName("eyr").getMethod("a",Class.forName("eyt")).invoke(queue,tick);
+        }
+        var result=new java.util.ArrayList<java.util.Map<String,Object>>();
+        for(var entry:queues.entrySet()){
+            String[] key=entry.getKey().split(" ");Object registry=Class.forName("lt").getField(key[0].equals("block")?"e":"c").get(null);
+            java.util.function.Function<Object,String> name=type->{try{return Class.forName("jz").getMethod("b",Object.class).invoke(registry,type).toString();}catch(Exception e){throw new RuntimeException(e);}};
+            Object saved=Class.forName("eyr").getMethod("b",long.class,java.util.function.Function.class).invoke(entry.getValue(),999L,name);
+            for(Object tag:(java.util.List<?>)saved){var row=new java.util.LinkedHashMap<String,Object>();row.put("kind",key[0]);row.put("type",Class.forName("ub").getMethod("l",String.class).invoke(tag,"i"));for(String[] f:new String[][]{{"x","x"},{"y","y"},{"z","z"},{"t","delay"},{"p","priority"}})row.put(f[1],Class.forName("ub").getMethod("h",String.class).invoke(tag,f[0]));result.add(row);}
+        }
+        return result;
+    }
     public static java.util.Set<String> tagBlocks(String name) throws Exception {
         var input = TreeFeatureProbe.class.getClassLoader().getResourceAsStream("data/minecraft/tags/block/" + name + ".json");
         if (input == null) throw new IllegalStateException("missing tag " + name);
@@ -60,6 +83,7 @@ public final class TreeFeatureProbe {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean captureTicks=java.util.Arrays.asList(args).contains("ticks");
         Object version = Class.forName("t").getMethod("a").invoke(null);
         Class.forName("ab").getMethod("a", Class.forName("ae")).invoke(null, version);
         Class.forName("akt").getMethod("a").invoke(null);
@@ -121,6 +145,7 @@ public final class TreeFeatureProbe {
                         : scenario == 13 ? new int[]{8,313,8} : scenario == 14 ? new int[]{8,315,8} : new int[]{8, 41, 8};
                     int mode = scenario;
                     Map<String, Object> changed = new HashMap<>();
+                    var requests=new java.util.ArrayList<java.util.Map<String,Object>>();
                     Object world = Proxy.newProxyInstance(Class.forName("dds").getClassLoader(), new Class<?>[]{Class.forName("dds")},
                         (proxy, method, values) -> {
                             String m = method.getName();
@@ -152,6 +177,10 @@ public final class TreeFeatureProbe {
                                     if (y < -64 || y >= 320) return false;
                                     changed.put(key, values[1]); return true;
                                 }
+                                if(captureTicks && m.equals("a") && values.length>=3 && (block.isInstance(values[1]) || Class.forName("epd").isInstance(values[1]))) {
+                                    String kind=block.isInstance(values[1])?"block":"fluid";Object tickRegistry=Class.forName("lt").getField(kind.equals("block")?"e":"c").get(null);
+                                    var r=new java.util.LinkedHashMap<String,Object>();r.put("kind",kind);r.put("type",Class.forName("jz").getMethod("b",Object.class).invoke(tickRegistry,values[1]).toString());r.put("x",x);r.put("y",y);r.put("z",z);r.put("delay",values[2]);r.put("priority",values.length==4?Class.forName("eyx").getMethod("a").invoke(values[3]):0);requests.add(r);return null;
+                                }
                                 if (method.getReturnType() == void.class) return null; // Scheduled leaf/fluid ticks do not run in worldgen.
                             }
                             if (method.isDefault()) return java.lang.reflect.InvocationHandler.invokeDefault(proxy,method,values);
@@ -173,8 +202,9 @@ public final class TreeFeatureProbe {
                     output.sort(String::compareTo);
                     if (args.length > 0 && name.equals("oak") && seed == 0 && scenario == 0) output.forEach(System.out::println);
                     String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(String.join("\n", output).getBytes(StandardCharsets.UTF_8)));
-                    System.out.printf("tree_case minecraft:%s %d %d %d %d %d %d %d %d %s%n", name, seed, scenario, origin[0], origin[1], origin[2],
-                        placed ? 1 : 0, changed.size(), Class.forName("dzx").getMethod("g").invoke(random), hash);
+                    long next=(long)Class.forName("dzx").getMethod("g").invoke(random);
+                    System.out.printf("tree_case minecraft:%s %d %d %d %d %d %d %d %d %s%n", name, seed, scenario, origin[0], origin[1], origin[2],placed ? 1 : 0, changed.size(),next,hash);
+                    if(captureTicks){var row=new java.util.LinkedHashMap<String,Object>();row.put("name","minecraft:"+name);row.put("seed",seed);row.put("scenario",scenario);row.put("origin",origin);row.put("placed",placed);row.put("hash",hash);row.put("count",changed.size());row.put("next",next);row.put("requests",requests);row.put("packed",packedTicks(requests));System.out.println("tree_ticks "+new com.google.gson.Gson().toJson(row));}
                 }
             }
         }

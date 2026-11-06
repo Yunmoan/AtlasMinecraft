@@ -3,6 +3,7 @@ package world
 import (
 	"atlas/internal/nbt"
 	"atlas/internal/registry"
+	"atlas/internal/tickqueue"
 	"atlas/internal/worldgen"
 	"fmt"
 )
@@ -45,12 +46,23 @@ func chunkFromGeneratedOverworld(generated *worldgen.GeneratedOverworldChunk) (*
 		root, _ := chunk.anvilRoot.Object()
 		entities, _ := root["block_entities"].Elements()
 		for _, entity := range generated.BlockEntities {
-			entities = append(entities, nbt.Tag{Type: nbt.Compound, Value: entity})
+			entities = append(entities, fullGeneratedBlockEntity(entity))
 		}
 		root["block_entities"] = nbt.Tag{Type: nbt.List, ListType: nbt.Compound, Value: entities}
 	}
 	installGeneratedStructures(chunk, generated)
 	return chunk, nil
+}
+
+// LevelChunk.getBlockEntityNbtForSaving marks instantiated block entities as
+// unpacked. Copy the top-level object so cached generation output stays private.
+func fullGeneratedBlockEntity(entity nbt.Object) nbt.Tag {
+	data := make(nbt.Object, len(entity)+1)
+	for key, value := range entity {
+		data[key] = value
+	}
+	data["keepPacked"] = nbt.Tag{Type: nbt.Byte, Value: int8(0)}
+	return nbt.Tag{Type: nbt.Compound, Value: data}
 }
 
 // chunkFromNoise bridges the reference-checked generation stages to the
@@ -101,27 +113,33 @@ func chunkFromNoiseBounds(terrain *worldgen.NoiseChunkResult, biomes [][64]strin
 	}
 	postProcessing := make([]nbt.Tag, len(chunk.sect))
 	for si := range postProcessing {
-		positions := []nbt.Tag{}
-		for i := 0; i < SectionVolume; i++ {
-			index := si*SectionVolume + i
-			featureMarked := index < len(terrain.PostProcessing) && terrain.PostProcessing[index]
-			if !featureMarked && (index >= len(terrain.FluidUpdates) || !terrain.FluidUpdates[index]) {
-				continue
-			}
-			state, err := terrain.BlockStateAt(int32(i&15), terrain.MinY+int32(si*16+i/256), int32((i>>4)&15))
-			if err != nil {
-				return nil, err
-			}
-			if featureMarked || state.Name == "minecraft:water" || state.Name == "minecraft:lava" {
-				// Vanilla packs post-processing as X | Y<<4 | Z<<8.
-				packed := int16((i & 15) | ((i>>8)&15)<<4 | ((i>>4)&15)<<8)
-				positions = append(positions, nbt.Tag{Type: nbt.Short, Value: packed})
-			}
+		postProcessing[si] = nbt.Tag{Type: nbt.List, ListType: nbt.Short, Value: []nbt.Tag{}}
+	}
+	for _, index := range terrain.PostProcessingOrder {
+		if index < 0 || index >= len(terrain.Blocks) {
+			return nil, fmt.Errorf("postprocessing index %d outside generated chunk", index)
 		}
-		postProcessing[si] = nbt.Tag{Type: nbt.List, ListType: nbt.Short, Value: positions}
+		si, i := index/SectionVolume, index%SectionVolume
+		// Vanilla packs X | Y<<4 | Z<<8, retaining duplicates and positions
+		// whose block was subsequently overwritten during generation.
+		packed := int16((i & 15) | ((i>>8)&15)<<4 | ((i>>4)&15)<<8)
+		postProcessing[si].Value = append(postProcessing[si].Value.([]nbt.Tag), nbt.Tag{Type: nbt.Short, Value: packed})
 	}
 	root, _ := chunk.anvilRoot.Object()
 	root["PostProcessing"] = nbt.Tag{Type: nbt.List, ListType: nbt.List, Value: postProcessing}
+	fluidTicks := make([]tickqueue.Saved[string], 0, len(terrain.FluidTicks))
+	for _, tick := range terrain.FluidTicks {
+		fluidTicks = append(fluidTicks, tickqueue.Saved[string]{
+			Type: tick.Fluid, Position: tickqueue.Position{X: tick.Position.X, Y: tick.Position.Y, Z: tick.Position.Z},
+			Priority: tickqueue.ClampPriority(tick.Priority),
+		})
+	}
+	root["fluid_ticks"] = tickqueue.EncodeSavedNBT(fluidTicks, func(kind string) string { return kind })
+	blockTicks := make([]tickqueue.Saved[string], 0, len(terrain.BlockTicks))
+	for _, tick := range terrain.BlockTicks {
+		blockTicks = append(blockTicks, tickqueue.Saved[string]{Type: tick.Block, Position: tickqueue.Position{X: tick.Position.X, Y: tick.Position.Y, Z: tick.Position.Z}, Priority: tickqueue.ClampPriority(tick.Priority)})
+	}
+	root["block_ticks"] = tickqueue.EncodeSavedNBT(blockTicks, func(name string) string { return name })
 	return chunk, nil
 }
 
@@ -137,7 +155,7 @@ func (v *VanillaSave) generateDimension(cx, cz int32) (*Chunk, error) {
 	root, _ := chunk.anvilRoot.Object()
 	entities := make([]nbt.Tag, 0, len(generated.BlockEntities))
 	for _, entity := range generated.BlockEntities {
-		entities = append(entities, nbt.Tag{Type: nbt.Compound, Value: entity})
+		entities = append(entities, fullGeneratedBlockEntity(entity))
 	}
 	root["block_entities"] = nbt.Tag{Type: nbt.List, ListType: nbt.Compound, Value: entities}
 	installGeneratedStructures(chunk, &worldgen.GeneratedOverworldChunk{Structures: generated.Structures, PendingEntities: generated.PendingEntities})

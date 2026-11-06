@@ -152,16 +152,19 @@ func (g *DimensionGenerator) applyStructureStep(region *OverworldFeatureRegion, 
 		if err != nil {
 			return err
 		}
-		for p, state := range cached.blocks {
-			if p.X>>4 == cx && p.Z>>4 == cz {
-				if err := region.SetBlock(p, state); err != nil {
+		if err := region.restoreStructureBlocks(cached, cx, cz, false); err != nil {
+			return err
+		}
+		for _, tick := range cached.fluidTicks.ticks {
+			if tick.Position.X>>4 == cx && tick.Position.Z>>4 == cz {
+				if err := region.ScheduleFluidTick(tick); err != nil {
 					return err
 				}
 			}
 		}
-		for p := range cached.postProcessing {
-			if p.X>>4 == cx && p.Z>>4 == cz {
-				if err := region.MarkPostProcessing(p); err != nil {
+		for _, tick := range cached.blockTicks.ticks {
+			if tick.Position.X>>4 == cx && tick.Position.Z>>4 == cz {
+				if err := region.ScheduleGenerationBlockTick(tick); err != nil {
 					return err
 				}
 			}

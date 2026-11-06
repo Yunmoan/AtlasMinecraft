@@ -87,6 +87,23 @@ type WorldSink struct {
 	epoch  uint64
 }
 
+// SoundPacketSink samples dimension, position and delivery epoch together.
+// Native sound broadcasts use a strict three-dimensional radius and do not
+// require the source chunk to have been delivered to the client.
+func (p *Player) SoundPacketSink(dimension string, x, y, z, radius float64) *WorldSink {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	current := p.dimension
+	if current == "" {
+		current = "minecraft:overworld"
+	}
+	dx, dy, dz := p.x-x, p.y-y, p.z-z
+	if current != dimension || dx*dx+dy*dy+dz*dz >= radius*radius {
+		return nil
+	}
+	return &WorldSink{player: p, epoch: p.worldEpoch}
+}
+
 func (sink *WorldSink) Current() bool {
 	p := sink.player
 	p.mu.Lock()

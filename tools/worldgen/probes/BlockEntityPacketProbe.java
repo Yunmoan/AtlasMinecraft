@@ -22,7 +22,7 @@ public final class BlockEntityPacketProbe {
         Object registries=Class.forName("pd").getMethod("a").invoke(null);
         System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out),true));
         Method write=info.getDeclaredMethod("a",Class.forName("wk"));write.setAccessible(true);
-        for(String[] input:new String[][]{{"brushable_block","suspicious_sand","dql"},{"chest","chest","dqo"},{"dispenser","dispenser","dra"},{"brewing_stand","brewing_stand","dqk"},{"sign","oak_wall_sign","drs"},{"mob_spawner","spawner","drw"},{"beehive","bee_nest","dqe"},{"sculk_catalyst","sculk_catalyst","dro"},{"sculk_sensor","sculk_sensor","drp"},{"sculk_shrieker","sculk_shrieker","drq"},{"end_portal","end_portal","drz"},{"end_gateway","end_gateway","dry"}}) {
+        for(String[] input:new String[][]{{"brushable_block","suspicious_sand","dql"},{"chest","chest","dqo"},{"dispenser","dispenser","dra"},{"brewing_stand","brewing_stand","dqk"},{"sign","oak_wall_sign","drs"},{"mob_spawner","spawner","drw"},{"beehive","bee_nest","dqe"},{"sculk_catalyst","sculk_catalyst","dro"},{"sculk_sensor","sculk_sensor","drp"},{"sculk_shrieker","sculk_shrieker","drq"},{"end_portal","end_portal","drz"},{"end_gateway","end_gateway","dry"},{"campfire","campfire","dqn"}}) {
             Object block=Class.forName("jz").getMethod("a",Class.forName("akr")).invoke(blocks,Class.forName("akr").getMethod("a",String.class).invoke(null,"minecraft:"+input[1]));
             Object blockState=Class.forName("dfy").getMethod("o").invoke(block);
             Object p=pos.getConstructor(int.class,int.class,int.class).newInstance(-1,-60,-16);

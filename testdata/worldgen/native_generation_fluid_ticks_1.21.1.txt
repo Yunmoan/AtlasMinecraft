@@ -1,0 +1,5 @@
+native_fluid_chunk 4511451270791457643 0 10 2
+native_fluid_tick minecraft:water 7 26 168 5 0
+native_fluid_tick minecraft:water 15 53 160 5 0
+native_fluid_chunk 4511451270791457643 -3 44 1
+native_fluid_tick minecraft:lava -39 -53 712 0 0

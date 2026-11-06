@@ -33,6 +33,26 @@ func mechanicsWorld(t *testing.T) (*World, string) {
 
 func TestGravityAndDoublePlantUpdatesPersist(t *testing.T) {
 	w, dir := mechanicsWorld(t)
+	for x := int32(-2); x <= 2; x++ {
+		for z := int32(-2); z <= 2; z++ {
+			if _, err := w.LoadChunk(x, z); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	advance := func(ticks int) {
+		t.Helper()
+		for i := 0; i < ticks; i++ {
+			w.AdvanceTime(1)
+			eligible := func(x, z int32) bool { return x >= -1 && x <= 1 && z >= -1 && z <= 1 }
+			if err := w.TickScheduled(eligible); err != nil {
+				t.Fatal(err)
+			}
+			if err := w.TickFallingEntities(eligible); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	id := func(name string, properties map[string]string) uint32 {
 		state, err := BlockStateID(name, properties)
 		if err != nil {
@@ -56,6 +76,11 @@ func TestGravityAndDoublePlantUpdatesPersist(t *testing.T) {
 	set(-1, -49, -1, sand)
 	set(-1, -48, -1, gravel)
 	set(-1, -50, -1, StateAir)
+	check(-1, -49, -1, sand)
+	check(-1, -48, -1, gravel)
+	advance(1)
+	check(-1, -49, -1, sand)
+	advance(59)
 	check(-1, -60, -1, sand)
 	check(-1, -59, -1, gravel)
 	check(-1, -49, -1, StateAir)
@@ -78,6 +103,8 @@ func TestGravityAndDoublePlantUpdatesPersist(t *testing.T) {
 		t.Fatal(err)
 	}
 	set(-4, -45, -1, sand)
+	check(-4, -45, -1, sand)
+	advance(60)
 	check(-4, -60, -1, sand)
 	check(-4, -59, -1, StateAir)
 	set(-3, -59, -1, StateStone)

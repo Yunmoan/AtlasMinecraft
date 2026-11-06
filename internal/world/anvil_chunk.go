@@ -157,14 +157,22 @@ func decodePalette(count int, palette []uint32, data []int64, minBits int, set f
 	return nil
 }
 
-// updateAnvilBlocks changes only block_states in each section. Other chunk
-// tags (block entities, scheduled ticks, structures, heightmaps, lighting,
-// custom data) remain in the NBT tree for later full-fidelity handling.
+// updateAnvilBlocks updates block states, derived maps/light and the live
+// block/fluid queue snapshots. Other chunk tags remain in the retained NBT tree.
 func (c *Chunk) updateAnvilBlocks() (string, nbt.Tag, error) {
 	if !c.fromAnvil {
 		return "", nbt.Tag{}, errors.New("chunk has no Anvil source")
 	}
 	root, _ := c.anvilRoot.Object()
+	if c.scheduledTicks != nil {
+		ticks, blocks, post, revision, time := c.scheduledTicks.snapshot()
+		root["fluid_ticks"] = ticks
+		root["block_ticks"] = blocks
+		if post.Type == nbt.List {
+			root["PostProcessing"] = post
+		}
+		c.tickSaveRevision, c.tickSaveTime = revision, time
+	}
 	sections, _ := root["sections"].Elements()
 	seen := make([]bool, len(c.sect))
 	for _, section := range sections {

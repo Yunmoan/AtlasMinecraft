@@ -8,8 +8,10 @@ type structureChunkKey struct {
 }
 
 type structureChunkSnapshot struct {
-	base    *overworldBase
-	overlay *featureChunkOverlay
+	base       *overworldBase
+	overlay    *featureChunkOverlay
+	fluidTicks []PendingFluidTick
+	blockTicks []PendingBlockTick
 }
 
 type structureChunkEntry struct {
@@ -42,7 +44,7 @@ func (g *OverworldGenerator) structureChunkBefore(cx, cz, step int32) (*structur
 	var snapshot *structureChunkSnapshot
 	if err == nil {
 		position := featureChunkPosition{cx, cz}
-		snapshot = &structureChunkSnapshot{base: region.biomeBases[position], overlay: region.overlays[position]}
+		snapshot = &structureChunkSnapshot{base: region.biomeBases[position], overlay: region.overlays[position], fluidTicks: region.fluidTicksInChunk(cx, cz), blockTicks: region.blockTicksInChunk(cx, cz)}
 	}
 	g.precedingMu.Lock()
 	entry.snapshot, entry.err, entry.complete = snapshot, err, true
@@ -73,6 +75,22 @@ func (region *OverworldFeatureRegion) installStructureChunk(key featureChunkPosi
 	region.chunks[key] = snapshot.base.terrain
 	region.borrowed[key] = true
 	region.biomeBases[key] = snapshot.base
+	if region.fluidTicks == nil {
+		region.fluidTicks = make(map[featureChunkPosition]*generationFluidTickQueue)
+	}
+	queue := &generationFluidTickQueue{}
+	for _, tick := range snapshot.fluidTicks {
+		queue.add(tick)
+	}
+	region.fluidTicks[key] = queue
+	if region.blockTicks == nil {
+		region.blockTicks = make(map[featureChunkPosition]*generationBlockTickQueue)
+	}
+	blocks := &generationBlockTickQueue{}
+	for _, tick := range snapshot.blockTicks {
+		blocks.add(tick)
+	}
+	region.blockTicks[key] = blocks
 	if snapshot.overlay == nil {
 		return
 	}
@@ -80,6 +98,7 @@ func (region *OverworldFeatureRegion) installStructureChunk(key featureChunkPosi
 		region.overlays = make(map[featureChunkPosition]*featureChunkOverlay)
 	}
 	overlay := &featureChunkOverlay{blocks: make(map[int]SurfaceBlockState, len(snapshot.overlay.blocks))}
+	overlay.postProcessingOrder = append([]int(nil), snapshot.overlay.postProcessingOrder...)
 	for index, state := range snapshot.overlay.blocks {
 		overlay.blocks[index] = cloneSurfaceState(state)
 	}

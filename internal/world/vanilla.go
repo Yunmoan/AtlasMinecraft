@@ -367,6 +367,9 @@ func (v *VanillaSave) persistChunk(chunk *Chunk) error {
 	if err := v.regions.WriteChunk(v.regionDir, chunk.cx, chunk.cz, name, root); err != nil {
 		return err
 	}
+	if chunk.scheduledTicks != nil {
+		chunk.scheduledTicks.saved(chunk.tickSaveRevision, chunk.tickSaveTime)
+	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	chunk.dirty = false

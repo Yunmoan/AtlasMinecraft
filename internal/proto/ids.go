@@ -56,6 +56,7 @@ const (
 	SSpawnEntity        = 0x01
 	SAnimation          = 0x03
 	SAckBlockChange     = 0x05 // acknowledge_player_digging
+	SBlockEntityData    = 0x07
 	SBlockChange        = 0x09
 	SDifficulty         = 0x0B
 	SChunkBatchFinished = 0x0C
@@ -65,6 +66,7 @@ const (
 	SUnloadChunk        = 0x21
 	SKeepAlive          = 0x26
 	SChunkData          = 0x27
+	SLevelEvent         = 0x28
 	SUpdateLight        = 0x2A
 	SLogin              = 0x2B
 	SRelEntityMove      = 0x2E
@@ -85,6 +87,7 @@ const (
 	SSpawnPosition      = 0x56
 	SEntityMetadata     = 0x58
 	SUpdateTime         = 0x64
+	SSoundEffect        = 0x68
 	SSystemChat         = 0x6C
 	SEntityTeleport     = 0x70
 	SDeclareCommands    = 0x11
