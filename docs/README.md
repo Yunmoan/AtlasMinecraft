@@ -29,6 +29,9 @@ testdata/                   参考数据和测试输入
   protocol/                 协议 JSON、注册表和 mcmeta 数据
   worldgen/                 原版参考结果及压缩数据
 artifacts/                  测试日志、临时世界、性能报告和编译产物
+configs/                    可提交的配置模板
+bin/                        本地编译出的程序
+run/                        本地配置、实际世界、玩家数据与日志
 ```
 
 工具用法见[开发工具导航](../tools/README.md)，数据用途见[参考数据说明](../testdata/README.md)。运行时需要内嵌的数据仍保留在 `internal` 对应模块中。

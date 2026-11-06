@@ -18,7 +18,7 @@ import (
 
 var (
 	addr   = flag.String("addr", "127.0.0.1:25599", "server address")
-	outDir = flag.String("out", "capture", "output directory")
+	outDir = flag.String("out", "artifacts/captures", "output directory")
 	name   = flag.String("name", "CaptureBot", "bot username")
 )
 
@@ -92,7 +92,11 @@ func main() {
 				must(fc.WritePacket(proto.CKeepAlive, proto.NewWriter().I64(v).Payload()))
 			case proto.SPositionSync:
 				r := proto.NewReader(payload)
-				r.F64(); r.F64(); r.F64(); r.F32(); r.F32()
+				r.F64()
+				r.F64()
+				r.F64()
+				r.F32()
+				r.F32()
 				r.U8()
 				tid, _ := r.VarInt()
 				must(fc.WritePacket(proto.CTeleportConfirm, proto.NewWriter().VarInt(tid).Payload()))

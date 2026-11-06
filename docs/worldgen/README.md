@@ -249,11 +249,7 @@ $env:ATLAS_SERVER_JAR = (Resolve-Path jar/server.jar).Path
 go test ./internal/world -run TestNewWorldMetadataOpensInVanillaServer -v -count=1
 
 # Real Atlas binary: default normal creation, protocol batches, edits and restart
-./build.ps1 -Output atlas-worldgen.exe
-go build -o atlas-worldgen-test.exe ./cmd/atlas-test
-$env:ATLAS_SERVER_EXE = (Resolve-Path atlas-worldgen.exe).Path
-$env:ATLAS_TEST_EXE = (Resolve-Path atlas-worldgen-test.exe).Path
-go test ./cmd/atlas -run 'TestNormalWorldBinaryCreateAndRestart|TestIdleChunksBinaryUnloadAndReload' -v -count=1 -timeout=5m
+./test.ps1 -Suite smoke
 ```
 
 `verify_reference.py --update` deliberately rewrites the checked-in vectors.

@@ -1,0 +1,4 @@
+# Packet fixtures and compressed/structured binary data must keep exact bytes.
+*.bin binary
+*.gz binary
+*.nbt binary

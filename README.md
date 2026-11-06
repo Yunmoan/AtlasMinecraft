@@ -4,35 +4,36 @@ A from-scratch Minecraft **Java Edition 1.21.1 (protocol 767)** server written i
 
 ## Quick start
 
-```bash
+```powershell
 # Build with an embedded UTC build time (PowerShell, Go 1.23+)
 ./build.ps1
 
-# A plain go build also works, but reports that the build time was not injected
-go build -o atlas.exe ./cmd/atlas
+# Start with local configuration, saves and logs under run/
+./start.ps1
 
 # Create a normal Overworld with pure-Go terrain, caves and supported decoration
-./atlas.exe -world ./new-world -seed 1234
+./start.ps1 -ServerArgs @("-world", "new-world", "-seed", "1234")
 
 # Load a COPY of an existing 1.21.1 Java save
-./atlas.exe -world ./world-copy
+./start.ps1 -ServerArgs @("-world", "world-copy")
 
 # Create a Java-format superflat world without structures/features
-./atlas.exe -world ./flat-world -level-type minecraft:flat -seed 1234
+./start.ps1 -ServerArgs @("-world", "flat-world", "-level-type", "minecraft:flat", "-seed", "1234")
 
-# Import offline-mode operators into ops.json and enable a separate debug log
-./atlas.exe -world ./flat-world -ops Alice,Bob -debug
+# Enable a separate debug log; grant operators with console op after login
+./start.ps1 -ServerArgs @("-world", "flat-world", "-debug")
 
 # End-to-end smoke test (drives the full protocol flow against the server)
-go build -o atlas-test.exe ./cmd/atlas-test
-./atlas.exe -world ./flat-world -level-type minecraft:flat &  # then, in another shell:
-./atlas-test.exe        # status→login→config→chunks→chat→dig→commands
-# For operator command checks, start Atlas with -ops TestBot, then:
-./atlas-test.exe -operator
+./test.ps1 -Suite smoke
 ```
 
-Connect with a **1.21.1** client to `127.0.0.1`. To require authenticated
-accounts, set `online-mode=true` in `server.properties` before starting Atlas.
+The local configuration starts on `127.0.0.1:25567` with online authentication.
+Use a **1.21.1** client. Edit `run/server.properties` for local settings; the
+initial template is `configs/server.example.properties`. Type `stop` to save
+and shut down. Relative world paths passed to `start.ps1` resolve under `run/`.
+`build.ps1` writes `bin/atlas.exe`; a plain `go build -o bin/atlas.exe ./cmd/atlas`
+also works but does not embed a build time. Direct binary execution uses the
+current working directory, so launch it from `run/` to use the local save.
 
 ## What works
 
@@ -426,6 +427,9 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 ```
 cmd/atlas/         server entry point
 cmd/atlas-test/    end-to-end protocol smoke test (status→play)
+configs/          tracked configuration templates
+bin/              ignored compiled executables
+run/              ignored local configuration, worlds, player state and logs
 internal/proto/    VarInt, packet reader/writer, framing+zlib, minimal NBT, packet IDs
 internal/server/   handshake/status/login/configuration/play state machines
 internal/player/   per-player state + outbound queue

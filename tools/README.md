@@ -11,6 +11,7 @@
 | `worldgen/diagnose_terrain_stages.py` | 指定种子、区块的地形阶段诊断 |
 | `worldgen/probes/*.java` | 世界生成和游戏交互的参考探针及辅助类 |
 | `worldgen/extract_native_bubble_columns.go` | 从原版世界提取气泡柱坐标 |
+| `inspect-save/`、`terrain-scan/` | 独立 Go 存档检查和地形扫描工具；以命令参数为准 |
 
 ## 常用命令
 
@@ -44,7 +45,7 @@ python tools/worldgen/verify_reference.py --probe ReferenceProbe
 python tools/worldgen/verify_structure_reference.py --probe StructurePlacementProbe
 
 # 比较抓包中的注册表
-python tools/protocol/diff_registries.py capture-mine
+python tools/protocol/diff_registries.py testdata/protocol/captures/atlas
 ```
 
 Python 工具使用标准库。调用官方参考代码的工具还需要 JDK 21+ 的 `java`、`javac`，以及 `jar/server.jar`（Minecraft Java 1.21.1）。优先使用 `JAVA_HOME` 指向的完整 JDK，否则查找 `PATH`。公共工具会验证官方包的 SHA-1、版本和 DataVersion，并将探针使用的 JAR 准备到 `artifacts/reference-java`。Go 提取工具需要 Go。

@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | `protocol/` | 协议 JSON、方块/物品表、注册表、mcmeta 元素及采集资料 | `tools/protocol` |
 | `worldgen/` | 原版探针输出、地形测试向量、结构和实体数据，含压缩参考集 | Go 测试和 `tools/worldgen` |
+| `protocol/captures/` | 保留的 Atlas、原版和历史抓包基准 | `tools/protocol/diff_registries.py` |
 
 这些文件用于开发验证和资源生成。服务端运行时直接使用的内嵌资源放在 `internal` 各模块中。
 

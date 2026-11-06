@@ -6,6 +6,8 @@
 *.out
 
 /artifacts/
+/bin/
+/run/
 
 # Coverage / profiling artifacts
 *.prof

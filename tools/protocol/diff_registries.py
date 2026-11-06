@@ -1,5 +1,7 @@
 import os, struct, json, sys
 
+from _bootstrap import common
+
 def rvarint(d, p):
     v=0
     for i in range(5):
@@ -101,7 +103,7 @@ def diff(a, b, path, out):
         if typed(a) != typed(b):
             out.append('%s: %r vs %r' % (path, a, b))
 
-van, van_order = load_dir('capture-vanilla')
+van, van_order = load_dir(str(common.ROOT / 'testdata/protocol/captures/vanilla'))
 print('vanilla registries:')
 for r in van_order: print('  %-45s %d entries' % (r, len(van[r])))
 
