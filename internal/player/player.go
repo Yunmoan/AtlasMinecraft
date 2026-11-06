@@ -129,8 +129,12 @@ func (p *Player) SendPacket(id int32, payload []byte) {
 // waiting indefinitely for batch_finished. Serialize region actors so their
 // start/data/finished packets cannot form nested batches.
 func (p *Player) SendChunkData(payload []byte) {
-	p.chunkSendMu.Lock()
-	defer p.chunkSendMu.Unlock()
+	p.WorldPacketSink().SendChunkData(payload)
+}
+
+// sendChunkBatch requires chunkSendMu. View-scoped callers also hold mu to
+// keep reservation/delivery and respawn ordering atomic with the whole batch.
+func (p *Player) sendChunkBatch(payload []byte) {
 	p.SendPacket(proto.SChunkBatchStart, nil)
 	p.SendPacket(proto.SChunkData, payload)
 	p.SendPacket(proto.SChunkBatchFinished, proto.NewWriter().VarInt(1).Payload())
@@ -139,52 +143,15 @@ func (p *Player) SendChunkData(payload []byte) {
 // SendRequestedChunk queues a reserved chunk only while it is still wanted.
 // Delivery and pruning share the batch lock so an unload cannot overtake data.
 func (p *Player) SendRequestedChunk(cx, cz int32, payload []byte) bool {
-	p.chunkSendMu.Lock()
-	defer p.chunkSendMu.Unlock()
-	p.mu.Lock()
-	key := [2]int32{cx, cz}
-	_, requested := p.requestedChunks[key]
-	if !requested {
-		p.mu.Unlock()
-		return false
-	}
-	delete(p.requestedChunks, key)
-	p.SendPacket(proto.SChunkBatchStart, nil)
-	p.SendPacket(proto.SChunkData, payload)
-	p.SendPacket(proto.SChunkBatchFinished, proto.NewWriter().VarInt(1).Payload())
-	p.sentChunks[key] = struct{}{}
-	p.mu.Unlock()
-	select {
-	case p.ChunkUpdates <- struct{}{}:
-	default:
-	}
-	return true
+	return p.WorldPacketSink().SendRequestedChunk(cx, cz, payload)
 }
 
 func (p *Player) ReserveChunk(cx, cz int32) bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	k := [2]int32{cx, cz}
-	if _, ok := p.sentChunks[k]; ok {
-		return false
-	}
-	if _, ok := p.requestedChunks[k]; ok {
-		return false
-	}
-	p.requestedChunks[k] = struct{}{}
-	return true
+	return p.WorldPacketSink().ReserveChunk(cx, cz)
 }
 
 func (p *Player) WantsChunk(cx, cz int32) bool {
-	select {
-	case <-p.Done:
-		return false
-	default:
-	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	_, wanted := p.requestedChunks[[2]int32{cx, cz}]
-	return wanted
+	return p.WorldPacketSink().WantsChunk(cx, cz)
 }
 
 // CancelPendingChunks stops old view requests before a teleport's blocking

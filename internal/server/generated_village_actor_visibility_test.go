@@ -160,10 +160,7 @@ func TestVillageActorsPacketSinkLifecycle(t *testing.T) {
 		}
 	}
 	deliver := func(viewer *player.Player, view *villagePacketView) {
-		if !viewer.ReserveChunk(-1, 1) {
-			t.Fatal("chunk reservation failed")
-		}
-		if err := w.SpawnChunk(viewer.WorldPacketSink(), -1, 1, func(int32, int32) {}); err != nil {
+		if err := w.SpawnChunk(viewer.WorldPacketSink(), -1, 1); err != nil {
 			t.Fatal(err)
 		}
 		s.updateGeneratedEntityVisibility(viewer)

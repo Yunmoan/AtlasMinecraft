@@ -171,6 +171,9 @@ func (w *World) post(ctx context.Context, cx, cz int32, message any) error {
 		return ctx.Err()
 	default:
 	}
+	// Close waits for admitted posts too, before draining unread requests.
+	w.wg.Add(1)
+	defer w.wg.Done()
 	r := w.regions[k]
 	if r == nil {
 		r = newRegion(w, k.x, k.z)
@@ -187,11 +190,6 @@ func (w *World) post(ctx context.Context, cx, cz int32, message any) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-}
-
-// RequestChunk asynchronously delivers the chunk's packet to sink.
-func (w *World) RequestChunk(sink PacketSink, cx, cz int32) {
-	_ = w.post(context.Background(), cx, cz, chunkRequest{cx: cx, cz: cz, to: sink})
 }
 
 // LoadChunk waits for the owning region to return the current chunk packet.
@@ -348,18 +346,6 @@ func (w *World) PreGenerateSpawn(cx, cz int32) error {
 	return w.ensureChunk(context.Background(), cx, cz)
 }
 
-// SpawnChunk delivers the player's current chunk first, then marks it sent.
-func (w *World) SpawnChunk(p PacketSink, cx, cz int32, mark func(cx, cz int32)) error {
-	payload, err := w.LoadChunk(cx, cz)
-	if err != nil {
-		return err
-	}
-	if deliverChunk(p, cx, cz, payload) {
-		mark(cx, cz)
-	}
-	return nil
-}
-
 // SetBlock posts a block edit; the owning region applies it and broadcasts
 // the change to every viewer of that position.
 func (w *World) SetBlock(x, y, z int32, state uint32) error {
@@ -494,6 +480,9 @@ func (w *World) Close() error {
 		w.wg.Wait()
 		w.saveMu.Lock()
 		defer w.saveMu.Unlock()
+		for _, r := range w.regions {
+			r.releaseChunkRequests()
+		}
 		if w.store != nil {
 			for _, r := range w.regions {
 				w.closeErr = errors.Join(w.closeErr, r.saveChunks())

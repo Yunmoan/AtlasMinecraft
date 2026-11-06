@@ -122,10 +122,7 @@ func TestPlayerLightEditsTwoSinksPersistAndReload(t *testing.T) {
 		for i, p := range viewers {
 			result[i] = make(map[int32]receivedLightV12)
 			for _, cx := range []int32{-1, 0} {
-				if !p.ReserveChunk(cx, 0) {
-					t.Fatal("chunk reservation failed")
-				}
-				if err := w.SpawnChunk(p.WorldPacketSink(), cx, 0, func(int32, int32) {}); err != nil {
+				if err := w.SpawnChunk(p.WorldPacketSink(), cx, 0); err != nil {
 					t.Fatal(err)
 				}
 			}

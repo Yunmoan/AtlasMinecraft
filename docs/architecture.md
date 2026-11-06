@@ -11,6 +11,7 @@ Atlas 在一个 Go 进程中实现 Minecraft Java 1.21.1 的连接协议、部�
 | 玩家状态与发送队列 | [`player/player.go`](../internal/player/player.go) |
 | 可见玩家和广播接收者 | [`hub/hub.go`](../internal/hub/hub.go) |
 | 区域所有权和区块任务 | [`world/world.go`](../internal/world/world.go)、[`region.go`](../internal/world/region.go) |
+| 区块预约、交付与失败释放的契约 | [`world/chunk_delivery.go`](../internal/world/chunk_delivery.go)、[`player/dimension.go`](../internal/player/dimension.go) |
 | Java 存档解释与世界衔接 | [`world/vanilla.go`](../internal/world/vanilla.go)、[`store.go`](../internal/world/store.go) |
 | gzip/NBT 文件保存与恢复副本 | [`javasave/files.go`](../internal/javasave/files.go) |
 | 区块和光照的网络编码 | [`chunkwire/encode.go`](../internal/chunkwire/encode.go) |
@@ -79,11 +80,17 @@ flowchart TD
 
 ### 请求新区块
 
-1. 根据玩家位置和视距计算请求，优先安排较近区块。
+1. 根据玩家位置和视距计算请求；`RequestChunk` 和 `SpawnChunk` 负责预约，调用方无需预先预约或提供交付标记回调。
 2. Region 复用已加载内容，并合并同一区块的重复等待请求。
 3. 工作协程读取已有 Anvil 区块；缺失时运行对应维度的生成流水线。
 4. 安装或更新光照、保存需要持久化的内容，将结果送回 Region。
 5. 使用 chunkwire 编码网络内容，通过区块批次交付，并在状态变化时失效对应缓存。
+
+`ChunkReceiver` 是请求与交付的显式 interface，要求预约去重、当前需求与距离查询、受保护交付和失败释放。生产 adapter 是绑定维度视图的 `WorldSink`；生成队列与 Region 不再猜测可选能力。距离与需求在同次玩家状态读取中确定，玩家移动后排队任务会重新比较距离；断线或旧维度视图不能保留普通视野任务。其他玩家仍需的任务、阻塞加载和已开始的生成继续按既有规则处理。
+
+预约失败或重复请求是无操作；投递被世界拒收时同步返回错误并释放预约。生成失败、首区块加载失败或世界关闭也会释放未完成预约，旧视图的释放不能清除新视图的同坐标请求，也不能忘记已交付地形。批次发送与卸载、维度重置仍共享串行锁；“已交付”表示完整批次已进入服务器发送队列，不表示客户端确认。交付通知继续驱动地形之后的实体可见性更新。
+
+方块与光照广播使用现有 `PacketSink`；广播接收者无需具备区块预约能力。区块状态仍归 Region，预约、已发送集合和维度视图仍归 Player，生成队列只负责挑选任务。
 
 ## 存档与编码如何分工
 

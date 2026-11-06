@@ -7,7 +7,7 @@ import (
 
 type generationTask struct {
 	job      genJob
-	sinks    []PacketSink
+	sinks    []ChunkReceiver
 	required bool
 	order    uint64
 }
@@ -25,14 +25,7 @@ func newGenerationQueue() *generationQueue {
 	return &generationQueue{pending: map[chunkKey]*generationTask{}, wake: make(chan struct{}, 1)}
 }
 
-func chunkWanted(sink PacketSink, cx, cz int32) bool {
-	if viewer, ok := sink.(interface{ WantsChunk(int32, int32) bool }); ok {
-		return viewer.WantsChunk(cx, cz)
-	}
-	return true
-}
-
-func (q *generationQueue) enqueue(job genJob, sinks []PacketSink, required, create bool) {
+func (q *generationQueue) enqueue(job genJob, sinks []ChunkReceiver, required, create bool) {
 	q.mu.Lock()
 	key := chunkKey{job.cx, job.cz}
 	task := q.pending[key]
@@ -42,7 +35,7 @@ func (q *generationQueue) enqueue(job genJob, sinks []PacketSink, required, crea
 		q.pending[key] = task
 	}
 	if task != nil {
-		task.sinks = append([]PacketSink(nil), sinks...)
+		task.sinks = append([]ChunkReceiver(nil), sinks...)
 		task.required = required
 	}
 	q.mu.Unlock()
@@ -63,16 +56,9 @@ func (q *generationQueue) next(done <-chan struct{}) (genJob, bool) {
 				priority = -1
 			} else {
 				for _, sink := range task.sinks {
-					if !chunkWanted(sink, key.x, key.z) {
-						continue
+					if distance, wanted := sink.ChunkPriority(key.x, key.z); wanted {
+						priority = min(priority, distance)
 					}
-					distance := int64(0)
-					if viewer, ok := sink.(interface{ ChunkPos() (int32, int32) }); ok {
-						cx, cz := viewer.ChunkPos()
-						dx, dz := int64(key.x)-int64(cx), int64(key.z)-int64(cz)
-						distance = dx*dx + dz*dz
-					}
-					priority = min(priority, distance)
 				}
 			}
 			if priority == math.MaxInt64 {

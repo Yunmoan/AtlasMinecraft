@@ -128,8 +128,7 @@ func (s *Server) handlePlay(fc *proto.FramedConn, name string, uuid [16]byte, vi
 	}()
 	// The player's current chunk goes out first, including saved positions
 	// away from the boot-prepared spawn area.
-	p.ReserveChunk(cx, cz)
-	if err := currentWorld.SpawnChunk(p.WorldPacketSinkInDimension(currentWorld.DimensionName()), cx, cz, func(cx, cz int32) {}); err != nil {
+	if err := currentWorld.SpawnChunk(p.WorldPacketSinkInDimension(currentWorld.DimensionName()), cx, cz); err != nil {
 		slog.Error("player chunk unavailable", "player", p.Name, "x", cx, "z", cz, "error", err)
 		return
 	}
@@ -550,8 +549,8 @@ func (s *Server) requestChunksAround(p *player.Player, cx, cz int32) {
 		return ax*ax+az*az < bx*bx+bz*bz
 	})
 	for _, k := range positions {
-		if sink.ReserveChunk(k[0], k[1]) {
-			w.RequestChunk(sink, k[0], k[1])
+		if err := w.RequestChunk(sink, k[0], k[1]); err != nil {
+			return
 		}
 	}
 }

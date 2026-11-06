@@ -1,7 +1,7 @@
 package world
 
 import (
-	"atlas/internal/proto"
+	"atlas/internal/player"
 	"context"
 	"os"
 	"testing"
@@ -9,24 +9,18 @@ import (
 )
 
 type remoteChunkSink struct {
+	*player.WorldSink
 	received chan [2]int32
 	cx, cz   int32
 }
 
-func (s *remoteChunkSink) SendPacket(int32, []byte) {}
-func (s *remoteChunkSink) SendChunkData(payload []byte) {
-	r := proto.NewReader(payload)
-	x, e := r.I32()
-	if e != nil {
-		return
+func (s *remoteChunkSink) SendRequestedChunk(cx, cz int32, payload []byte) bool {
+	if !s.WorldSink.SendRequestedChunk(cx, cz, payload) {
+		return false
 	}
-	z, e := r.I32()
-	if e != nil {
-		return
-	}
-	s.received <- [2]int32{x, z}
+	s.received <- [2]int32{cx, cz}
+	return true
 }
-func (s *remoteChunkSink) ChunkPos() (int32, int32) { return s.cx, s.cz }
 
 // Opt-in acceptance timing at the coordinates in the reported client image.
 func TestRemoteChunkStreamingAtReportedCoordinates(t *testing.T) {
@@ -51,7 +45,9 @@ func TestRemoteChunkStreamingAtReportedCoordinates(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		sink := &remoteChunkSink{received: make(chan [2]int32, 49), cx: 625045, cz: 624993}
+		p := player.New("probe", [16]byte{}, 1, nil)
+		p.SetPos(625045*16+.5, 89, 624993*16+.5, 0, 0, false)
+		sink := &remoteChunkSink{WorldSink: p.WorldPacketSink(), received: make(chan [2]int32, 49), cx: 625045, cz: 624993}
 		started := time.Now()
 		for _, k := range spawnPreparationChunks(sink.cx, sink.cz, 3) {
 			w.RequestChunk(sink, k.x, k.z)

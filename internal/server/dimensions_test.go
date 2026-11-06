@@ -68,12 +68,12 @@ func TestRuntimeDimensionsTeleportRoutingAndPlayerRestart(t *testing.T) {
 		t.Fatal("old dimension still tracks player entity")
 	}
 	p.ReserveChunk(17, -4)
-	oldSink.UnmarkChunkSent(17, -4)
+	oldSink.ReleaseChunk(17, -4)
 	if !p.WantsChunk(17, -4) || oldSink.ReserveChunk(18, -4) {
 		t.Fatal("stale sink changed new dimension reservations")
 	}
 	currentSink := p.WorldPacketSink()
-	currentSink.UnmarkChunkSent(17, -4)
+	currentSink.ReleaseChunk(17, -4)
 	if !currentSink.ReserveChunk(17, -4) {
 		t.Fatal("failed current-world request could not be retried")
 	}

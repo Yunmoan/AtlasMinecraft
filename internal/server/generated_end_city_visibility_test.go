@@ -119,10 +119,7 @@ func TestEndCityActorsPacketSinkLifecycle(t *testing.T) {
 	}
 	deliver := func(viewer *player.Player, view *endCityPacketView) {
 		for _, pos := range chunks {
-			if !viewer.ReserveChunk(pos[0], pos[1]) {
-				t.Fatal("chunk reservation failed", pos)
-			}
-			if err := end.SpawnChunk(viewer.WorldPacketSink(), pos[0], pos[1], func(int32, int32) {}); err != nil {
+			if err := end.SpawnChunk(viewer.WorldPacketSink(), pos[0], pos[1]); err != nil {
 				t.Fatal(err)
 			}
 			s.updateGeneratedEntityVisibility(viewer)
