@@ -262,6 +262,7 @@ func (g *DimensionGenerator) decorateRegion(bases map[featureChunkPosition]*dime
 	}
 	region.featureOrder = g.order
 	region.borrowed = make(map[featureChunkPosition]bool, len(chunks))
+	region.BeginFeatureStage()
 	for position := range region.chunks {
 		region.borrowed[position] = true
 	}
@@ -279,6 +280,7 @@ func (g *DimensionGenerator) decorateRegion(bases map[featureChunkPosition]*dime
 	for dx := int32(-1); dx <= 1; dx++ {
 		for dz := int32(-1); dz <= 1; dz++ {
 			sx, sz := cx+dx, cz+dz
+			region.shapeRandom = NewStructureRegionRandom(g.seed, sx, sz)
 			present := make(map[string]bool)
 			for nx := int32(-1); nx <= 1; nx++ {
 				for nz := int32(-1); nz <= 1; nz++ {
@@ -344,15 +346,9 @@ func (g *DimensionGenerator) Generate(cx, cz int32) (*GeneratedDimensionChunk, e
 	if err != nil {
 		return nil, err
 	}
-	if err := finalizeGeneratedLeafDistances(region, cx, cz); err != nil {
-		return nil, err
-	}
 	base := bases[featureChunkPosition{cx, cz}]
 	result := &GeneratedDimensionChunk{Terrain: region.cloneChunk(cx, cz), Biomes: append([][64]string(nil), base.biomes...),
 		BlockEntities: region.BlockEntitiesInChunk(cx, cz), PendingEntities: region.PendingEntitiesInChunk(cx, cz), SkippedFeatures: skipped}
-	if _, err := PostProcessGeneratedBubbleColumns(result.Terrain); err != nil {
-		return nil, err
-	}
 	if g.structures != nil {
 		result.Structures, err = g.generatedStructureNBT(cx, cz, base.starts)
 		if err != nil {

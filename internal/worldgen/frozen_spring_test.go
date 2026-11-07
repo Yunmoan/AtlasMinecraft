@@ -515,7 +515,7 @@ func TestSculkVeinPlacementAgainstVanillaJAR(t *testing.T) {
 }
 
 func testSurfaceFeatureReference(t *testing.T, fixture, label string, wantCases, wantSuccesses int) {
-	file, err := os.Open("../../docs/worldgen/" + fixture)
+	file, err := os.Open("../../testdata/worldgen/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,7 +643,10 @@ func testSurfaceFeatureReference(t *testing.T, fixture, label string, wantCases,
 			t.Fatal(err)
 		}
 		var output []string
-		ticks := 0
+		// This older native probe reports the union of scheduled fluid
+		// positions and PostProcessing marks. Keep that oracle format while
+		// the runtime stores those distinct mechanisms separately.
+		updatePositions := make(map[FeaturePosition]bool)
 		for position, overlay := range region.overlays {
 			for i, state := range overlay.blocks {
 				p := FeaturePosition{position.chunkX*16 + int32(i&15), -64 + int32(i/256), position.chunkZ*16 + int32((i>>4)&15)}
@@ -653,8 +656,16 @@ func testSurfaceFeatureReference(t *testing.T, fixture, label string, wantCases,
 				}
 				output = append(output, fmt.Sprintf("%d %d %d %d", p.X, p.Y, p.Z, id))
 			}
-			ticks += len(overlay.postProcessing)
+			for i := range overlay.postProcessing {
+				updatePositions[FeaturePosition{position.chunkX*16 + int32(i&15), -64 + int32(i/256), position.chunkZ*16 + int32((i>>4)&15)}] = true
+			}
 		}
+		for _, queue := range region.fluidTicks {
+			for _, tick := range queue.ticks {
+				updatePositions[tick.Position] = true
+			}
+		}
+		ticks := len(updatePositions)
 		sort.Strings(output)
 		hash := sha256.Sum256([]byte(strings.Join(output, "\n")))
 		if label == "well_feature" || strings.HasPrefix(label, "room_") {

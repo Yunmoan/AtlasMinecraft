@@ -55,9 +55,9 @@ continue to pass after the two fixes.
 ## Reproduce
 
 ```powershell
-python docs/worldgen/build_jigsaw_data.py --check
-python docs/worldgen/build_village_blocks_probe.py --check
-python docs/worldgen/build_village_campfire_probe.py --check
+python tools/worldgen/build_jigsaw_data.py --check
+python tools/worldgen/build_village_blocks_probe.py --check
+python tools/worldgen/build_village_campfire_probe.py --check
 & (Join-Path $env:TEMP 'atlas-go/go/bin/go.exe') test ./internal/worldgen -run '^Test(JigsawVillageBlocksAgainstVanillaJAR|JigsawCampfireDefaultsAgainstVanillaJAR|JigsawVillageCampfireReplacementRecordsEntity|VillageTemplateAssetsAndProcessors)$' -count=1 -v -timeout=4m
 ```
 

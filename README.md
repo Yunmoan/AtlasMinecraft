@@ -1,38 +1,41 @@
 # Atlas
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 A from-scratch Minecraft **Java Edition 1.21.1 (protocol 767)** server written in **Go** — no JVM, zero external dependencies, built entirely on the standard library.
 
 ## Quick start
 
-```bash
+```powershell
 # Build with an embedded UTC build time (PowerShell, Go 1.23+)
 ./build.ps1
 
-# A plain go build also works, but reports that the build time was not injected
-go build -o atlas.exe ./cmd/atlas
+# Start with local configuration, saves and logs under run/
+./start.ps1
 
 # Create a normal Overworld with pure-Go terrain, caves and supported decoration
-./atlas.exe -world ./new-world -seed 1234
+./start.ps1 -ServerArgs @("-world", "new-world", "-seed", "1234")
 
 # Load a COPY of an existing 1.21.1 Java save
-./atlas.exe -world ./world-copy
+./start.ps1 -ServerArgs @("-world", "world-copy")
 
 # Create a Java-format superflat world without structures/features
-./atlas.exe -world ./flat-world -level-type minecraft:flat -seed 1234
+./start.ps1 -ServerArgs @("-world", "flat-world", "-level-type", "minecraft:flat", "-seed", "1234")
 
-# Import offline-mode operators into ops.json and enable a separate debug log
-./atlas.exe -world ./flat-world -ops Alice,Bob -debug
+# Enable a separate debug log; grant operators with console op after login
+./start.ps1 -ServerArgs @("-world", "flat-world", "-debug")
 
 # End-to-end smoke test (drives the full protocol flow against the server)
-go build -o atlas-test.exe ./cmd/atlas-test
-./atlas.exe -world ./flat-world -level-type minecraft:flat &  # then, in another shell:
-./atlas-test.exe        # status→login→config→chunks→chat→dig→commands
-# For operator command checks, start Atlas with -ops TestBot, then:
-./atlas-test.exe -operator
+./test.ps1 -Suite smoke
 ```
 
-Connect with a **1.21.1** client to `127.0.0.1`. To require authenticated
-accounts, set `online-mode=true` in `server.properties` before starting Atlas.
+The local configuration starts on `127.0.0.1:25567` with online authentication.
+Use a **1.21.1** client. Edit `run/server.properties` for local settings; the
+initial template is `configs/server.example.properties`. Type `stop` to save
+and shut down. Relative world paths passed to `start.ps1` resolve under `run/`.
+`build.ps1` writes `bin/atlas.exe`; a plain `go build -o bin/atlas.exe ./cmd/atlas`
+also works but does not embed a build time. Direct binary execution uses the
+current working directory, so launch it from `run/` to use the local save.
 
 ## What works
 
@@ -75,8 +78,9 @@ accounts, set `online-mode=true` in `server.properties` before starting Atlas.
   across region boundaries. Fences, bars and panes update their connections.
   Visible players receive mainhand, offhand and armor equipment updates.
 - Initial block updates remove unsupported grass/flowers and both halves of
-  double plants. Sand/red sand/gravel settle vertically in one durable column
-  edit; animated falling entities and drops are not implemented yet.
+  double plants. Sand/red sand/gravel enqueue delayed gravity updates. Explicit
+  scheduled execution supports falling entities and item creation/persistence;
+  default clock/ticket integration and the subsequent item lifecycle remain incomplete.
 - Chat (system-chat relay), keep-alive heartbeat with mismatch kick
 - Java world save: block edits, world age/daytime/weather, player position,
   inventory and creative flight state survive restart; joining players receive their own
@@ -112,8 +116,9 @@ accounts, set `online-mode=true` in `server.properties` before starting Atlas.
   trail ruins, trial chambers, ancient cities, pillager outposts, all five village variants and strongholds have actual
   starts, blocks, block entities, loot seeds and saved references. Supported
   structure NPCs and 18 initial animal types are generated and persisted separately from terrain.
-  Remaining structure families and neighboring decoration/light-stage ordering
-  are incomplete. 151 of 151 top-level Overworld
+  Ocean monuments and woodland mansions complete the 29 Overworld structure
+  definitions' start/placement coverage. Neighboring decoration/light-stage ordering
+  remains incomplete. 151 of 151 top-level Overworld
   placed-feature plans are enabled; this is implementation coverage, not a
   percentage of vanilla world equivalence. The complete decorated world is
   not yet equivalent to vanilla.
@@ -121,8 +126,11 @@ accounts, set `online-mode=true` in `server.properties` before starting Atlas.
   Nether caves and all 37/37 Nether and 5/5 End feature plans. Nether fortresses,
   Nether fossils, Nether ruined portals and Bastions join the actual chunk/save pipeline.
   End cities include loot chests, Shulkers and Elytra item frames. Generated
-  bubble columns and cross-tree leaf distances settle after decoration.
-  Remaining Overworld structure families and general generation ticks remain incomplete. Players can
+  bubble columns and cross-tree leaf distances retain delayed requests and update
+  through explicit scheduled execution after generation.
+  All Overworld structure families are enabled. Generation fluid requests retain
+  their original type, priority and order in `fluid_ticks`; broad block-handler
+  coverage, default clock/ticket integration and full-world equivalence remain incomplete. Players can
   switch dimensions and retain their dimension, position, inventory and edits
   across logout/restart. Generated End crystals and supported structure NPCs
   are saved in independent dimension entity regions and sent after terrain.
@@ -342,7 +350,7 @@ do not produce a leave announcement, and the client's language controls the
 join/leave wording.
 Independent development checks can export protocol fixtures with
 `ATLAS_COMPAT_FIXTURES` and decode them with
-`python docs/protocol/verify_player_entity.py <fixtures-directory>` using the
+`python tools/protocol/verify_player_entity.py <fixtures-directory>` using the
 supplied reference JAR. The reference JAR is never required at server runtime.
 
 Performance commands require operator level 2 or the console. `/tps` reports
@@ -386,13 +394,17 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 
 ## Architecture (the interesting part)
 
+Module responsibilities, ownership and login/edit/chunk request flows are
+documented in [the architecture guide](docs/architecture.md). Domain terms are
+defined in [the glossary](GLOSSARY.md).
+
 ```
                     ┌────────────────────────── TCP :25565
                     │  net.Listener (accept loop)
                     ▼
         ┌───────────────────────┐
         │ per-connection         │  read loop (this file's goroutine)
-        │ goroutine pair         │  writer loop drains p.Out (buffered 512)
+        │ goroutine pair         │  writer loop drains bounded p.Out
         └──────────┬────────────┘  slow client ⇒ disconnect, never blocks
                    │
              ┌─────▼─────┐
@@ -403,7 +415,7 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
     │ Region actors — the world is sharded into     │
     │ 32×32-chunk regions, ONE goroutine each.      │
     │ Chunk state is touched only by its owner —    │
-    │ no locks on world data, ever.                 │
+    │ shared world managers synchronize access.     │
     └──────────────┬───────────────────────────────┘
                    │ genJob (chan)
         ┌──────────▼──────────┐
@@ -413,7 +425,7 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 
 - **Region actors**: block edits and chunk requests are messages; the owning
   region goroutine applies them and fans out block-change packets via
-  `Hub.ViewersOf`. Cross-region interaction needs no shared state.
+  `Hub.ViewersOf`. Cross-region edits use world coordination and region messages.
 - **Backpressure**: every outbound queue is bounded; a lagging client is
   kicked instead of stalling a region actor.
 - **Generation boundary**: normal chunks run the verified terrain stages and
@@ -426,23 +438,31 @@ start fresh on each run, rotate at 10 MiB, and keep three backups.
 ```
 cmd/atlas/         server entry point
 cmd/atlas-test/    end-to-end protocol smoke test (status→play)
+configs/          tracked configuration templates
+bin/              ignored compiled executables
+run/              ignored local configuration, worlds, player state and logs
 internal/proto/    VarInt, packet reader/writer, framing+zlib, minimal NBT, packet IDs
 internal/server/   handshake/status/login/configuration/play state machines
 internal/player/   per-player state + outbound queue
 internal/hub/      player registry, viewer lookups, broadcast
 internal/world/    chunk codec (palette/heightmap/light), normal/flat generation,
                    region actors, worker pool, Java Anvil/NBT saves, item→block map
+internal/chunkwire/ protocol-767 section, heightmap, chunk and light encoding
+internal/javasave/ gzip/NBT file I/O, atomic replacement and recovery copies
 internal/logging/  structured rotating logs
 internal/blockstate/ shared 1.21.1 block-state codec
 internal/worldgen/ vanilla terrain, partial decoration, and JAR reference tests
 internal/registry/ embedded 1.21.1 Registry Data payload (prebuilt NBT)
-docs/protocol/     protocol data sources + build_registries.py
+docs/             technical guides and protocol notes (start at docs/README.md)
+tools/            reference-data generators and verification scripts
+tools/*/probes/   development-only Java reference probes
+testdata/         protocol source data and world-generation reference fixtures
 ```
 
 ## Regenerating the registry payload
 
 ```bash
-python docs/protocol/build_registries.py   # reads docs/protocol/mcmeta/, rewrites internal/registry/registries.bin
+python tools/protocol/build_registries.py   # reads testdata/protocol/mcmeta/, rewrites internal/registry/registries.bin
 ```
 
 ## Not yet (roadmap)
@@ -467,7 +487,7 @@ This is not a full vanilla world simulation yet. The provided JAR is a
 ## Notes
 
 - Protocol facts were pinned against machine-readable 1.21.1 data
-  (`docs/protocol/`), which caught several traps: `unload_chunk` sends Z
+  (`testdata/protocol/`), which caught several traps: `unload_chunk` sends Z
   first; `acknowledge_player_digging` is a bare sequence id since 1.20.3;
   chat components are NBT (not JSON) since 1.20.3; `chunk_batch_finished`
   carries a VarInt.

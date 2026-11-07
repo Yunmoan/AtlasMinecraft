@@ -20,7 +20,7 @@ import (
 )
 
 func TestEntityInteractionPacketsAgainstVanillaJAR(t *testing.T) {
-	source, err := os.ReadFile("../../docs/worldgen/armor_stand_interaction_1.21.1.txt")
+	source, err := os.ReadFile("../../testdata/worldgen/armor_stand_interaction_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

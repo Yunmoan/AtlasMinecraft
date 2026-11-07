@@ -89,44 +89,9 @@ func (w *World) TryPlaceBlock(p BlockPosition, expected, state uint32, upper *ui
 	return w.updateBlockNeighbors(changed)
 }
 
-// settleColumn provides the initial block-update implementation: supported
-// plants lose invalid support; sand/red sand/gravel settle vertically. Falling
-// entities and their animation, item drops and other tick behaviors are future
-// work. The whole column mutation is persisted in one chunk write.
-func settleColumn(ch *Chunk, x, z int, start int32, change func(int32, uint32)) error {
-	for y := max(ch.minY, start); y < ch.maxY; y++ {
-		id := ch.GetBlock(x, z, y)
-		if isAir(id) {
-			continue
-		}
-		state, err := BlockStateByID(id)
-		if err != nil {
-			return err
-		}
-		if state.Name == "minecraft:sand" || state.Name == "minecraft:red_sand" || state.Name == "minecraft:gravel" {
-			target := y
-			for target > ch.minY {
-				below, err := blockrules.Lookup(ch.GetBlock(x, z, target-1))
-				if err != nil {
-					return err
-				}
-				if !below.FallThrough {
-					break
-				}
-				target--
-			}
-			if target != y {
-				change(y, StateAir)
-				if target > ch.minY {
-					change(target, id)
-				}
-			}
-			continue
-		}
-	}
-	// A falling block can land below the originally edited Y and replace the
-	// lower half of a plant. Validate plants after all vertical moves, including
-	// positions below the source; otherwise the upper half remains suspended.
+// The legacy player-edit path still validates supported plants in its column.
+// Gravity is handled by scheduled block ticks and falling entities.
+func validateColumnPlants(ch *Chunk, x, z int, change func(int32, uint32)) error {
 	for y := ch.minY; y < ch.maxY; y++ {
 		id := ch.GetBlock(x, z, y)
 		if isAir(id) {
@@ -199,9 +164,11 @@ func (r *Region) applyColumnEdit(ch *Chunk, msg setBlockMsg) error {
 	if msg.upper != nil {
 		change(msg.y+1, *msg.upper)
 	}
-	if err := settleColumn(ch, x, z, msg.y-1, change); err != nil {
-		rollback()
-		return err
+	if !msg.raw {
+		if err := validateColumnPlants(ch, x, z, change); err != nil {
+			rollback()
+			return err
+		}
 	}
 	var ys []int
 	for y, state := range previous {
@@ -241,6 +208,9 @@ func (r *Region) applyColumnEdit(ch *Chunk, msg setBlockMsg) error {
 	for _, value := range ys {
 		y := int32(value)
 		changed = append(changed, BlockPosition{X: msg.x, Y: y, Z: msg.z})
+		if msg.raw && msg.flags&2 == 0 {
+			continue
+		}
 		payload := proto.NewWriter().I64(proto.PackPosition(msg.x, y, msg.z)).VarInt(int32(ch.GetBlock(x, z, y))).Payload()
 		for _, v := range r.world.hub.ViewersOf(msg.x, msg.z) {
 			if !chunkDelivered(v, ch.cx, ch.cz) {

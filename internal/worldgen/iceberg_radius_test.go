@@ -9,7 +9,7 @@ import (
 )
 
 func TestIcebergRadiiAgainstVanillaJAR(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/iceberg_radius_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/iceberg_radius_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

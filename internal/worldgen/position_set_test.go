@@ -11,7 +11,7 @@ import (
 )
 
 func TestPositionSetAgainstJavaHashSet(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/position_set_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/position_set_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

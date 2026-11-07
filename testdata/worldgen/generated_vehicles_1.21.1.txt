@@ -1,0 +1,86 @@
+creature_settings minecraft:wooded_badlands 0.04 [minecraft:armadillo*(1-2):6, minecraft:wolf*(4-8):2]
+creature_settings minecraft:the_void 0.1 []
+creature_settings minecraft:meadow 0.1 [minecraft:donkey*(1-2):1, minecraft:rabbit*(2-6):2, minecraft:sheep*(2-4):2]
+creature_settings minecraft:end_highlands 0.1 []
+creature_settings minecraft:dark_forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8]
+creature_settings minecraft:flower_forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:rabbit*(2-3):4]
+creature_settings minecraft:jungle 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:chicken*(4-4):10, minecraft:parrot*(1-2):40, minecraft:panda*(1-2):1]
+creature_settings minecraft:end_barrens 0.1 []
+creature_settings minecraft:windswept_savanna 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:horse*(2-6):1, minecraft:donkey*(1-1):1, minecraft:armadillo*(2-3):10]
+creature_settings minecraft:crimson_forest 0.1 [minecraft:strider*(1-2):60]
+creature_settings minecraft:basalt_deltas 0.1 [minecraft:strider*(1-2):60]
+creature_settings minecraft:forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:wolf*(4-4):5]
+creature_settings minecraft:windswept_gravelly_hills 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:llama*(4-6):5]
+creature_settings minecraft:nether_wastes 0.1 [minecraft:strider*(1-2):60]
+creature_settings minecraft:deep_ocean 0.1 []
+creature_settings minecraft:mangrove_swamp 0.1 [minecraft:frog*(2-5):10]
+creature_settings minecraft:grove 0.1 [minecraft:wolf*(1-1):1, minecraft:rabbit*(2-3):8, minecraft:fox*(2-4):4]
+creature_settings minecraft:savanna 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:horse*(2-6):1, minecraft:donkey*(1-1):1, minecraft:armadillo*(2-3):10]
+creature_settings minecraft:deep_frozen_ocean 0.1 [minecraft:polar_bear*(1-2):1]
+creature_settings minecraft:bamboo_jungle 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:chicken*(4-4):10, minecraft:parrot*(1-2):40, minecraft:panda*(1-2):80]
+creature_settings minecraft:jagged_peaks 0.1 [minecraft:goat*(1-3):5]
+creature_settings minecraft:taiga 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:wolf*(4-4):8, minecraft:rabbit*(2-3):4, minecraft:fox*(2-4):8]
+creature_settings minecraft:frozen_ocean 0.1 [minecraft:polar_bear*(1-2):1]
+creature_settings minecraft:lush_caves 0.1 []
+creature_settings minecraft:birch_forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8]
+creature_settings minecraft:snowy_taiga 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:wolf*(4-4):8, minecraft:rabbit*(2-3):4, minecraft:fox*(2-4):8]
+creature_settings minecraft:windswept_hills 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:llama*(4-6):5]
+creature_settings minecraft:snowy_plains 0.07 [minecraft:rabbit*(2-3):10, minecraft:polar_bear*(1-2):1]
+creature_settings minecraft:ocean 0.1 []
+creature_settings minecraft:savanna_plateau 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:horse*(2-6):1, minecraft:donkey*(1-1):1, minecraft:armadillo*(2-3):10, minecraft:llama*(4-4):8, minecraft:wolf*(4-8):8]
+creature_settings minecraft:small_end_islands 0.1 []
+creature_settings minecraft:deep_lukewarm_ocean 0.1 []
+creature_settings minecraft:sparse_jungle 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:chicken*(4-4):10, minecraft:wolf*(2-4):8]
+creature_settings minecraft:warm_ocean 0.1 []
+creature_settings minecraft:snowy_beach 0.1 []
+creature_settings minecraft:cold_ocean 0.1 []
+creature_settings minecraft:badlands 0.03 [minecraft:armadillo*(1-2):6]
+creature_settings minecraft:old_growth_pine_taiga 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:wolf*(4-4):8, minecraft:rabbit*(2-3):4, minecraft:fox*(2-4):8]
+creature_settings minecraft:stony_peaks 0.1 []
+creature_settings minecraft:snowy_slopes 0.1 [minecraft:rabbit*(2-3):4, minecraft:goat*(1-3):5]
+creature_settings minecraft:mushroom_fields 0.1 [minecraft:mooshroom*(4-8):8]
+creature_settings minecraft:beach 0.1 [minecraft:turtle*(2-5):5]
+creature_settings minecraft:stony_shore 0.1 []
+creature_settings minecraft:windswept_forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:llama*(4-6):5]
+creature_settings minecraft:frozen_peaks 0.1 [minecraft:goat*(1-3):5]
+creature_settings minecraft:soul_sand_valley 0.1 [minecraft:strider*(1-2):60]
+creature_settings minecraft:old_growth_birch_forest 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8]
+creature_settings minecraft:sunflower_plains 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:horse*(2-6):5, minecraft:donkey*(1-3):1]
+creature_settings minecraft:plains 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:horse*(2-6):5, minecraft:donkey*(1-3):1]
+creature_settings minecraft:river 0.1 []
+creature_settings minecraft:dripstone_caves 0.1 []
+creature_settings minecraft:ice_spikes 0.07 [minecraft:rabbit*(2-3):10, minecraft:polar_bear*(1-2):1]
+creature_settings minecraft:cherry_grove 0.1 [minecraft:pig*(1-2):1, minecraft:rabbit*(2-6):2, minecraft:sheep*(2-4):2]
+creature_settings minecraft:lukewarm_ocean 0.1 []
+creature_settings minecraft:desert 0.1 [minecraft:rabbit*(2-3):4]
+creature_settings minecraft:deep_dark 0.1 []
+creature_settings minecraft:frozen_river 0.1 []
+creature_settings minecraft:swamp 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:frog*(2-5):10]
+creature_settings minecraft:warped_forest 0.1 [minecraft:strider*(1-2):60]
+creature_settings minecraft:eroded_badlands 0.03 [minecraft:armadillo*(1-2):6]
+creature_settings minecraft:the_end 0.1 []
+creature_settings minecraft:end_midlands 0.1 []
+creature_settings minecraft:old_growth_spruce_taiga 0.1 [minecraft:sheep*(4-4):12, minecraft:pig*(4-4):10, minecraft:chicken*(4-4):10, minecraft:cow*(4-4):8, minecraft:wolf*(4-4):8, minecraft:rabbit*(2-3):4, minecraft:fox*(2-4):8]
+creature_settings minecraft:deep_cold_ocean 0.1 []
+[19:51:04] [main/WARN]: Not all defined tags for registry ResourceKey[minecraft:root / minecraft:block] are present in data pack: minecraft:incorrect_for_diamond_tool, minecraft:incorrect_for_gold_tool, minecraft:incorrect_for_iron_tool, minecraft:incorrect_for_netherite_tool, minecraft:incorrect_for_stone_tool, minecraft:incorrect_for_wooden_tool, minecraft:leaves, minecraft:mineable/axe, minecraft:mineable/hoe, minecraft:mineable/pickaxe, minecraft:mineable/shovel, minecraft:soul_speed_blocks, minecraft:sword_efficient, minecraft:wool
+vehicle_type minecraft:chest_minecart 18
+vehicle_default minecraft:chest_minecart 0 0a0900064d6f74696f6e060000000300000000000000000000000000000000000000000000000005000c46616c6c44697374616e636500000000090003506f73060000000300000000000000000000000000000000000000000000000002000446697265ffff01000c496e76756c6e657261626c65000900054974656d730000000000080002696400186d696e6563726166743a63686573745f6d696e6563617274020003416972012c0100084f6e47726f756e640003000e506f7274616c436f6f6c646f776e000000000b0004555549440000000400000000000000000000000000000000090008526f746174696f6e0500000002000000000000000000
+vehicle_metadata minecraft:chest_minecart 0 4dff
+vehicle_saved minecraft:chest_minecart 1 0a0800094c6f6f745461626c6500246d696e6563726166743a6368657374732f6162616e646f6e65645f6d696e6573686166740900064d6f74696f6e060000000300000000000000000000000000000000000000000000000001000c496e76756c6e657261626c6500020003416972012c0100084f6e47726f756e640003000e506f7274616c436f6f6c646f776e00000000090008526f746174696f6e0500000002000000000000000005000c46616c6c44697374616e636500000000090003506f73060000000300000000000000000000000000000000000000000000000002000446697265ffff080002696400186d696e6563726166743a63686573745f6d696e65636172740b000455554944000000040000000000000000000000000000000004000d4c6f6f745461626c6553656564000000000000000100
+vehicle_metadata minecraft:chest_minecart 1 4dff
+vehicle_saved minecraft:chest_minecart 2 0a0800094c6f6f745461626c6500246d696e6563726166743a6368657374732f6162616e646f6e65645f6d696e6573686166740900064d6f74696f6e060000000300000000000000000000000000000000000000000000000001000c496e76756c6e657261626c6500020003416972012c0100084f6e47726f756e640003000e506f7274616c436f6f6c646f776e00000000090008526f746174696f6e0500000002000000000000000005000c46616c6c44697374616e636500000000090003506f73060000000300000000000000000000000000000000000000000000000002000446697265ffff080002696400186d696e6563726166743a63686573745f6d696e65636172740b000455554944000000040000000000000000000000000000000004000d4c6f6f745461626c6553656564ffffffffffffffff00
+vehicle_metadata minecraft:chest_minecart 2 4dff
+vehicle_saved minecraft:chest_minecart 3 0a0800094c6f6f745461626c6500246d696e6563726166743a6368657374732f6162616e646f6e65645f6d696e6573686166740900064d6f74696f6e060000000300000000000000000000000000000000000000000000000001000c496e76756c6e657261626c6500020003416972012c0100084f6e47726f756e640003000e506f7274616c436f6f6c646f776e00000000090008526f746174696f6e0500000002000000000000000005000c46616c6c44697374616e636500000000090003506f73060000000300000000000000000000000000000000000000000000000002000446697265ffff080002696400186d696e6563726166743a63686573745f6d696e65636172740b000455554944000000040000000000000000000000000000000004000d4c6f6f745461626c65536565647fffffffffffffff00
+vehicle_metadata minecraft:chest_minecart 3 4dff
+vehicle_passengers 0 - 0000
+vehicle_passengers 0 78 00014e
+vehicle_passengers 0 78,129,1234568 00034e810188ad4b
+vehicle_passengers 77 - 4d00
+vehicle_passengers 77 78 4d014e
+vehicle_passengers 77 78,129,1234568 4d034e810188ad4b
+vehicle_passengers 128 - 800100
+vehicle_passengers 128 78 8001014e
+vehicle_passengers 128 78,129,1234568 8001034e810188ad4b
+vehicle_passengers 1234567 - 87ad4b00
+vehicle_passengers 1234567 78 87ad4b014e
+vehicle_passengers 1234567 78,129,1234568 87ad4b034e810188ad4b

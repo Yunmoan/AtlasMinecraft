@@ -68,7 +68,7 @@ func compareAnimalFields(t *testing.T, description string, got, want nbt.Object)
 }
 
 func TestAllInitialAnimalPacksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestInitialAnimalPlacementLowerAgainstVanillaJAR(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	file, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	file, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

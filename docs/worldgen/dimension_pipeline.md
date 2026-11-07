@@ -98,25 +98,25 @@ canonical dimension saved in `Dimension` and personal spawn in `SpawnDimension`.
 Independent reference checks:
 
 ```powershell
-python docs/worldgen/verify_reference.py --probe DimensionFeatureOrderProbe
-python docs/worldgen/verify_reference.py --probe DimensionPlacementProbe
-python docs/worldgen/verify_reference.py --probe NetherCarverProbe
-python docs/worldgen/verify_reference.py --probe PortalShapeProbe
-python docs/worldgen/verify_reference.py --probe PortalGeometryProbe
-python docs/worldgen/verify_reference.py --probe PortalForcerProbe
-python docs/worldgen/verify_reference.py --probe PortalRulesProbe
-python docs/worldgen/verify_reference.py --probe PortalPositionProbe
-python docs/worldgen/verify_reference.py --probe BlockOffsetProbe
-python docs/worldgen/verify_reference.py --probe PortalProcessorProbe
-python docs/worldgen/verify_structure_reference.py --probe FortressStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe FortressBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe NetherFossilStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe NetherFossilBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe JigsawStartsProbe
-python docs/worldgen/verify_structure_reference.py --probe JigsawBlocksProbe
-python docs/worldgen/verify_structure_reference.py --probe JigsawProcessorsProbe
-python docs/worldgen/verify_structure_reference.py --probe JigsawBlockEntitiesProbe
-python docs/worldgen/verify_structure_reference.py --probe JigsawOverworldBlocksProbe
+python tools/worldgen/verify_reference.py --probe DimensionFeatureOrderProbe
+python tools/worldgen/verify_reference.py --probe DimensionPlacementProbe
+python tools/worldgen/verify_reference.py --probe NetherCarverProbe
+python tools/worldgen/verify_reference.py --probe PortalShapeProbe
+python tools/worldgen/verify_reference.py --probe PortalGeometryProbe
+python tools/worldgen/verify_reference.py --probe PortalForcerProbe
+python tools/worldgen/verify_reference.py --probe PortalRulesProbe
+python tools/worldgen/verify_reference.py --probe PortalPositionProbe
+python tools/worldgen/verify_reference.py --probe BlockOffsetProbe
+python tools/worldgen/verify_reference.py --probe PortalProcessorProbe
+python tools/worldgen/verify_structure_reference.py --probe FortressStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe FortressBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe NetherFossilStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe NetherFossilBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe JigsawStartsProbe
+python tools/worldgen/verify_structure_reference.py --probe JigsawBlocksProbe
+python tools/worldgen/verify_structure_reference.py --probe JigsawProcessorsProbe
+python tools/worldgen/verify_structure_reference.py --probe JigsawBlockEntitiesProbe
+python tools/worldgen/verify_structure_reference.py --probe JigsawOverworldBlocksProbe
 ```
 
 The new fixtures cover 10 nonempty biome schedule groups, 99 placement streams

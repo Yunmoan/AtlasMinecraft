@@ -30,7 +30,7 @@ also checks the actual integrated `generateBase` output with structures off.
 Regenerate the four official probe outputs into a separate artifact directory:
 
 ```powershell
-python docs/worldgen/diagnose_terrain_stages.py --seed 4511451270791457643 --chunk -24 61 --chunk 0 10 --chunk 0 43 --chunk -3 44 --output artifacts/river-ocean-debug/terrain-stages-regression
+python tools/worldgen/diagnose_terrain_stages.py --seed 4511451270791457643 --chunk -24 61 --chunk 0 10 --chunk 0 43 --chunk -3 44 --output artifacts/river-ocean-debug/terrain-stages-regression
 ```
 
 After inspecting them, `noise.txt`, `surface.txt` and `carved.txt` correspond to

@@ -20,7 +20,7 @@ import (
 
 func openNoiseReference(t *testing.T) *bufio.Scanner {
 	t.Helper()
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "noise_chunk_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "noise_chunk_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestMountainPlateauCaveNoiseAgainstVanillaJAR(t *testing.T) {
 
 func terrainCaseCount(t *testing.T) int {
 	t.Helper()
-	data, err := os.ReadFile("../../docs/worldgen/terrain_cases_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/terrain_cases_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func testNoiseChunksAgainstVanillaJAR(t *testing.T, fixture string, wantCount in
 		}
 		ids[index] = state
 	}
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", fixture))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", fixture))
 	if err != nil {
 		t.Fatal(err)
 	}

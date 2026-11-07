@@ -14,7 +14,7 @@ import (
 )
 
 func TestGeneratedSculkEntitiesAgainstVanillaAndAnvil(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/block_entity_packets_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/block_entity_packets_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,6 +66,9 @@ func TestGeneratedSculkEntitiesAgainstVanillaAndAnvil(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if _, mutated := entities[0]["keepPacked"]; mutated {
+				t.Fatal("FULL conversion mutated cached generation NBT")
+			}
 			dir := t.TempDir()
 			seed := int64(0)
 			if err := CreateNormalWorld(dir, &seed); err != nil {
@@ -88,6 +91,10 @@ func TestGeneratedSculkEntitiesAgainstVanillaAndAnvil(t *testing.T) {
 			}
 			loadedRoot, _ := loaded.anvilRoot.Object()
 			values, _ := loadedRoot["block_entities"].Elements()
+			// LevelChunk's saving wrapper adds this flag to the native entity
+			// payload; it is not part of BlockEntity.saveWithFullMetadata.
+			expectedObject, _ := expected.Object()
+			expectedObject["keepPacked"] = nbt.Tag{Type: nbt.Byte, Value: int8(0)}
 			if len(values) != 1 || !reflect.DeepEqual(values[0], expected) {
 				t.Fatal("sculk NBT changed during Anvil restart")
 			}

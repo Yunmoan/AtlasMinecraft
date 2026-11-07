@@ -81,7 +81,7 @@ func TestNoiseCellInterpolation(t *testing.T) {
 // DensityClimateProbe builds vanilla density nodes through the supplied JAR.
 // Compare raw double bits, including the Shift and ShiftedNoise coordinate math.
 func TestDensityClimateReference(t *testing.T) {
-	f, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "density_climate_1.21.1.txt"))
+	f, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "density_climate_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestDensityClimateReference(t *testing.T) {
 }
 
 func TestBlendedNoiseReference(t *testing.T) {
-	f, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "blended_noise_1.21.1.txt"))
+	f, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "blended_noise_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestBlendedNoiseReference(t *testing.T) {
 }
 
 func TestWeirdScaledReference(t *testing.T) {
-	f, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "weird_scaled_1.21.1.txt"))
+	f, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "weird_scaled_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestWeirdScaledReference(t *testing.T) {
 }
 
 func TestSplineReference(t *testing.T) {
-	f, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "spline_1.21.1.txt"))
+	f, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "spline_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

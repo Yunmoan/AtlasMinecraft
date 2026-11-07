@@ -4,11 +4,17 @@ import (
 	"atlas/internal/anvil"
 	"atlas/internal/blockstate"
 	"atlas/internal/nbt"
+	"bufio"
+	"compress/gzip"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"math/bits"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +84,7 @@ func diagnosticReplayFeatures(t *testing.T, g *OverworldGenerator, bases map[fea
 		t.Fatal(err)
 	}
 	region.borrowed = make(map[featureChunkPosition]bool)
+	region.BeginFeatureStage()
 	for p := range region.chunks {
 		region.borrowed[p] = true
 	}
@@ -98,6 +105,8 @@ func diagnosticReplayFeatures(t *testing.T, g *OverworldGenerator, bases map[fea
 		}
 	}
 	switch order {
+	case "trace":
+		positions = diagnosticTracePositions(t, os.Getenv("ATLAS_FINAL_DIAG_TRACE"), cx, cz)
 	case "zx":
 		sort.Slice(positions, func(i, j int) bool {
 			a, b := positions[i], positions[j]
@@ -148,7 +157,19 @@ func diagnosticReplayFeatures(t *testing.T, g *OverworldGenerator, bases map[fea
 			writes := &structureBlockResult{blocks: make(map[FeaturePosition]SurfaceBlockState), postProcessing: make(map[FeaturePosition]bool), blockEntities: make(map[FeaturePosition]featureBlockEntity)}
 			region.structureRecording = writes
 			random.SetSeed(seed + int64(feature.Index) + int64(10000*feature.Step))
+			traceRandom := os.Getenv("ATLAS_FINAL_DIAG_FEATURE_TRACE") != "" && abs32(sx-cx) <= 1 && abs32(sz-cz) <= 1
+			if traceRandom {
+				lo, hi := random.XoroshiroState()
+				t.Logf("feature_random begin %d %d %d %d %d %d", sx, sz, feature.Step, feature.Index, lo, hi)
+			}
+			if feature.Step == 6 && feature.Index <= 10 && abs32(sx-cx) <= 1 && abs32(sz-cz) <= 1 {
+				diagnosticFeatureSnapshot(t, region, cx, cz, sx, sz, feature.Index, "begin")
+			}
 			if err := walkPlacement(operations, random, FeaturePosition{X: sx * 16, Z: sz * 16}, func(origin FeaturePosition, r *WorldgenRandom) error {
+				if os.Getenv("ATLAS_FINAL_DIAG_FEATURE_TRACE") != "" && sx == -3 && sz == 44 && feature.Step == 6 && feature.Index == 0 {
+					lo, hi := r.XoroshiroState()
+					t.Logf("configured_origin %d %d %d %d %d %d %d %d %d", sx, sz, feature.Step, feature.Index, origin.X, origin.Y, origin.Z, lo, hi)
+				}
 				trace := os.Getenv("ATLAS_FINAL_DIAG_SOURCE_TRACE") != "" && sx == cx && sz == cz && cx == 0 && cz == 43 && feature.Name == "minecraft:ore_copper"
 				var beforeLo, beforeHi uint64
 				var floor int32
@@ -165,6 +186,13 @@ func diagnosticReplayFeatures(t *testing.T, g *OverworldGenerator, bases map[fea
 			}); err != nil {
 				t.Fatal(err)
 			}
+			if traceRandom {
+				lo, hi := random.XoroshiroState()
+				t.Logf("feature_random end %d %d %d %d %d %d", sx, sz, feature.Step, feature.Index, lo, hi)
+			}
+			if feature.Step == 6 && feature.Index <= 10 && abs32(sx-cx) <= 1 && abs32(sz-cz) <= 1 {
+				diagnosticFeatureSnapshot(t, region, cx, cz, sx, sz, feature.Index, "end")
+			}
 			for p := range writes.blocks {
 				if p.X>>4 == cx && p.Z>>4 == cz {
 					last[p] = diagnosticFeatureWriter{feature.Name, sx, sz}
@@ -174,6 +202,115 @@ func diagnosticReplayFeatures(t *testing.T, g *OverworldGenerator, bases map[fea
 	}
 	region.structureRecording = nil
 	return region, last
+}
+
+func diagnosticFeatureSnapshot(t *testing.T, region *OverworldFeatureRegion, cx, cz, sx, sz int32, index int, phase string) {
+	t.Helper()
+	dir := os.Getenv("ATLAS_FINAL_DIAG_SNAPSHOTS")
+	if dir == "" {
+		return
+	}
+	name := fmt.Sprintf("%s_%d_%d_6_%d.gz", phase, sx, sz, index)
+	f, err := os.Open(filepath.Join(dir, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	b, err := io.ReadAll(r)
+	r.Close()
+	f.Close()
+	if err != nil || len(b) != 98304*2 {
+		t.Fatalf("invalid snapshot %s: %v", name, err)
+	}
+	count := 0
+	first := ""
+	pairs := make(map[string]int)
+	for i := 0; i < 98304; i++ {
+		p := FeaturePosition{cx*16 + int32(i%16), int32(i/256) - 64, cz*16 + int32(i/16%16)}
+		s, err := region.BlockAt(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		id, err := blockstate.BlockStateID(s.Name, s.Properties)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := uint32(binary.BigEndian.Uint16(b[i*2:]))
+		if id == want {
+			continue
+		}
+		expected, err := blockstate.BlockStateByID(want)
+		if err != nil {
+			t.Fatal(err)
+		}
+		pairs[s.Name+" -> "+expected.Name]++
+		if count == 0 {
+			first = fmt.Sprintf("%v got=%v want=%v", p, s, expected)
+		}
+		count++
+	}
+	t.Logf("feature_snapshot %s differences=%d pairs=%v first=%s", name, count, pairs, first)
+}
+
+// Read only original calls in the requested 7x7 neighborhood. Reject overlapping
+// calls here: a serial replay cannot explain concurrent native writes.
+func diagnosticTracePositions(t *testing.T, path string, cx, cz int32) []featureChunkPosition {
+	t.Helper()
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	var positions []featureChunkPosition
+	active := make(map[featureChunkPosition]bool)
+	seen := make(map[featureChunkPosition]bool)
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		fields := strings.Fields(s.Text())
+		if len(fields) == 0 || fields[0] != "decoration" {
+			continue
+		}
+		if len(fields) != 6 {
+			t.Fatal("invalid decoration trace", s.Text())
+		}
+		x, err := strconv.ParseInt(fields[3], 10, 32)
+		if err != nil {
+			t.Fatal(err)
+		}
+		z, err := strconv.ParseInt(fields[4], 10, 32)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := featureChunkPosition{int32(x), int32(z)}
+		if abs32(p.chunkX-cx) > 3 || abs32(p.chunkZ-cz) > 3 {
+			continue
+		}
+		if fields[2] == "begin" {
+			if len(active) != 0 || seen[p] {
+				t.Fatal("nonserial or repeated native decoration", s.Text())
+			}
+			active[p], seen[p] = true, true
+			positions = append(positions, p)
+		} else if fields[2] == "end" {
+			if !active[p] {
+				t.Fatal("unmatched native decoration exit", s.Text())
+			}
+			delete(active, p)
+		} else {
+			t.Fatal("unknown trace phase", s.Text())
+		}
+	}
+	if err := s.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if len(active) != 0 || len(positions) == 0 {
+		t.Fatal("incomplete native trace")
+	}
+	return positions
 }
 
 func TestFinalFeatureDiagnostic(t *testing.T) {
@@ -205,6 +342,23 @@ func TestFinalFeatureDiagnostic(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if os.Getenv("ATLAS_FINAL_DIAG_TRACE") != "" {
+				for x := cx - 4; x <= cx+4; x++ {
+					for z := cz - 4; z <= cz+4; z++ {
+						p := featureChunkPosition{x, z}
+						if bases[p] != nil {
+							continue
+						}
+						entry := g.baseEntryAt(x, z)
+						<-entry.ready
+						if entry.err != nil {
+							t.Fatal(entry.err)
+						}
+						bases[p] = entry.base
+						chunks = append(chunks, entry.base.terrain)
+					}
+				}
+			}
 			for x := cx - 1; x <= cx+1; x++ {
 				for z := cz - 1; z <= cz+1; z++ {
 					_, biomes := diagnosticNativeChunk(t, dir, x, z)
@@ -220,14 +374,14 @@ func TestFinalFeatureDiagnostic(t *testing.T) {
 				}
 			}
 			orders := []string{"xz", "zx", "reverse", "center-first"}
+			if os.Getenv("ATLAS_FINAL_DIAG_TRACE") != "" {
+				orders = []string{"trace"}
+			}
 			if os.Getenv("ATLAS_FINAL_DIAG_SOURCE_TRACE") != "" {
 				orders = []string{"xz", "center-first"}
 			}
 			for _, order := range orders {
 				region, last := diagnosticReplayFeatures(t, g, bases, chunks, cx, cz, order)
-				if err := finalizeGeneratedLeafDistances(region, cx, cz); err != nil {
-					t.Fatal(err)
-				}
 				chunk := region.cloneChunk(cx, cz)
 				pairs, writers := make(map[string]int), make(map[diagnosticFeatureWriter]int)
 				different := 0

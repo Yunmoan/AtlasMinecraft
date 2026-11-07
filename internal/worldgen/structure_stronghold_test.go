@@ -9,7 +9,7 @@ import (
 )
 
 func TestStrongholdStartsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/structure_stronghold_starts_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/structure_stronghold_starts_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

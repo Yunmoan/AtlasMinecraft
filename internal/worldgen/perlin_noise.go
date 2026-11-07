@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"atlas/internal/worldgen/randomsource"
 	"fmt"
 	"math"
 )
@@ -14,7 +15,7 @@ type PerlinNoise struct {
 	valueFactor float64
 }
 
-func NewPerlinNoise(random *Xoroshiro, firstOctave int, amplitudes []float64) (*PerlinNoise, error) {
+func NewPerlinNoise(random *randomsource.Xoroshiro, firstOctave int, amplitudes []float64) (*PerlinNoise, error) {
 	positional := random.ForkPositional()
 	return newPositionalPerlinNoise(firstOctave, amplitudes, func(name string) octaveRandom { return positional.FromHashOf(name) })
 }

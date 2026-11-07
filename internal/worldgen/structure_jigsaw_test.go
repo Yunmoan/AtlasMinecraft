@@ -14,7 +14,7 @@ import (
 )
 
 func TestJigsawStartsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_jigsaw_starts_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_jigsaw_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestJigsawStartsAgainstVanillaJAR(t *testing.T) {
 }
 
 func TestJigsawStartsParallelAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "structure_jigsaw_starts_1.21.1.txt"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "structure_jigsaw_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

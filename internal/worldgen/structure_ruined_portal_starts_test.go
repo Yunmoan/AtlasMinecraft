@@ -14,7 +14,7 @@ import (
 )
 
 func TestRuinedPortalStartsAndBaseColumnsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_ruined_portal_starts_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_ruined_portal_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

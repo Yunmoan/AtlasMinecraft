@@ -2,7 +2,7 @@ package worldgen
 
 // Vanilla 1.21.1 initial spawn search (MinecraftServer.setInitialSpawn plus
 // Climate$SpawnFinder), transcribed from the reference JAR and cross-checked
-// against docs/worldgen/spawn_search_1.21.1.txt. The search ring-samples the
+// against testdata/worldgen/spawn_search_1.21.1.txt. The search ring-samples the
 // six overworld climate density functions and picks the position whose
 // climate best matches the noise settings' spawn_target parameter points;
 // an origin-distance penalty keeps the result near (0,0). Deterministic per

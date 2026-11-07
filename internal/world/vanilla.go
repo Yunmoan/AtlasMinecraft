@@ -2,15 +2,12 @@ package world
 
 import (
 	"atlas/internal/anvil"
+	"atlas/internal/javasave"
 	"atlas/internal/nbt"
 	"atlas/internal/registry"
 	"atlas/internal/worldgen"
-	"bytes"
-	"compress/gzip"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"path/filepath"
 	"sync"
 )
@@ -370,6 +367,9 @@ func (v *VanillaSave) persistChunk(chunk *Chunk) error {
 	if err := v.regions.WriteChunk(v.regionDir, chunk.cx, chunk.cz, name, root); err != nil {
 		return err
 	}
+	if chunk.scheduledTicks != nil {
+		chunk.scheduledTicks.saved(chunk.tickSaveRevision, chunk.tickSaveTime)
+	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	chunk.dirty = false
@@ -445,69 +445,9 @@ func (v *VanillaSave) saveMeta(m worldMeta) error {
 }
 
 func writeGzipNBTAtomic(path, name string, root nbt.Tag) error {
-	encoded, err := nbt.Marshal(name, root)
-	if err != nil {
-		return err
-	}
-	var compressed bytes.Buffer
-	zw := gzip.NewWriter(&compressed)
-	if _, err = zw.Write(encoded); err != nil {
-		zw.Close()
-		return err
-	}
-	if err = zw.Close(); err != nil {
-		return err
-	}
-	return writeVanillaFileAtomic(path, compressed.Bytes())
-}
-
-// Keep the previous complete file as the vanilla .dat_old recovery copy.
-func writeVanillaFileAtomic(path string, data []byte) error {
-	if previous, err := os.ReadFile(path); err == nil {
-		if err := replaceFileAtomic(path+"_old", previous); err != nil {
-			return err
-		}
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	return replaceFileAtomic(path, data)
-}
-
-func replaceFileAtomic(path string, data []byte) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), "atlas-vanilla-*.tmp")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err = tmp.Write(data); err == nil {
-		err = tmp.Sync()
-	}
-	if e := tmp.Close(); err == nil {
-		err = e
-	}
-	if err != nil {
-		return err
-	}
-	return os.Rename(tmp.Name(), path)
+	return javasave.WriteNBT(path, name, root)
 }
 
 func readGzip(path string) ([]byte, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	zr, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, err
-	}
-	defer zr.Close()
-	b, err := io.ReadAll(io.LimitReader(zr, (32<<20)+1))
-	if err != nil {
-		return nil, err
-	}
-	if len(b) > 32<<20 {
-		return nil, errors.New("gzip NBT exceeds 32 MiB limit")
-	}
-	return b, nil
+	return javasave.ReadGzip(path)
 }

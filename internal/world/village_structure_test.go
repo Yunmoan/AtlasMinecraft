@@ -98,7 +98,12 @@ func TestVillageStructureAnvilRestart(t *testing.T) {
 				}
 				blockEntities := make([]nbt.Tag, len(generated.BlockEntities))
 				for i, data := range generated.BlockEntities {
-					blockEntities[i] = nbt.Tag{Type: nbt.Compound, Value: data}
+					saved := make(nbt.Object, len(data)+1)
+					for key, value := range data {
+						saved[key] = value
+					}
+					saved["keepPacked"] = nbt.Tag{Type: nbt.Byte, Value: int8(0)}
+					blockEntities[i] = nbt.Tag{Type: nbt.Compound, Value: saved}
 					if table, _ := data.Text("LootTable"); strings.HasPrefix(table, "minecraft:chests/village/") {
 						loot++
 						if data["LootTableSeed"].Type != nbt.Long {

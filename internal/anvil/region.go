@@ -51,6 +51,12 @@ func readChunkRecord(dir string, cx, cz int32) (byte, []byte, bool, error) {
 	if err != nil {
 		return 0, nil, false, err
 	}
+	// Vanilla RegionFile opens with CREATE even for reads and writes its header
+	// only with the first chunk. A zero-byte file is an empty region, not a
+	// truncated save (common for newly inspected entity regions).
+	if info.Size() == 0 {
+		return 0, nil, false, nil
+	}
 	if info.Size() < 2*sector || info.Size() > maxRegionBytes {
 		return 0, nil, false, fmt.Errorf("invalid region size: %s", path)
 	}
@@ -215,11 +221,13 @@ func writeChunkRecord(dir string, cx, cz int32, payload []byte) (err error) {
 			return statErr
 		}
 		size = info.Size()
-		if size < 2*sector || size > maxRegionBytes {
+		if size != 0 && size < 2*sector || size > maxRegionBytes {
 			return errors.New("invalid existing region size")
 		}
-		if _, err = source.ReadAt(header[:], 0); err != nil {
-			return err
+		if size != 0 {
+			if _, err = source.ReadAt(header[:], 0); err != nil {
+				return err
+			}
 		}
 	}
 	// Validate and plan the complete replacement before creating it. Only the

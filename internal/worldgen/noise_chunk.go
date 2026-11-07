@@ -36,14 +36,24 @@ func (material NoiseMaterial) BlockName() string {
 }
 
 type NoiseChunkResult struct {
-	X, Z                int32
-	MinY, Height        int32
-	Blocks              []NoiseMaterial
-	FluidUpdates        []bool
-	PostProcessing      []bool
-	CarvingMask         []bool
-	CarvingMaskByCarver [3]int
-	SurfaceBlocks       map[int]SurfaceBlockState
+	X, Z           int32
+	MinY, Height   int32
+	Blocks         []NoiseMaterial
+	FluidUpdates   []bool
+	FluidTicks     []PendingFluidTick
+	BlockTicks     []PendingBlockTick
+	PostProcessing []bool
+	// PostProcessingOrder contains block indices in append order, including
+	// duplicates. The boolean arrays above are diagnostic flags;
+	// only this log may be used to serialize the native per-section short lists.
+	PostProcessingOrder []int
+	// The original NoiseChunk retains its aquifer across stages. Carver lava
+	// below the configured floor bypasses computeSubstance and observes this
+	// last scheduling flag rather than resetting it.
+	aquiferShouldSchedule bool
+	CarvingMask           []bool
+	CarvingMaskByCarver   [3]int
+	SurfaceBlocks         map[int]SurfaceBlockState
 }
 
 func (result *NoiseChunkResult) Index(x, y, z int32) (int, error) {
@@ -119,6 +129,7 @@ func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, bea
 								return nil, fmt.Errorf("final density at %d,%d,%d: %w", blockX, y, blockZ, err)
 							}
 							material, solid, update := aquifer.compute(blockX, y, blockZ, value)
+							result.aquiferShouldSchedule = update
 							if aquifer.err != nil {
 								return nil, aquifer.err
 							}
@@ -132,6 +143,9 @@ func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, bea
 							}
 							index := int((y-settings.MinY)*256 + z*16 + x)
 							result.Blocks[index], result.FluidUpdates[index] = material, update
+							if update && (material == NoiseWater || material == NoiseLava) {
+								result.PostProcessingOrder = append(result.PostProcessingOrder, index)
+							}
 						}
 					}
 				}

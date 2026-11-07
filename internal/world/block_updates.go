@@ -2,6 +2,7 @@ package world
 
 import (
 	"atlas/internal/blockrules"
+	"atlas/internal/worldgen"
 	"context"
 	"errors"
 	"strings"
@@ -81,7 +82,33 @@ func (w *World) updateBlockNeighbors(changed []BlockPosition) error {
 			if err != nil {
 				return err
 			}
-			updated, err := w.updatedNeighborState(target, states[0], state)
+			updated := states[0]
+			if worldgen.IsFallingBlock(state.Name) || worldgen.IsBrushableBlock(state.Name) {
+				runtime := &fluidRuntime{world: w, settings: w.fluidSettings()}
+				position := worldgen.FeaturePosition{X: target.X, Y: target.Y, Z: target.Z}
+				s := worldgen.SurfaceBlockState{Name: state.Name, Properties: state.Properties}
+				if target == p {
+					err = worldgen.NotifyFallingBlockPlacement(runtime, position, s)
+					if err == nil {
+						err = worldgen.NotifyBrushableBlockPlacement(runtime, position, s)
+					}
+				} else {
+					face := 0
+					for f := range directionOffsets {
+						if neighbor(target, f) == p {
+							face = f
+							break
+						}
+					}
+					var after worldgen.SurfaceBlockState
+					after, err = worldgen.UpdateFluidNeighborShape(runtime, position, s, face, worldgen.SurfaceBlockState{})
+					if err == nil {
+						updated, err = BlockStateID(after.Name, after.Properties)
+					}
+				}
+			} else {
+				updated, err = w.updatedNeighborState(target, states[0], state)
+			}
 			if errors.Is(err, ErrChunkNotLoaded) {
 				continue
 			}

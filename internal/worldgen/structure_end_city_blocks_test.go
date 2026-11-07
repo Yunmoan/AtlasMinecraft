@@ -32,7 +32,7 @@ func (w *endCityProbeWorld) BlockAt(p FeaturePosition) (SurfaceBlockState, error
 	return structureState("air"), nil
 }
 func TestEndCityBlocksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/structure_end_city_blocks_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/structure_end_city_blocks_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

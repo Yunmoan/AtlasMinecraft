@@ -6,13 +6,14 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestBastionTemplateActorsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "structure_bastion_actors_1.21.1.txt"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "structure_bastion_actors_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,21 @@ func TestBastionTemplateActorsAgainstVanillaJAR(t *testing.T) {
 				t.Fatalf("%s %s field count %d != %d; got %v", line, mode, len(got), len(want), got)
 			}
 			for key, expected := range want {
-				if a, b := iglooCanonicalNBT(t, got[key]), iglooCanonicalNBT(t, expected); a != b {
+				canonical := func(tag nbt.Tag) string {
+					if key != "attributes" {
+						return iglooCanonicalNBT(t, tag)
+					}
+					// Vanilla saves attributes from a map; encounter order can
+					// differ across JVMs without changing any attribute values.
+					attributes, _ := tag.Elements()
+					entries := make([]string, len(attributes))
+					for i, attribute := range attributes {
+						entries[i] = iglooCanonicalNBT(t, attribute)
+					}
+					sort.Strings(entries)
+					return strings.Join(entries, "\n")
+				}
+				if a, b := canonical(got[key]), canonical(expected); a != b {
 					t.Fatalf("%s %s %s: got %s want %s", line, mode, key, a, b)
 				}
 			}

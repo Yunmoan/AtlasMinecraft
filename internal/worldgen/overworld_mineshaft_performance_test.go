@@ -3,6 +3,7 @@ package worldgen
 import (
 	"crypto/sha256"
 	"fmt"
+	"slices"
 	"testing"
 )
 
@@ -52,7 +53,7 @@ func fullBoxMineshaftReplay(g *OverworldGenerator, start StructureStart) (*struc
 
 func mineshaftRecordDigest(result *structureBlockResult) [32]byte {
 	// fmt sorts maps, including nested state properties and NBT compounds.
-	return sha256.Sum256([]byte(fmt.Sprintf("%v %v %v %v %v", result.start, result.blocks, result.postProcessing, result.blockEntities, result.pending)))
+	return sha256.Sum256([]byte(fmt.Sprintf("%v %v %v %v %v %v", result.start, result.blocks, result.postProcessing, result.blockEntities, result.pending, result.fluidTicks.ticks)))
 }
 
 func TestMineshaftRuntimeOptimizationParity(t *testing.T) {
@@ -75,9 +76,17 @@ func TestMineshaftRuntimeOptimizationParity(t *testing.T) {
 			if want != got {
 				t.Fatalf("optimized mine changed blocks/flags/updates/NBT/actors: got%x want%x", got, want)
 			}
-			baseline := "c7b76b400443b65499e96c0da231c3198eb71a4cfc0ff4e40fb93de0de98adcd"
+			if !slices.Equal(original.postProcessingOrder, optimized.postProcessingOrder) {
+				t.Fatal("optimized mine changed ordered postprocessing events")
+			}
+			// Version 13 records fluid requests separately from PostProcessing;
+			// include their ordered type/position/priority records in this digest.
+			baseline := "be43582a7c7dc50ded24fc8f8ee4e2a9aac6788459dc04baa030cb1dbd67c9fa"
 			if mesa {
-				baseline = "8108c07d2701d0e328dfcf4249e8dc9a7daaa3b140ceaf0e2166ee7a526082bb"
+				// Version 13 freezes WG heights at CARVERS, as independently
+				// checked by TestGenerationHeightmapsAgainstVanillaJAR. Cutting
+				// exposed mesa passages no longer lowers this generation map.
+				baseline = "e5c2902f4b4f92f72e1715445b2030c184b39e79d31fd38f136bcba9b7ffe4c3"
 			}
 			if fmt.Sprintf("%x", got) != baseline {
 				t.Fatalf("mine optimization baseline changed: got%x want%s", got, baseline)

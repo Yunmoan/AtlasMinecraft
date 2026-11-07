@@ -162,8 +162,7 @@ func (s *Server) teleportFromWorld(p *player.Player, name string, xyz [3]float64
 	p.SendPacket(proto.SAbilities, proto.NewWriter().I8(0x0D|boolFlyingFlag(p)).F32(0.05).F32(0.1).Payload())
 	s.syncPosition(p)
 	p.SendPacket(proto.SSetViewPosition, proto.NewWriter().VarInt(cx).VarInt(cz).Payload())
-	p.ReserveChunk(cx, cz)
-	if err := w.SpawnChunk(p.WorldPacketSinkInDimension(w.DimensionName()), cx, cz, func(int32, int32) {}); err != nil {
+	if err := w.SpawnChunk(p.WorldPacketSinkInDimension(w.DimensionName()), cx, cz); err != nil {
 		return err
 	}
 	s.requestChunksAround(p, cx, cz)

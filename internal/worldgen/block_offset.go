@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"atlas/internal/worldgen/randomsource"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -41,7 +42,7 @@ func BlockOffset(name string, p FeaturePosition) [3]float64 {
 	if !ok {
 		return [3]float64{}
 	}
-	seed := positionSeed(p.X, 0, p.Z)
+	seed := randomsource.PositionSeed(p.X, 0, p.Z)
 	x := javaClamp((float64(float32(seed&15)/15)-0.5)*0.5, -float64(rule.maxHorizontal), float64(rule.maxHorizontal))
 	z := javaClamp((float64(float32((seed>>8)&15)/15)-0.5)*0.5, -float64(rule.maxHorizontal), float64(rule.maxHorizontal))
 	y := 0.0

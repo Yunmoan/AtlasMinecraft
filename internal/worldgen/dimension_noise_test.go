@@ -19,7 +19,7 @@ import (
 func TestDimensionNoiseAgainstVanillaJAR(t *testing.T) {
 	for _, dimension := range []string{"nether", "end"} {
 		t.Run(dimension, func(t *testing.T) {
-			file, err := os.Open("../../docs/worldgen/"+dimension+"_noise_1.21.1.txt")
+			file, err := os.Open("../../testdata/worldgen/"+dimension+"_noise_1.21.1.txt")
 			if err != nil { t.Fatal(err) }
 			defer file.Close()
 			settings, err := worldgen.LoadDensitySettings(dimension)

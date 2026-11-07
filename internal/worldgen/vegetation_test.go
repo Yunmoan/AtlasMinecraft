@@ -97,7 +97,7 @@ func vegetationProbeRegion(t *testing.T, cx, cz int32, scenario int) *OverworldF
 }
 
 func TestVegetationAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/vegetation_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/vegetation_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestVegetationAgainstVanillaJAR(t *testing.T) {
 	}
 	// Template regions are immutable; replay each case into a private clone.
 	templates := make(map[[3]int32]*OverworldFeatureRegion)
-	extra, err := os.Open("../../docs/worldgen/column_vegetation_1.21.1.txt")
+	extra, err := os.Open("../../testdata/worldgen/column_vegetation_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,5 +1,5 @@
 param(
-    [string]$Output = "atlas.exe"
+    [string]$Output = "bin/atlas.exe"
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,8 +14,16 @@ if ($goCommand) {
 }
 
 $buildTime = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
-& $goExe build -ldflags "-X main.buildTime=$buildTime" -o $Output ./cmd/atlas
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if (-not [IO.Path]::IsPathRooted($Output)) {
+    $Output = Join-Path $PSScriptRoot $Output
+}
+$outputDirectory = Split-Path -Parent $Output
+New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+Push-Location $PSScriptRoot
+try {
+    & $goExe build -ldflags "-X main.buildTime=$buildTime" -o $Output ./cmd/atlas
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} finally {
+    Pop-Location
 }
 Write-Host "Built $Output at $buildTime (UTC)"

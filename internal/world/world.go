@@ -1,9 +1,11 @@
 package world
 
 import (
+	"atlas/internal/chunkwire"
 	"atlas/internal/item"
 	"atlas/internal/light"
 	"atlas/internal/proto"
+	"atlas/internal/worldgen"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -19,27 +21,30 @@ import (
 // of chunk-generation workers. Callers never touch chunk state directly;
 // they post messages to the owning region's mailbox.
 type World struct {
-	mu            sync.Mutex
-	regions       map[chunkKey]*Region
-	generation    *generationQueue
-	hub           HubView
-	store         *Store
-	stateMu       sync.RWMutex
-	saveMu        sync.Mutex
-	blockUpdateMu sync.Mutex // edits plus neighbor propagation; actors never acquire it
-	meta          worldMeta
-	seed          int64
-	workers       int
-	loadChunk     func(int32, int32) (*Chunk, error)
-	done          chan struct{}
-	wg            sync.WaitGroup
-	closeOnce     sync.Once
-	closeErr      error
-	lighting      *light.Engine
-	lightErr      error
-	loadedChunks  atomic.Int64
-	activeJobs    atomic.Int64
-	dimension     dimensionSettings
+	mu              sync.Mutex
+	regions         map[chunkKey]*Region
+	generation      *generationQueue
+	hub             HubView
+	store           *Store
+	stateMu         sync.RWMutex
+	saveMu          sync.Mutex
+	blockUpdateMu   sync.Mutex // edits plus neighbor propagation; actors never acquire it
+	meta            worldMeta
+	seed            int64
+	workers         int
+	loadChunk       func(int32, int32) (*Chunk, error)
+	done            chan struct{}
+	wg              sync.WaitGroup
+	closeOnce       sync.Once
+	closeErr        error
+	lighting        *light.Engine
+	lightErr        error
+	loadedChunks    atomic.Int64
+	activeJobs      atomic.Int64
+	dimension       dimensionSettings
+	scheduledTicks  *scheduledTickOwner
+	tickRandom      *worldgen.LegacyRandom // runtime stream, independent of terrain RNG
+	fallingEntities fallingEntityOrder
 }
 
 var ErrWorldClosed = errors.New("world is closed")
@@ -73,13 +78,14 @@ func newWorld(hub HubView, genWorkers int, store *Store, meta worldMeta) *World 
 		genWorkers = 1
 	}
 	w := &World{
-		regions:    make(map[chunkKey]*Region),
-		generation: newGenerationQueue(),
-		hub:        hub,
-		store:      store,
-		meta:       meta,
-		workers:    genWorkers,
-		done:       make(chan struct{}),
+		regions:        make(map[chunkKey]*Region),
+		generation:     newGenerationQueue(),
+		hub:            hub,
+		store:          store,
+		meta:           meta,
+		scheduledTicks: newScheduledTickOwner(meta.Age),
+		workers:        genWorkers,
+		done:           make(chan struct{}),
 	}
 	w.dimension, _ = builtinDimension("minecraft:overworld")
 	if store != nil {
@@ -170,6 +176,9 @@ func (w *World) post(ctx context.Context, cx, cz int32, message any) error {
 		return ctx.Err()
 	default:
 	}
+	// Close waits for admitted posts too, before draining unread requests.
+	w.wg.Add(1)
+	defer w.wg.Done()
 	r := w.regions[k]
 	if r == nil {
 		r = newRegion(w, k.x, k.z)
@@ -186,11 +195,6 @@ func (w *World) post(ctx context.Context, cx, cz int32, message any) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-}
-
-// RequestChunk asynchronously delivers the chunk's packet to sink.
-func (w *World) RequestChunk(sink PacketSink, cx, cz int32) {
-	_ = w.post(context.Background(), cx, cz, chunkRequest{cx: cx, cz: cz, to: sink})
 }
 
 // LoadChunk waits for the owning region to return the current chunk packet.
@@ -347,18 +351,6 @@ func (w *World) PreGenerateSpawn(cx, cz int32) error {
 	return w.ensureChunk(context.Background(), cx, cz)
 }
 
-// SpawnChunk delivers the player's current chunk first, then marks it sent.
-func (w *World) SpawnChunk(p PacketSink, cx, cz int32, mark func(cx, cz int32)) error {
-	payload, err := w.LoadChunk(cx, cz)
-	if err != nil {
-		return err
-	}
-	if deliverChunk(p, cx, cz, payload) {
-		mark(cx, cz)
-	}
-	return nil
-}
-
 // SetBlock posts a block edit; the owning region applies it and broadcasts
 // the change to every viewer of that position.
 func (w *World) SetBlock(x, y, z int32, state uint32) error {
@@ -384,10 +376,14 @@ func (w *World) Time() (age, dayTime int64) {
 }
 
 func (w *World) AdvanceTime(ticks int64) {
+	w.blockUpdateMu.Lock()
+	defer w.blockUpdateMu.Unlock()
 	w.stateMu.Lock()
 	w.meta.Age += ticks
 	w.meta.DayTime += ticks
+	age := w.meta.Age
 	w.stateMu.Unlock()
+	w.scheduledTicks.setTime(age)
 }
 
 func (w *World) SetDayTime(ticks int64) {
@@ -450,6 +446,8 @@ func (w *World) SetWeather(weather string) error {
 
 // Save flushes world metadata. Block edits are durable when SetBlock returns.
 func (w *World) Save() error {
+	w.blockUpdateMu.Lock()
+	defer w.blockUpdateMu.Unlock()
 	w.saveMu.Lock()
 	defer w.saveMu.Unlock()
 	if w.store == nil {
@@ -493,6 +491,9 @@ func (w *World) Close() error {
 		w.wg.Wait()
 		w.saveMu.Lock()
 		defer w.saveMu.Unlock()
+		for _, r := range w.regions {
+			r.releaseChunkRequests()
+		}
 		if w.store != nil {
 			for _, r := range w.regions {
 				w.closeErr = errors.Join(w.closeErr, r.saveChunks())
@@ -510,16 +511,15 @@ func (w *World) Close() error {
 // heightmaps NBT, section data, block entities, and sky light.
 func buildChunkDataPacket(cx, cz int32, ch *Chunk) []byte {
 	data := ch.EncodeSections()
-	w := proto.NewWriterCap(len(data) + 6*2048 + 512)
-	w.I32(cx).I32(cz)
-	w.Raw(ch.HeightmapNBT())
-	w.VarInt(int32(len(data))).Raw(data)
-	writeChunkBlockEntities(w, ch)
+	entities := proto.NewWriter()
+	writeChunkBlockEntities(entities, ch)
 
 	lighting := ch.lights
 	if lighting == nil {
 		lighting = detachedLight(ch)
 	}
-	writeLightData(w, lighting)
-	return w.Payload()
+	return chunkwire.Encode(chunkwire.Column{
+		X: cx, Z: cz, Sections: data, Heightmaps: ch.HeightmapNBT(),
+		BlockEntities: entities.Payload(), Light: lighting,
+	})
 }

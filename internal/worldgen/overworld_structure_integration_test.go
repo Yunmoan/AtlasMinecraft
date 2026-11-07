@@ -16,6 +16,8 @@ func supportedIntegrationStart(t *testing.T, g *OverworldGenerator, set, name st
 	// replay and persistence rather than repeatedly searching remote biomes.
 	if g.seed == 1234 {
 		locations := map[string]StructureChunkPosition{
+			"minecraft:mansion":        {8, -127},
+			"minecraft:monument":       {13, 13},
 			"minecraft:stronghold":     {-100, -125},
 			"minecraft:desert_pyramid": {-154, 402}, "minecraft:swamp_hut": {-31, 119},
 			"minecraft:jungle_pyramid": {131, -54}, "minecraft:igloo": {-79, 35},
@@ -94,7 +96,7 @@ func TestOverworldSupportedStructurePipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, entry := range supportedOverworldStructures {
-		if isOverworldJigsawStructure(entry.name) || isOverworldMineshaftStructure(entry.name) || entry.name == "minecraft:stronghold" {
+		if isOverworldJigsawStructure(entry.name) || isOverworldMineshaftStructure(entry.name) || entry.name == "minecraft:stronghold" || entry.name == "minecraft:monument" || entry.name == "minecraft:mansion" {
 			continue // Large starts have focused multi-clip integration below.
 		}
 		t.Run(entry.name, func(t *testing.T) {
@@ -182,6 +184,9 @@ func TestOverworldSupportedStructurePipeline(t *testing.T) {
 				}
 				if len(ch.Terrain.PostProcessing) > 0 {
 					ch.Terrain.PostProcessing[0] = !ch.Terrain.PostProcessing[0]
+				}
+				if len(ch.Terrain.PostProcessingOrder) > 0 {
+					ch.Terrain.PostProcessingOrder[0] = -1
 				}
 				second, err := g.Generate(positions[i][0], positions[i][1])
 				if err != nil {
@@ -358,6 +363,7 @@ func generatedStructureDigest(t *testing.T, ch *GeneratedOverworldChunk) [32]byt
 			fmt.Fprintln(h, "postprocessing", index)
 		}
 	}
+	fmt.Fprintln(h, "postprocessing_order", ch.Terrain.PostProcessingOrder)
 	for _, entity := range ch.PendingEntities {
 		fmt.Fprintln(h, entity)
 	}

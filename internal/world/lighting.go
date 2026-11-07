@@ -1,6 +1,7 @@
 package world
 
 import (
+	"atlas/internal/chunkwire"
 	"atlas/internal/light"
 	"atlas/internal/nbt"
 	"atlas/internal/proto"
@@ -9,7 +10,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"math/bits"
 )
 
 type lightChanged struct {
@@ -120,28 +120,7 @@ func (c *Chunk) writeAnvilLight(root nbt.Object) {
 }
 
 func writeLightData(w *proto.Writer, data *light.Data) {
-	var skyMask, blockMask int64
-	for i := range data.Sky {
-		if data.Sky[i] != nil {
-			skyMask |= 1 << i
-		}
-		if data.Block[i] != nil {
-			blockMask |= 1 << i
-		}
-	}
-	all := int64(1)<<len(data.Sky) - 1
-	w.VarInt(1).I64(skyMask).VarInt(1).I64(blockMask).VarInt(1).I64(all &^ skyMask).VarInt(1).I64(all &^ blockMask)
-	for _, item := range []struct {
-		mask   int64
-		layers [][]byte
-	}{{skyMask, data.Sky}, {blockMask, data.Block}} {
-		w.VarInt(int32(bits.OnesCount64(uint64(item.mask))))
-		for i, layer := range item.layers {
-			if item.mask&(1<<i) != 0 {
-				w.VarInt(int32(len(layer))).Raw(layer)
-			}
-		}
-	}
+	chunkwire.WriteLight(w, data)
 }
 
 func detachedLight(ch *Chunk) *light.Data {

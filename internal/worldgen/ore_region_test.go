@@ -125,7 +125,7 @@ func TestOreFeatureCrossesChunkBoundary(t *testing.T) {
 }
 
 func TestOverworldOreHeightAgainstVanillaJAR(t *testing.T) {
-	heightFile, err := os.Open("../../docs/worldgen/ore_height_1.21.1.txt")
+	heightFile, err := os.Open("../../testdata/worldgen/ore_height_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestOverworldOreHeightAgainstVanillaJAR(t *testing.T) {
 	if count != 3072 || len(expected) != 12 {
 		t.Fatalf("got %d heights in %d chunks, want 3072 in 12", count, len(expected))
 	}
-	carvedFile, err := os.Open("../../docs/worldgen/carver_chunk_1.21.1.txt")
+	carvedFile, err := os.Open("../../testdata/worldgen/carver_chunk_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

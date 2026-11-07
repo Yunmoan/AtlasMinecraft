@@ -12,7 +12,7 @@ import (
 )
 
 func TestGeneratedAnimalMetadataAgainstVanillaJAR(t *testing.T) {
-	fixture, err := os.ReadFile("../../docs/worldgen/initial_animals_1.21.1.txt")
+	fixture, err := os.ReadFile("../../testdata/worldgen/initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestGeneratedAnimalMetadataAgainstVanillaJAR(t *testing.T) {
 }
 
 func TestGeneratedOtherAnimalMetadataAgainstVanillaJAR(t *testing.T) {
-	fixture, err := os.ReadFile("../../docs/worldgen/other_initial_animals_1.21.1.txt")
+	fixture, err := os.ReadFile("../../testdata/worldgen/other_initial_animals_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

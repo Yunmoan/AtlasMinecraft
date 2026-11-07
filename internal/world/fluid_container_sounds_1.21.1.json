@@ -1,0 +1,10 @@
+{
+  "minecraft:block.candle.extinguish": [
+    245,
+    16.0
+  ],
+  "minecraft:entity.generic.extinguish_fire": [
+    577,
+    16.0
+  ]
+}

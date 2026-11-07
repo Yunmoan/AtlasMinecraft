@@ -11,7 +11,7 @@ import (
 )
 
 func TestChestLootAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/chest_loot_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/chest_loot_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -138,7 +138,7 @@ func compileEndFeatureProbePlan(name string) (configuredFeaturePlacer, error) {
 }
 
 func TestEndFeaturesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/end_features_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/end_features_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

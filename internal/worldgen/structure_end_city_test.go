@@ -10,7 +10,7 @@ import (
 )
 
 func TestEndCityStartsAgainstVanillaJAR(t *testing.T) {
-	data, err := os.ReadFile("../../docs/worldgen/structure_end_city_starts_1.21.1.txt")
+	data, err := os.ReadFile("../../testdata/worldgen/structure_end_city_starts_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -168,7 +168,15 @@ func PlaceOreFeature(world OreWorld, random *WorldgenRandom, origin FeaturePosit
 	possible := false
 	for blockX := startX; blockX <= startX+width && !possible; blockX++ {
 		for blockZ := startZ; blockZ <= startZ+width; blockZ++ {
-			columnHeight, err := world.OceanFloorHeightAt(blockX, blockZ)
+			var columnHeight int32
+			var err error
+			if heights, ok := world.(interface {
+				HeightmapAt(string, int32, int32) (int32, error)
+			}); ok {
+				columnHeight, err = heights.HeightmapAt("OCEAN_FLOOR_WG", blockX, blockZ)
+			} else {
+				columnHeight, err = world.OceanFloorHeightAt(blockX, blockZ)
+			}
 			if err != nil {
 				return false, err
 			}

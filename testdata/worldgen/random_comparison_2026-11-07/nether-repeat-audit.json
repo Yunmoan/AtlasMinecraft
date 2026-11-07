@@ -1,0 +1,81 @@
+{
+  "comparison": "2-chunk pilot vs 50-chunk formal run; same seed and coordinates",
+  "cases": [
+    {
+      "seed": 0,
+      "x": -939276,
+      "z": -624230,
+      "vanilla": {
+        "pilot_sha256": "e2997db43f6146c0444b0f56e3d62316f3c717a5fa40719476f4536ad755e2dd",
+        "formal_sha256": "81cf58c0ea6a117971e2cfcacff185753fc40060b85a398a2b57c0a3c3b62b8f",
+        "different_positions": 609,
+        "top_pairs": [
+          [
+            "minecraft:basalt -> minecraft:netherrack",
+            265
+          ],
+          [
+            "minecraft:basalt -> minecraft:blackstone",
+            158
+          ],
+          [
+            "minecraft:blackstone -> minecraft:basalt",
+            92
+          ],
+          [
+            "minecraft:netherrack -> minecraft:basalt",
+            42
+          ],
+          [
+            "minecraft:blackstone -> minecraft:netherrack",
+            39
+          ]
+        ]
+      },
+      "go": {
+        "pilot_sha256": "81cf58c0ea6a117971e2cfcacff185753fc40060b85a398a2b57c0a3c3b62b8f",
+        "formal_sha256": "81cf58c0ea6a117971e2cfcacff185753fc40060b85a398a2b57c0a3c3b62b8f",
+        "different_positions": 0,
+        "top_pairs": []
+      }
+    },
+    {
+      "seed": 0,
+      "x": -501831,
+      "z": 14849,
+      "vanilla": {
+        "pilot_sha256": "afee956d090326f0e5b40a14980eae68117e129a1f5f6baf688a19b19f1108ac",
+        "formal_sha256": "c30c9be55a51cc83e34c46b8d5cb90752953b7332ef91ded38907027ce91133f",
+        "different_positions": 1494,
+        "top_pairs": [
+          [
+            "minecraft:air -> minecraft:warped_wart_block",
+            596
+          ],
+          [
+            "minecraft:warped_wart_block -> minecraft:air",
+            488
+          ],
+          [
+            "minecraft:air -> minecraft:warped_stem",
+            108
+          ],
+          [
+            "minecraft:twisting_vines_plant -> minecraft:air",
+            46
+          ],
+          [
+            "minecraft:warped_stem -> minecraft:air",
+            46
+          ]
+        ]
+      },
+      "go": {
+        "pilot_sha256": "afee956d090326f0e5b40a14980eae68117e129a1f5f6baf688a19b19f1108ac",
+        "formal_sha256": "afee956d090326f0e5b40a14980eae68117e129a1f5f6baf688a19b19f1108ac",
+        "different_positions": 0,
+        "top_pairs": []
+      }
+    }
+  ]
+}

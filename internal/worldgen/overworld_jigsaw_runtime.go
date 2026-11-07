@@ -15,6 +15,12 @@ func isOverworldJigsawStructure(name string) bool {
 // canonical ground-alignment pass. Cache each clipped call independently so
 // entering one corner of a city does not generate every chunk in the city.
 func (g *OverworldGenerator) jigsawStructureBlocksFor(start StructureStart, cx, cz int32) (*structureBlockResult, error) {
+	return g.clippedStructureBlocksFor(start, cx, cz)
+}
+
+// Mansion templates also have fixed authored origins and share this bounded
+// per-clip cache; their assembler and placement rules remain separate.
+func (g *OverworldGenerator) clippedStructureBlocksFor(start StructureStart, cx, cz int32) (*structureBlockResult, error) {
 	c := g.structures
 	key := dimensionStructureBlockKey{start.Structure, start.Chunk.X, start.Chunk.Z, cx, cz}
 	c.mu.Lock()
@@ -28,7 +34,13 @@ func (g *OverworldGenerator) jigsawStructureBlocksFor(start StructureStart, cx, 
 	entry := &structureBlockEntry{ready: make(chan struct{}), used: c.clock}
 	c.jigsawBlocks[key] = entry
 	c.mu.Unlock()
-	result, err := g.generateJigsawStructureBlocks(start, cx, cz)
+	var result *structureBlockResult
+	var err error
+	if start.Structure == "minecraft:mansion" {
+		result, err = g.generateMansionStructureBlocks(start, cx, cz)
+	} else {
+		result, err = g.generateJigsawStructureBlocks(start, cx, cz)
+	}
 	c.mu.Lock()
 	entry.result, entry.err, entry.complete = result, err, true
 	close(entry.ready)

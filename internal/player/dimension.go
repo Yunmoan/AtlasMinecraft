@@ -61,9 +61,8 @@ func (p *Player) ResetWorld(name string, pos [3]float64, yaw, pitch float32, res
 	p.SendPacket(proto.SRespawn, respawn)
 }
 
-// WorldPacketSink captures one world view. Its methods deliberately match
-// world.PacketSink and the region's optional delivery interfaces without an
-// import from this package back into world.
+// WorldPacketSink captures one dimension view. WorldSink is both a broadcast
+// adapter and a complete world.ChunkReceiver, without importing world here.
 func (p *Player) WorldPacketSink() *WorldSink {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -88,19 +87,50 @@ type WorldSink struct {
 	epoch  uint64
 }
 
+// SoundPacketSink samples dimension, position and delivery epoch together.
+// Native sound broadcasts use a strict three-dimensional radius and do not
+// require the source chunk to have been delivered to the client.
+func (p *Player) SoundPacketSink(dimension string, x, y, z, radius float64) *WorldSink {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	current := p.dimension
+	if current == "" {
+		current = "minecraft:overworld"
+	}
+	dx, dy, dz := p.x-x, p.y-y, p.z-z
+	if current != dimension || dx*dx+dy*dy+dz*dz >= radius*radius {
+		return nil
+	}
+	return &WorldSink{player: p, epoch: p.worldEpoch}
+}
+
 func (sink *WorldSink) Current() bool {
 	p := sink.player
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.worldEpoch == sink.epoch
+	return sink.currentLocked()
+}
+
+// currentLocked requires player.mu. Position and request queries use the same
+// lock so validity, reservation and distance describe one consistent view.
+func (sink *WorldSink) currentLocked() bool {
+	select {
+	case <-sink.player.Done:
+		return false
+	default:
+		return sink.player.worldEpoch == sink.epoch
+	}
 }
 
 func (sink *WorldSink) ReserveChunk(cx, cz int32) bool {
+	if sink == nil {
+		return false
+	}
 	p := sink.player
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	key := [2]int32{cx, cz}
-	if p.worldEpoch != sink.epoch {
+	if !sink.currentLocked() {
 		return false
 	}
 	if _, exists := p.sentChunks[key]; exists {
@@ -119,7 +149,7 @@ func (sink *WorldSink) SendPacket(id int32, payload []byte) {
 	defer p.chunkSendMu.Unlock()
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.worldEpoch == sink.epoch {
+	if sink.currentLocked() {
 		p.SendPacket(id, payload)
 	}
 }
@@ -130,12 +160,10 @@ func (sink *WorldSink) SendChunkData(payload []byte) {
 	defer p.chunkSendMu.Unlock()
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.worldEpoch != sink.epoch {
+	if !sink.currentLocked() {
 		return
 	}
-	p.SendPacket(proto.SChunkBatchStart, nil)
-	p.SendPacket(proto.SChunkData, payload)
-	p.SendPacket(proto.SChunkBatchFinished, proto.NewWriter().VarInt(1).Payload())
+	p.sendChunkBatch(payload)
 }
 
 func (sink *WorldSink) SendRequestedChunk(cx, cz int32, payload []byte) bool {
@@ -144,14 +172,21 @@ func (sink *WorldSink) SendRequestedChunk(cx, cz int32, payload []byte) bool {
 	defer p.chunkSendMu.Unlock()
 	p.mu.Lock()
 	key := [2]int32{cx, cz}
-	if _, wanted := p.requestedChunks[key]; !wanted || p.worldEpoch != sink.epoch {
+	if _, wanted := p.requestedChunks[key]; !wanted || !sink.currentLocked() {
+		if p.worldEpoch == sink.epoch {
+			delete(p.requestedChunks, key)
+		}
 		p.mu.Unlock()
 		return false
 	}
 	delete(p.requestedChunks, key)
-	p.SendPacket(proto.SChunkBatchStart, nil)
-	p.SendPacket(proto.SChunkData, payload)
-	p.SendPacket(proto.SChunkBatchFinished, proto.NewWriter().VarInt(1).Payload())
+	p.sendChunkBatch(payload)
+	if !sink.currentLocked() {
+		// A saturated outbound queue disconnects the player. A partial batch
+		// on that dead connection must not count as delivered terrain.
+		p.mu.Unlock()
+		return false
+	}
 	p.sentChunks[key] = struct{}{}
 	p.mu.Unlock()
 	select {
@@ -169,21 +204,31 @@ func (sink *WorldSink) IsChunkSent(cx, cz int32) bool {
 	return ok && p.worldEpoch == sink.epoch
 }
 func (sink *WorldSink) WantsChunk(cx, cz int32) bool {
+	_, wanted := sink.ChunkPriority(cx, cz)
+	return wanted
+}
+
+// ChunkPriority combines reservation validity and live position in one read.
+// Old views and disconnected players cannot keep optional generation alive.
+func (sink *WorldSink) ChunkPriority(cx, cz int32) (int64, bool) {
 	p := sink.player
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	_, ok := p.requestedChunks[[2]int32{cx, cz}]
-	return ok && p.worldEpoch == sink.epoch
+	if !ok || !sink.currentLocked() {
+		return 0, false
+	}
+	dx, dz := int64(cx)-int64(p.cx), int64(cz)-int64(p.cz)
+	return dx*dx + dz*dz, true
 }
 
-// A failed request releases only its own world's reservation. A late failure
-// from the previous dimension must not cancel a new request at the same coords.
-func (sink *WorldSink) UnmarkChunkSent(cx, cz int32) {
+// ReleaseChunk undoes a failed reservation without erasing delivered terrain.
+// Failure from an old epoch cannot release the new view's same-coordinate work.
+func (sink *WorldSink) ReleaseChunk(cx, cz int32) {
 	p := sink.player
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.worldEpoch == sink.epoch {
-		delete(p.sentChunks, [2]int32{cx, cz})
 		delete(p.requestedChunks, [2]int32{cx, cz})
 	}
 }

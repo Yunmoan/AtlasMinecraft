@@ -162,7 +162,7 @@ func placePyramidArchaeologyRoom(e *scatteredPieceEditor, worldRandom StructureP
 		}
 	}
 	positional := NewLegacyRandom(worldSeed).ForkPositional()
-	choice := positional.AtPosition(e.piece.BlockPosition(14, 0, 11))
+	choice := legacyAtPosition(positional, e.piece.BlockPosition(14, 0, 11))
 	x, z := 14+choice.NextIntBound(5), 11+choice.NextIntBound(5)
 	guaranteed := e.piece.BlockPosition(x, 0, z)
 	orange := structureState("orange_terracotta")
@@ -184,8 +184,8 @@ func placePyramidArchaeologyRoom(e *scatteredPieceEditor, worldRandom StructureP
 	return candidates, guaranteed
 }
 
-// AtPosition exposes the BlockPos overload of the original positional source.
-func (p LegacyPositionalRandom) AtPosition(position FeaturePosition) *LegacyRandom {
+// This adapter keeps FeaturePosition out of the standalone random package.
+func legacyAtPosition(p LegacyPositionalRandom, position FeaturePosition) *LegacyRandom {
 	return p.At(position.X, position.Y, position.Z)
 }
 
@@ -218,7 +218,7 @@ func afterPlacePyramidArchaeology(e *scatteredPieceEditor, world StructureBlockE
 	})
 	box := e.piece.Box
 	center := FeaturePosition{box.MinX + (box.MaxX-box.MinX+1)/2, box.MinY + (box.MaxY-box.MinY+1)/2, box.MinZ + (box.MaxZ-box.MinZ+1)/2}
-	random := NewLegacyRandom(worldSeed).ForkPositional().AtPosition(center)
+	random := legacyAtPosition(NewLegacyRandom(worldSeed).ForkPositional(), center)
 	for i := len(candidates); i > 1; i-- {
 		other := int(random.NextIntBound(int32(i)))
 		candidates[i-1], candidates[other] = candidates[other], candidates[i-1]

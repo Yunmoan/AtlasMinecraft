@@ -18,12 +18,12 @@ logs and leaves, submerged trees, clipped trees and build limits.
 Reproduce using JDK 21 and the official JAR in `jar/server.jar`:
 
 ```powershell
-python docs/worldgen/verify_reference.py --probe TreeDecoratorProbe
-python docs/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set decorated
-python docs/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set giant
-python docs/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set branching
-python docs/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set cherry
-python docs/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set mangrove
+python tools/worldgen/verify_reference.py --probe TreeDecoratorProbe
+python tools/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set decorated
+python tools/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set giant
+python tools/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set branching
+python tools/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set cherry
+python tools/worldgen/verify_reference.py --probe TreeFeatureProbe --tree-set mangrove
 ```
 
 Two official implementation details affect exact reproduction:

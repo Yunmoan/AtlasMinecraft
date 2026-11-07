@@ -19,11 +19,42 @@ type structureBlockEntry struct {
 	complete bool
 }
 type structureBlockResult struct {
-	start          StructureStart
-	blocks         map[FeaturePosition]SurfaceBlockState
-	postProcessing map[FeaturePosition]bool
-	blockEntities  map[FeaturePosition]featureBlockEntity
-	pending        []PendingStructureEntity
+	start               StructureStart
+	blocks              map[FeaturePosition]SurfaceBlockState
+	postProcessing      map[FeaturePosition]bool
+	postProcessingOrder []FeaturePosition
+	fluidTicks          generationFluidTickQueue
+	blockTicks          generationBlockTickQueue
+	blockEntities       map[FeaturePosition]featureBlockEntity
+	pending             []PendingStructureEntity
+}
+
+func (result *structureBlockResult) recordPostProcessing(p FeaturePosition) {
+	if result.postProcessing == nil {
+		result.postProcessing = make(map[FeaturePosition]bool)
+	}
+	result.postProcessing[p] = true
+	result.postProcessingOrder = append(result.postProcessingOrder, p)
+}
+
+// Restore final states without repeating their on-write marks. The append log
+// also retains marks for intermediate states overwritten by the structure.
+func (region *OverworldFeatureRegion) restoreStructureBlocks(cached *structureBlockResult, cx, cz int32, clipped bool) error {
+	for p, state := range cached.blocks {
+		if clipped || p.X>>4 == cx && p.Z>>4 == cz {
+			if err := region.setBlock(p, state, false); err != nil {
+				return err
+			}
+		}
+	}
+	for _, p := range cached.postProcessingOrder {
+		if clipped || p.X>>4 == cx && p.Z>>4 == cz {
+			if err := region.MarkPostProcessing(p); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // A structure is aligned and postprocessed once in its own canonical region.
@@ -41,7 +72,13 @@ func (w *structureRecordingWorld) BlockAt(p FeaturePosition) (SurfaceBlockState,
 func (w *structureRecordingWorld) InWorld(p FeaturePosition) bool { return w.region.InWorld(p) }
 func (w *structureRecordingWorld) MinBuildHeight() int32          { return w.region.minY }
 func (w *structureRecordingWorld) WorldSeed() int64               { return w.region.WorldSeed() }
-func (w *structureRecordingWorld) GenerationSeaLevel() int32      { return w.region.generationSeaLevel }
+func (w *structureRecordingWorld) ShapeRandomInt(bound int32) (int32, error) {
+	return w.region.ShapeRandomInt(bound)
+}
+func (w *structureRecordingWorld) GenerationSeaLevel() int32 { return w.region.generationSeaLevel }
+func (w *structureRecordingWorld) FeatureRawBrightness(p FeaturePosition, skyDarkening int32) (int32, error) {
+	return w.region.FeatureRawBrightness(p, skyDarkening)
+}
 func (w *structureRecordingWorld) HeightmapAt(kind string, x, z int32) (int32, error) {
 	return w.region.HeightmapAt(kind, x, z)
 }
@@ -50,6 +87,9 @@ func (w *structureRecordingWorld) SetBlock(p FeaturePosition, s SurfaceBlockStat
 		return err
 	}
 	w.result.blocks[p] = cloneSurfaceState(s)
+	if generationNeedsPostProcessing(s) && w.region.structureRecording != w.result {
+		w.result.recordPostProcessing(p)
+	}
 	if entity, ok := w.result.blockEntities[p]; ok && entity.block != s.Name {
 		delete(w.result.blockEntities, p)
 	}
@@ -66,14 +106,38 @@ func (w *structureRecordingWorld) MarkPostProcessing(p FeaturePosition) error {
 	if err := w.region.MarkPostProcessing(p); err != nil {
 		return err
 	}
-	w.result.postProcessing[p] = true
+	if p.Y >= w.region.minY && p.Y < w.region.minY+w.region.height && w.region.structureRecording != w.result {
+		w.result.recordPostProcessing(p)
+	}
 	return nil
 }
 func (w *structureRecordingWorld) ScheduleFluidUpdate(p FeaturePosition) error {
-	return w.MarkPostProcessing(p)
+	tick, err := w.region.fluidTickAt(p)
+	if err != nil {
+		return err
+	}
+	if tick.Fluid == "minecraft:empty" {
+		return nil
+	}
+	if err := w.region.ScheduleFluidTick(tick); err != nil {
+		return err
+	}
+	w.result.fluidTicks.add(tick)
+	return nil
+}
+
+func (w *structureRecordingWorld) ScheduleBlockTick(p FeaturePosition, name string, delay, priority int32) error {
+	if err := w.region.ScheduleBlockTick(p, name, delay, priority); err != nil {
+		return err
+	}
+	w.result.blockTicks.add(PendingBlockTick{Position: p, Block: name, Priority: priority})
+	return nil
 }
 
 func (g *OverworldGenerator) structureBlocksFor(start StructureStart) (*structureBlockResult, error) {
+	if start.Structure == "minecraft:mansion" {
+		return g.clippedStructureBlocksFor(start, start.Chunk.X, start.Chunk.Z)
+	}
 	if start.Structure == "minecraft:stronghold" {
 		return g.strongholdStructureBlocksFor(start, start.Chunk.X, start.Chunk.Z)
 	}
@@ -165,10 +229,13 @@ func (g *OverworldGenerator) generateStructureBlocks(start StructureStart) (*str
 			decorationSeed := OverworldDecorationSeed(g.seed, x, z)
 			random := NewWorldgenRandom(decorationSeed + int64(order.Index) + 10000*int64(order.Step))
 			worldRandom := NewStructureRegionRandom(g.seed, x, z)
+			region.shapeRandom = worldRandom
 			for i := range result.start.Pieces {
 				piece := &result.start.Pieces[i]
 				var placed StructurePiecePostprocessResult
 				switch start.Structure {
+				case "minecraft:monument":
+					placed, err = PostProcessOceanMonumentBlocks(world, &result.start, g.seed, random, x, z)
 				case "minecraft:igloo":
 					placed, err = PostProcessIglooBlocks(world, piece, random, x, z)
 				case "minecraft:swamp_hut":
@@ -193,6 +260,16 @@ func (g *OverworldGenerator) generateStructureBlocks(start StructureStart) (*str
 				if err != nil {
 					return nil, fmt.Errorf("postprocess %s in %d,%d: %w", start.Structure, x, z, err)
 				}
+				if start.Structure == "minecraft:monument" {
+					for actorIndex := range placed.PendingEntities {
+						request := &placed.PendingEntities[actorIndex]
+						request.SavedFlag = fmt.Sprintf("MonumentGuardian:%d,%d:%d,%d,%d", start.Chunk.X, start.Chunk.Z, request.Position.X, request.Position.Y, request.Position.Z)
+						request.Data, err = FinalizeMonumentEntity(*request, worldRandom)
+						if err != nil {
+							return nil, err
+						}
+					}
+				}
 				if start.Structure == "minecraft:swamp_hut" {
 					for i := range placed.PendingEntities {
 						request := &placed.PendingEntities[i]
@@ -203,25 +280,8 @@ func (g *OverworldGenerator) generateStructureBlocks(start StructureStart) (*str
 					}
 				}
 				if start.Structure == "minecraft:ocean_ruin_cold" || start.Structure == "minecraft:ocean_ruin_warm" {
-					for actorIndex := range placed.PendingEntities {
-						request := &placed.PendingEntities[actorIndex]
-						if request.ID != "minecraft:drowned" {
-							continue
-						}
-						request.SavedFlag = fmt.Sprintf("OceanRuinDrowned:%d,%d:%d:%d", start.Chunk.X, start.Chunk.Z, i, actorIndex)
-						finalized, err := FinalizeDrownedStructureEntity(*request, worldRandom, NewLegacyRandom(g.seed^int64(positionSeed(request.Position.X, request.Position.Y, request.Position.Z))), false)
-						if err != nil {
-							return nil, err
-						}
-						request.Data = finalized.Data
-						if finalized.ChickenJockey {
-							request.ID = "minecraft:chicken"
-							request.Persistent = false
-							request.Data = finalized.ChickenData
-							request.Data["Passengers"] = nbt.Tag{Type: nbt.List, ListType: nbt.Compound, Value: []nbt.Tag{{Type: nbt.Compound, Value: finalized.Data}}}
-							constructor := NewLegacyRandom(g.seed ^ int64(positionSeed(request.Position.X, request.Position.Y, request.Position.Z)))
-							request.Data["EggLayTime"] = nbt.Tag{Type: nbt.Int, Value: constructor.NextIntBound(6000) + 6000}
-						}
+					if err := g.finalizeOceanRuinActors(start, i, placed.PendingEntities, worldRandom); err != nil {
+						return nil, err
 					}
 				}
 				result.pending = append(result.pending, placed.PendingEntities...)
@@ -281,10 +341,16 @@ func (g *OverworldGenerator) applyStructureStep(region *OverworldFeatureRegion, 
 		if box.MaxX < cx*16 || box.MinX > cx*16+15 || box.MaxZ < cz*16 || box.MinZ > cz*16+15 {
 			continue
 		}
+		if start.Structure == "minecraft:ocean_ruin_cold" || start.Structure == "minecraft:ocean_ruin_warm" {
+			if err := g.placeOceanRuinInDecoration(region, start, cx, cz, order.Index, order.Step); err != nil {
+				return err
+			}
+			continue
+		}
 		var cached *structureBlockResult
-		jigsaw := isOverworldJigsawStructure(start.Structure)
-		if jigsaw {
-			cached, err = g.jigsawStructureBlocksFor(start, cx, cz)
+		clipped := isOverworldJigsawStructure(start.Structure) || start.Structure == "minecraft:mansion"
+		if clipped {
+			cached, err = g.clippedStructureBlocksFor(start, cx, cz)
 		} else if start.Structure == "minecraft:stronghold" {
 			cached, err = g.strongholdStructureBlocksFor(start, cx, cz)
 		} else {
@@ -293,29 +359,32 @@ func (g *OverworldGenerator) applyStructureStep(region *OverworldFeatureRegion, 
 		if err != nil {
 			return err
 		}
-		for p, state := range cached.blocks {
-			if jigsaw || p.X>>4 == cx && p.Z>>4 == cz {
-				if err := region.SetBlock(p, state); err != nil {
+		if err := region.restoreStructureBlocks(cached, cx, cz, clipped); err != nil {
+			return err
+		}
+		for _, tick := range cached.fluidTicks.ticks {
+			if clipped || tick.Position.X>>4 == cx && tick.Position.Z>>4 == cz {
+				if err := region.ScheduleFluidTick(tick); err != nil {
 					return err
 				}
 			}
 		}
-		for p := range cached.postProcessing {
-			if jigsaw || p.X>>4 == cx && p.Z>>4 == cz {
-				if err := region.MarkPostProcessing(p); err != nil {
+		for _, tick := range cached.blockTicks.ticks {
+			if clipped || tick.Position.X>>4 == cx && tick.Position.Z>>4 == cz {
+				if err := region.ScheduleGenerationBlockTick(tick); err != nil {
 					return err
 				}
 			}
 		}
 		for p, entity := range cached.blockEntities {
-			if jigsaw || p.X>>4 == cx && p.Z>>4 == cz {
+			if clipped || p.X>>4 == cx && p.Z>>4 == cz {
 				if err := region.SetBlockEntity(p, entity.block, entity.data); err != nil {
 					return err
 				}
 			}
 		}
 		for _, entity := range cached.pending {
-			if jigsaw || entity.Position.X>>4 == cx && entity.Position.Z>>4 == cz {
+			if clipped || entity.Position.X>>4 == cx && entity.Position.Z>>4 == cz {
 				if err := region.AddPendingEntity(entity); err != nil {
 					return err
 				}
@@ -337,7 +406,7 @@ func structureWriteBox(start StructureStart) (StructureBoundingBox, bool) {
 		box.MinX, box.MaxX = min(box.MinX-1, x-14), max(box.MaxX+1, x+14)
 		box.MinZ, box.MaxZ = min(box.MinZ-1, z-14), max(box.MaxZ+1, z+14)
 		box.MinY, box.MaxY = box.MinY-12, box.MaxY+1
-	} else if start.Structure == "minecraft:igloo" || strings.HasPrefix(start.Structure, "minecraft:shipwreck") || strings.HasPrefix(start.Structure, "minecraft:ocean_ruin_") {
+	} else if start.Structure == "minecraft:igloo" || start.Structure == "minecraft:mansion" || strings.HasPrefix(start.Structure, "minecraft:shipwreck") || strings.HasPrefix(start.Structure, "minecraft:ocean_ruin_") {
 		box.MinX--
 		box.MaxX++
 		box.MinZ--

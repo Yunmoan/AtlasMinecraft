@@ -17,16 +17,6 @@ type PacketSink interface {
 	SendChunkData(payload []byte)
 }
 
-func deliverChunk(to PacketSink, cx, cz int32, payload []byte) bool {
-	if receiver, ok := to.(interface {
-		SendRequestedChunk(int32, int32, []byte) bool
-	}); ok {
-		return receiver.SendRequestedChunk(cx, cz, payload)
-	}
-	to.SendChunkData(payload)
-	return true
-}
-
 func chunkDelivered(to PacketSink, cx, cz int32) bool {
 	if receiver, ok := to.(interface{ IsChunkSent(int32, int32) bool }); ok {
 		return receiver.IsChunkSent(cx, cz)
@@ -48,15 +38,15 @@ const (
 type chunkKey struct{ x, z int32 }
 
 // Region is an actor goroutine owning a 32x32-chunk slice of the world.
-// All chunk state is touched only by the region's goroutine — no locks —
-// and cross-region interaction happens purely through the Hub's viewer
-// lookup, which is coordinate-based and lock-free per message.
+// Chunk state is touched only by the region's goroutine. Shared world,
+// viewer and lighting managers have their own synchronization; cross-region
+// edits are coordinated through world operations and region messages.
 type Region struct {
 	world *World
 
 	chunks          map[chunkKey]*Chunk
 	packets         chunkPacketCache
-	pending         map[chunkKey][]PacketSink // sinks waiting for a chunk to generate
+	pending         map[chunkKey][]ChunkReceiver // reserved views waiting for a chunk
 	pendingLoads    map[chunkKey][]chan chunkResult
 	pendingReady    map[chunkKey][]chan error
 	pendingSurfaces map[chunkKey][]surfaceQuery
@@ -69,7 +59,7 @@ type Region struct {
 
 type chunkRequest struct {
 	cx, cz int32
-	to     PacketSink
+	to     ChunkReceiver
 }
 
 type chunkGenerated struct {
@@ -124,6 +114,8 @@ type setBlockMsg struct {
 	expected      *uint32
 	upper         *uint32
 	upperExpected *uint32
+	raw           bool // level mutation: callbacks run outside the region actor
+	flags         int32
 	changed       chan []BlockPosition
 	result        chan error
 }
@@ -132,7 +124,7 @@ func newRegion(w *World, rx, rz int32) *Region {
 	return &Region{
 		world:           w,
 		chunks:          make(map[chunkKey]*Chunk),
-		pending:         make(map[chunkKey][]PacketSink),
+		pending:         make(map[chunkKey][]ChunkReceiver),
 		pendingLoads:    make(map[chunkKey][]chan chunkResult),
 		pendingReady:    make(map[chunkKey][]chan error),
 		pendingSurfaces: make(map[chunkKey][]surfaceQuery),
@@ -155,10 +147,15 @@ func (r *Region) run() {
 		}
 		select {
 		case <-r.world.done:
+			if request, ok := m.(chunkRequest); ok {
+				request.to.ReleaseChunk(request.cx, request.cz)
+			}
 			return
 		default:
 		}
 		switch msg := m.(type) {
+		case fallingEntityOperation:
+			r.runFallingEntityOperation(msg)
 		case containerQuery:
 			r.containerQuery(msg)
 		case entityQuery:
@@ -168,9 +165,9 @@ func (r *Region) run() {
 		case generationCanceled:
 			k := chunkKey{msg.cx, msg.cz}
 			delete(r.genQueued, k)
-			var wanted []PacketSink
+			var wanted []ChunkReceiver
 			for _, sink := range r.pending[k] {
-				if chunkWanted(sink, k.x, k.z) {
+				if _, needed := sink.ChunkPriority(k.x, k.z); needed {
 					wanted = append(wanted, sink)
 				}
 			}
@@ -206,6 +203,8 @@ func (r *Region) run() {
 				ch.lastAccess = time.Now()
 			}
 			msg.Result <- blockReadResult{States: states, Err: err}
+		case fluidCampfireDowse:
+			msg.result <- r.dowseCampfire(msg.p)
 		case portalChunkQuery:
 			msg.result <- r.portalChunkSnapshot(msg)
 		case saveRegion:
@@ -224,19 +223,17 @@ func (r *Region) run() {
 			r.pendingReady[k] = append(r.pendingReady[k], msg.result)
 			r.queueGeneration(k)
 		case chunkRequest:
-			if !chunkWanted(msg.to, msg.cx, msg.cz) {
+			if _, wanted := msg.to.ChunkPriority(msg.cx, msg.cz); !wanted {
 				continue
 			}
 			k := chunkKey{msg.cx, msg.cz}
 			if r.unavailable[k] != nil {
-				if pending, ok := msg.to.(interface{ UnmarkChunkSent(int32, int32) }); ok {
-					pending.UnmarkChunkSent(msg.cx, msg.cz)
-				}
+				msg.to.ReleaseChunk(msg.cx, msg.cz)
 				continue
 			}
 			if ch := r.chunks[k]; ch != nil {
 				ch.lastAccess = time.Now()
-				deliverChunk(msg.to, msg.cx, msg.cz, r.packets.packet(ch))
+				msg.to.SendRequestedChunk(msg.cx, msg.cz, r.packets.packet(ch))
 				continue
 			}
 			r.pending[k] = append(r.pending[k], msg.to)
@@ -302,9 +299,7 @@ func (r *Region) run() {
 					edit.result <- msg.err
 				}
 				for _, sink := range r.pending[k] {
-					if pending, ok := sink.(interface{ UnmarkChunkSent(int32, int32) }); ok {
-						pending.UnmarkChunkSent(msg.cx, msg.cz)
-					}
+					sink.ReleaseChunk(msg.cx, msg.cz)
 				}
 				delete(r.pending, k)
 				delete(r.pendingLoads, k)
@@ -318,6 +313,8 @@ func (r *Region) run() {
 				r.world.loadedChunks.Add(1)
 			}
 			r.chunks[k] = msg.chunk
+			msg.chunk.scheduledTicks = r.world.scheduledTicks.register(msg.chunk)
+			r.world.fallingEntities.register(msg.chunk)
 			msg.chunk.lastAccess = time.Now()
 			if r.world.lighting != nil {
 				r.applyLight(msg.chunk, r.world.lighting.Snapshot(light.Position{X: msg.cx, Z: msg.cz}), false)
@@ -336,7 +333,7 @@ func (r *Region) run() {
 				result <- nil
 			}
 			for _, sink := range r.pending[k] {
-				deliverChunk(sink, msg.cx, msg.cz, payload)
+				sink.SendRequestedChunk(msg.cx, msg.cz, payload)
 			}
 			for _, result := range r.pendingLoads[k] {
 				result <- chunkResult{payload: payload}
@@ -371,6 +368,9 @@ func (r *Region) saveChunks() error {
 	var combined error
 	if r.world.store != nil {
 		for key, ch := range r.chunks {
+			if ch.scheduledTicks != nil && ch.scheduledTicks.needsSave() {
+				ch.dirty = true
+			}
 			r.world.store.vanilla.refreshStrongholdFlags(ch)
 			if r.world.lighting != nil {
 				r.applyLight(ch, r.world.lighting.Snapshot(light.Position{X: key.x, Z: key.z}), false)

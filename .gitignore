@@ -6,6 +6,8 @@
 *.out
 
 /artifacts/
+/bin/
+/run/
 
 # Coverage / profiling artifacts
 *.prof
@@ -13,6 +15,10 @@
 *.cpu
 *.mem
 *.txt
+# Required Go embed data is source input, not a disposable text artifact.
+!/internal/world/*.txt
+!/internal/worldgen/*.txt
+!/testdata/**/*.txt
 
 # Go workspace files are local-only
 go.work
@@ -59,4 +65,6 @@ Thumbs.db
 Desktop.ini
 .idea/
 *.swp
+__pycache__/
+*.py[cod]
 # .vscode/

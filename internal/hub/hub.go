@@ -123,6 +123,22 @@ type DimensionView struct {
 	Dimension string
 }
 
+func (h *Hub) SoundListeners(x, y, z, radius float64) []world.PacketSink {
+	return h.soundListeners("minecraft:overworld", x, y, z, radius)
+}
+func (view DimensionView) SoundListeners(x, y, z, radius float64) []world.PacketSink {
+	return view.Hub.soundListeners(view.Dimension, x, y, z, radius)
+}
+func (h *Hub) soundListeners(dimension string, x, y, z, radius float64) []world.PacketSink {
+	var listeners []world.PacketSink
+	for _, p := range h.Snapshot() {
+		if sink := p.SoundPacketSink(dimension, x, y, z, radius); sink != nil {
+			listeners = append(listeners, sink)
+		}
+	}
+	return listeners
+}
+
 func (view DimensionView) ViewersOf(x, z int32) []world.PacketSink {
 	return view.Hub.ViewersInDimension(view.Dimension, x, z)
 }

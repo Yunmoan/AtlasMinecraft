@@ -1,5 +1,7 @@
 package worldgen
 
+import "atlas/internal/worldgen/randomsource"
+
 // ImprovedNoise is Minecraft 1.21.1's gradient noise octave. Its permutation
 // table and offsets consume a RandomSource in the same order as the JAR.
 type ImprovedNoise struct {
@@ -7,7 +9,7 @@ type ImprovedNoise struct {
 	XOffset, YOffset, ZOffset float64
 }
 
-func NewImprovedNoise(random *Xoroshiro) *ImprovedNoise {
+func NewImprovedNoise(random *randomsource.Xoroshiro) *ImprovedNoise {
 	return newImprovedNoise(random)
 }
 

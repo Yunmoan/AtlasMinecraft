@@ -12,7 +12,7 @@ import (
 )
 
 func TestGeneratedPassengerAnvilReplayRestartAndIsolation(t *testing.T) {
-	fixture, err := os.ReadFile("../../docs/worldgen/structure_drowned_actors_1.21.1.txt")
+	fixture, err := os.ReadFile("../../testdata/worldgen/structure_drowned_actors_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

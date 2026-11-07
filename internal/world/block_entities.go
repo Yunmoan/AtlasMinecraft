@@ -14,10 +14,18 @@ var generatedBlockEntityTypes = map[string]int32{
 	"minecraft:beehive": 33, "minecraft:sculk_sensor": 34,
 	"minecraft:sculk_catalyst": 36, "minecraft:sculk_shrieker": 37,
 	"minecraft:end_portal": 13, "minecraft:end_gateway": 21,
+	"minecraft:campfire": 32,
 }
 
 func blockEntityUpdateTag(entity nbt.Object) nbt.Tag {
 	id, _ := entity.Text("id")
+	if id == "minecraft:campfire" {
+		items, ok := entity["Items"]
+		if !ok {
+			items = nbt.Tag{Type: nbt.List, ListType: nbt.End, Value: []nbt.Tag{}}
+		}
+		return nbt.Tag{Type: nbt.Compound, Value: nbt.Object{"Items": items}}
+	}
 	if id == "minecraft:sign" {
 		text := func() nbt.Tag {
 			messages := make([]nbt.Tag, 4)
@@ -105,6 +113,7 @@ func (c *Chunk) removeReplacedBlockEntity(lx, lz int, y int32, old, next uint32)
 	if errA != nil || errB != nil || a.Name == b.Name {
 		return
 	}
+	delete(c.brushableProgress, BlockPosition{X: c.cx*16 + int32(lx), Y: y, Z: c.cz*16 + int32(lz)})
 	var kept []nbt.Tag
 	for _, tag := range entities {
 		e, _ := tag.Object()

@@ -43,7 +43,7 @@ func canonicalEntity(data nbt.Object) nbt.Object {
 }
 
 func TestGeneratedEntityDefaultsAndFinalizationAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/generated_entities_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/generated_entities_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-// The fixture is produced by docs/worldgen/SpawnSearchProbe against the
+// The fixture is produced by tools/worldgen/probes/SpawnSearchProbe against the
 // reference JAR; this test pins the Go port of Climate$SpawnFinder to it.
 func TestFindSpawnPositionMatchesJarSearch(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "worldgen", "spawn_search_1.21.1.txt"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "worldgen", "spawn_search_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

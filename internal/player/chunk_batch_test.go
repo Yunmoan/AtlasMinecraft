@@ -8,16 +8,25 @@ import (
 
 func TestSingleGeneratedChunkFinishesBatch(t *testing.T) {
 	p := New("test", [16]byte{}, 1, nil)
-	p.SendChunkData([]byte{42})
+	sink := p.WorldPacketSink()
+	if !sink.ReserveChunk(0, 0) || !sink.SendRequestedChunk(0, 0, []byte{42}) {
+		t.Fatal("reserved chunk was not delivered")
+	}
 	checkChunkBatches(t, p, 1)
 }
 
 func TestConcurrentRegionChunksHaveCompleteBatches(t *testing.T) {
 	p := New("test", [16]byte{}, 1, nil)
+	sink := p.WorldPacketSink()
 	var workers sync.WaitGroup
 	for i := 0; i < 64; i++ {
 		workers.Add(1)
-		go func(i int) { defer workers.Done(); p.SendChunkData([]byte{byte(i)}) }(i)
+		go func(i int) {
+			defer workers.Done()
+			if !sink.ReserveChunk(int32(i), 0) || !sink.SendRequestedChunk(int32(i), 0, []byte{byte(i)}) {
+				t.Error("reserved chunk was not delivered", i)
+			}
+		}(i)
 	}
 	workers.Wait()
 	checkChunkBatches(t, p, 64)

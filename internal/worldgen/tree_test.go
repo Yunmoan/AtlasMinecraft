@@ -106,7 +106,7 @@ func TestMangroveTreeFeaturesAgainstVanillaJAR(t *testing.T) {
 
 func testTreeFeaturesAgainstVanillaJAR(t *testing.T, fixture string, expected int, decorated bool) {
 	t.Helper()
-	file, err := os.Open("../../docs/worldgen/" + fixture)
+	file, err := os.Open("../../testdata/worldgen/" + fixture)
 	if err != nil {
 		t.Fatal(err)
 	}

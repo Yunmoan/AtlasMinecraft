@@ -77,7 +77,7 @@ func (w *portalForcerProbeWorld) HeightmapAt(_ string, x, z int32) (int32, error
 }
 
 func TestPortalForcerAgainstVanillaJAR(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/portal_forcer_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/portal_forcer_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

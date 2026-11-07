@@ -80,7 +80,7 @@ func treasureDigest(rows []string) string {
 }
 
 func TestBuriedTreasureBlocksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_buried_treasure_blocks_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_buried_treasure_blocks_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func TestBuriedTreasureBlocksAgainstVanillaJAR(t *testing.T) {
 }
 
 func TestBuriedTreasureStartsAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open(filepath.Join("..", "..", "docs", "worldgen", "structure_buried_treasure_starts_1.21.1.txt"))
+	file, err := os.Open(filepath.Join("..", "..", "testdata", "worldgen", "structure_buried_treasure_starts_1.21.1.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}

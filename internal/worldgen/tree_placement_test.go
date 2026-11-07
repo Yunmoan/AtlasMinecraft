@@ -85,7 +85,7 @@ func treePlacementRegion(t *testing.T, cx, cz int32, scenario int) *OverworldFea
 }
 
 func TestTreePlacementAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/tree_placement_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/tree_placement_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

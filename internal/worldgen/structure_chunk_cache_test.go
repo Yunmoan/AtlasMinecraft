@@ -60,6 +60,12 @@ func TestStructureChunkSnapshotConcurrentIsolation(t *testing.T) {
 	if err := regions[0].MarkPostProcessing(p); err != nil {
 		t.Fatal(err)
 	}
+	if err := regions[0].ScheduleFluidTick(PendingFluidTick{Position: p, Fluid: "minecraft:water"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := regions[0].ScheduleBlockTick(p, "minecraft:oak_leaves", 1, -2); err != nil {
+		t.Fatal(err)
+	}
 	got, err := regions[1].BlockAt(p)
 	if err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("structure write escaped private overlay: %v %v", got, err)

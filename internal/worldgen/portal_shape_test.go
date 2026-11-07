@@ -22,7 +22,7 @@ func (w portalTestWorld) SetBlock(p FeaturePosition, state SurfaceBlockState) er
 func (w portalTestWorld) InWorld(p FeaturePosition) bool { return p.Y >= 0 && p.Y < 256 }
 
 func TestNetherPortalShapeAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/portal_shape_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/portal_shape_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -20,8 +20,9 @@ type featureColumnPosition struct {
 }
 
 type featureChunkOverlay struct {
-	blocks         map[int]SurfaceBlockState
-	postProcessing map[int]bool
+	blocks              map[int]SurfaceBlockState
+	postProcessing      map[int]bool
+	postProcessingOrder []int
 }
 
 // OverworldFeatureRegion exposes already-generated neighboring chunks to block
@@ -31,6 +32,7 @@ type OverworldFeatureRegion struct {
 	borrowed           map[featureChunkPosition]bool
 	overlays           map[featureChunkPosition]*featureChunkOverlay
 	heights            map[featureColumnPosition]int32
+	worldgenHeights    map[featureColumnPosition][2]int32
 	motionHeights      map[featureColumnPosition]int32
 	surfaceHeights     map[featureColumnPosition]int32
 	biomeSeed          int64
@@ -44,11 +46,10 @@ type OverworldFeatureRegion struct {
 	readBrightness     FeatureBrightnessReader
 	featureOrder       *featureOrder
 	pendingEntities    []PendingStructureEntity
+	fluidTicks         map[featureChunkPosition]*generationFluidTickQueue
+	blockTicks         map[featureChunkPosition]*generationBlockTickQueue
 	structureRecording *structureBlockResult
-}
-
-func (region *OverworldFeatureRegion) ScheduleFluidUpdate(p FeaturePosition) error {
-	return region.MarkPostProcessing(p)
+	shapeRandom        interface{ NextIntBound(int32) int32 }
 }
 
 func NewOverworldFeatureRegion(chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, error) {
@@ -129,6 +130,13 @@ func (region *OverworldFeatureRegion) OceanFloorHeightAt(blockX, blockZ int32) (
 }
 
 func (region *OverworldFeatureRegion) HeightmapAt(heightmap string, blockX, blockZ int32) (int32, error) {
+	if region.worldgenHeights != nil && (heightmap == "OCEAN_FLOOR_WG" || heightmap == "WORLD_SURFACE_WG") {
+		heights, err := region.frozenWorldgenHeights(blockX, blockZ)
+		if heightmap == "WORLD_SURFACE_WG" {
+			return heights[1], err
+		}
+		return heights[0], err
+	}
 	if heightmap == "OCEAN_FLOOR_WG" || heightmap == "OCEAN_FLOOR" {
 		return region.OceanFloorHeightAt(blockX, blockZ)
 	}
@@ -190,6 +198,12 @@ func (region *OverworldFeatureRegion) BlockAt(position FeaturePosition) (Surface
 }
 
 func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state SurfaceBlockState) error {
+	return region.setBlock(position, state, true)
+}
+
+// Cached structure writes restore their separately recorded postprocessing log.
+// Re-running hasPostProcess here would synthesize duplicate, unordered marks.
+func (region *OverworldFeatureRegion) setBlock(position FeaturePosition, state SurfaceBlockState, mark bool) error {
 	if !region.InWorld(position) {
 		return fmt.Errorf("feature block outside world at %+v", position)
 	}
@@ -201,6 +215,11 @@ func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state S
 		delete(region.blockEntities, position)
 	}
 	key := featureChunkPosition{position.X >> 4, position.Z >> 4}
+	if region.worldgenHeights != nil && !region.borrowed[key] {
+		if _, err := region.frozenWorldgenHeights(position.X, position.Z); err != nil {
+			return err
+		}
+	}
 	if region.borrowed[key] {
 		// A sparse write overlay avoids copying the entire surface map and
 		// postprocessing array of every neighbor for each decoration replay.
@@ -231,11 +250,21 @@ func (region *OverworldFeatureRegion) SetBlock(position FeaturePosition, state S
 			delete(heights, column)
 		}
 	}
+	if mark && generationNeedsPostProcessing(state) {
+		return region.MarkPostProcessing(position)
+	}
 	return nil
 }
 
+// BlockState.hasPostProcess in the pinned registry. WorldGenRegion checks
+// this after every accepted write; it is distinct from a feature's explicit
+// markAboveForPostProcessing calls and from scheduled ticks.
+func generationNeedsPostProcessing(state SurfaceBlockState) bool {
+	return state.Name == "minecraft:magma_block" || state.Name == "minecraft:brown_mushroom" || state.Name == "minecraft:red_mushroom"
+}
+
 func (region *OverworldFeatureRegion) MarkPostProcessing(p FeaturePosition) error {
-	if !region.InWorld(p) {
+	if p.Y < region.minY || p.Y >= region.minY+region.height {
 		return nil
 	}
 	chunk, err := region.chunkAt(p.X, p.Z)
@@ -244,7 +273,7 @@ func (region *OverworldFeatureRegion) MarkPostProcessing(p FeaturePosition) erro
 	}
 	index, _ := chunk.Index(p.X&15, p.Y, p.Z&15)
 	if recording := region.structureRecording; recording != nil {
-		recording.postProcessing[p] = true
+		recording.recordPostProcessing(p)
 	}
 	key := featureChunkPosition{p.X >> 4, p.Z >> 4}
 	if region.borrowed[key] {
@@ -260,17 +289,21 @@ func (region *OverworldFeatureRegion) MarkPostProcessing(p FeaturePosition) erro
 			overlay.postProcessing = make(map[int]bool)
 		}
 		overlay.postProcessing[index] = true
+		overlay.postProcessingOrder = append(overlay.postProcessingOrder, index)
 		return nil
 	}
 	if chunk.PostProcessing == nil {
 		chunk.PostProcessing = make([]bool, len(chunk.Blocks))
 	}
 	chunk.PostProcessing[index] = true
+	chunk.PostProcessingOrder = append(chunk.PostProcessingOrder, index)
 	return nil
 }
 
 func (region *OverworldFeatureRegion) cloneChunk(cx, cz int32) *NoiseChunkResult {
 	chunk := cloneTerrain(region.chunks[featureChunkPosition{cx, cz}])
+	chunk.FluidTicks = region.fluidTicksInChunk(cx, cz)
+	chunk.BlockTicks = region.blockTicksInChunk(cx, cz)
 	if overlay := region.overlayAt(cx*16, cz*16); overlay != nil {
 		for index, state := range overlay.blocks {
 			chunk.SurfaceBlocks[index] = cloneSurfaceState(state)
@@ -281,6 +314,7 @@ func (region *OverworldFeatureRegion) cloneChunk(cx, cz int32) *NoiseChunkResult
 		for index := range overlay.postProcessing {
 			chunk.PostProcessing[index] = true
 		}
+		chunk.PostProcessingOrder = append(chunk.PostProcessingOrder, overlay.postProcessingOrder...)
 	}
 	return chunk
 }

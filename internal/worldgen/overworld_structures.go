@@ -34,6 +34,8 @@ const structureStartsCacheLimit = 2048
 
 var supportedOverworldStructures = []struct{ set, name string }{
 	{"minecraft:strongholds", "minecraft:stronghold"},
+	{"minecraft:ocean_monuments", "minecraft:monument"},
+	{"minecraft:woodland_mansions", "minecraft:mansion"},
 	{"minecraft:desert_pyramids", "minecraft:desert_pyramid"},
 	{"minecraft:swamp_huts", "minecraft:swamp_hut"},
 	{"minecraft:jungle_temples", "minecraft:jungle_pyramid"},
@@ -146,8 +148,21 @@ func (g *OverworldGenerator) generateStructureStarts(cx, cz int32) ([]StructureS
 		}
 		start, err := SelectStructureSetStart(g.seed, cx, cz, g.structures.placement.Sets[candidate.set], func(name string) (*StructureStart, error) {
 			switch {
+			case name == "minecraft:monument":
+				return GenerateOceanMonumentStructureStart(g.seed, cx, cz, OceanMonumentStartSources{
+					SeaLevel: g.noise.settings.SeaLevel, BiomeAtQuart: biome.BiomeAtQuart,
+					OceanFloorOccupiedHeightAt: func(x, z int32) (int32, error) {
+						column, err := g.noise.BaseStructureColumnAt(x, z)
+						if err != nil {
+							return 0, err
+						}
+						return column.OccupiedHeight(true), nil
+					},
+				})
 			case name == "minecraft:stronghold":
 				return GenerateStrongholdStructureStart(g.seed, cx, cz, StrongholdStartSources{MinY: g.noise.settings.MinY, SeaLevel: g.noise.settings.SeaLevel, BiomeAtQuart: biome.BiomeAtQuart})
+			case name == "minecraft:mansion":
+				return GenerateMansionStructureStart(g.seed, cx, cz, biome.BiomeAtQuart, g.noise.BaseOccupiedHeightAt)
 			case isOverworldJigsawStructure(name):
 				return GenerateJigsawStructureStart(g.seed, cx, cz, name, JigsawStartSources{
 					MinY: g.noise.settings.MinY, Height: g.noise.settings.Height, GenerationDepth: g.noise.settings.Height,

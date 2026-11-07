@@ -83,6 +83,9 @@ func (r *Region) unloadUnused(cutoff time.Time) (int, error) {
 			continue
 		}
 		persist := func(data *light.Data) error {
+			if ch.scheduledTicks != nil && ch.scheduledTicks.needsSave() {
+				ch.dirty = true
+			}
 			r.world.store.vanilla.refreshStrongholdFlags(ch)
 			r.applyLight(ch, data, false)
 			if ch.dirty {
@@ -101,7 +104,12 @@ func (r *Region) unloadUnused(cutoff time.Time) (int, error) {
 			continue
 		}
 		r.packets.forget(ch)
+		if ch.scheduledTicks != nil {
+			ch.scheduledTicks.unregister()
+			ch.scheduledTicks = nil
+		}
 		delete(r.chunks, key)
+		r.world.fallingEntities.unregister(key.x, key.z)
 		r.world.loadedChunks.Add(-1)
 		count++
 	}

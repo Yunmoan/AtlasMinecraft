@@ -11,7 +11,7 @@ import (
 )
 
 // The built-in 1.21.1 OverworldBiomeBuilder emits these points. They were
-// extracted by docs/worldgen/BiomePresetProbe.java from the supplied JAR.
+// extracted by tools/worldgen/probes/BiomePresetProbe.java from the supplied JAR.
 //
 //go:embed biome_preset_1.21.1.txt
 var overworldBiomeData string

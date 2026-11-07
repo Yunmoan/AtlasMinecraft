@@ -37,7 +37,7 @@ func (world *dirtDiskWorld) InWorld(position FeaturePosition) bool {
 }
 
 func TestDiskFeaturesAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/disk_feature_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/disk_feature_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

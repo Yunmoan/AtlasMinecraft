@@ -37,7 +37,7 @@ func (w *ruleDiskWorld) BlockAt(p FeaturePosition) (SurfaceBlockState, error) {
 }
 
 func TestRuleDisksAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/rule_disk_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/rule_disk_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,7 +15,7 @@ import (
 // The fixture calls the actual LevelLightEngine with absent light sections,
 // and with queued sky DataLayers at the mushroom survival threshold.
 func TestMushroomFeatureAgainstVanillaJAR(t *testing.T) {
-	file, err := os.Open("../../docs/worldgen/mushroom_feature_1.21.1.txt")
+	file, err := os.Open("../../testdata/worldgen/mushroom_feature_1.21.1.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

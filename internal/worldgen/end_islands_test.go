@@ -9,7 +9,7 @@ import (
 )
 
 func TestEndIslandsAgainstVanillaJAR(t *testing.T) {
-	f, err := os.Open("../../docs/worldgen/end_islands_1.21.1.txt")
+	f, err := os.Open("../../testdata/worldgen/end_islands_1.21.1.txt")
 	if err != nil { t.Fatal(err) }
 	defer f.Close()
 	scan := bufio.NewScanner(f)

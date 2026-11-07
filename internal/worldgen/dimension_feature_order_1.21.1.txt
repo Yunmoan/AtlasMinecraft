@@ -1,0 +1,286 @@
+feature nether 2 0 minecraft:basalt_pillar
+feature nether 4 0 minecraft:delta
+feature nether 4 1 minecraft:small_basalt_columns
+feature nether 4 2 minecraft:large_basalt_columns
+feature nether 7 0 minecraft:basalt_blobs
+feature nether 7 1 minecraft:blackstone_blobs
+feature nether 7 2 minecraft:spring_delta
+feature nether 7 3 minecraft:spring_open
+feature nether 7 4 minecraft:patch_fire
+feature nether 7 5 minecraft:patch_soul_fire
+feature nether 7 6 minecraft:glowstone_extra
+feature nether 7 7 minecraft:glowstone
+feature nether 7 8 minecraft:patch_crimson_roots
+feature nether 7 9 minecraft:brown_mushroom_nether
+feature nether 7 10 minecraft:red_mushroom_nether
+feature nether 7 11 minecraft:ore_magma
+feature nether 7 12 minecraft:spring_closed_double
+feature nether 7 13 minecraft:ore_gold_deltas
+feature nether 7 14 minecraft:ore_quartz_deltas
+feature nether 7 15 minecraft:spring_closed
+feature nether 7 16 minecraft:ore_soul_sand
+feature nether 7 17 minecraft:ore_gravel_nether
+feature nether 7 18 minecraft:ore_blackstone
+feature nether 7 19 minecraft:ore_gold_nether
+feature nether 7 20 minecraft:ore_quartz_nether
+feature nether 7 21 minecraft:ore_ancient_debris_large
+feature nether 7 22 minecraft:ore_debris_small
+feature nether 9 0 minecraft:spring_lava
+feature nether 9 1 minecraft:brown_mushroom_normal
+feature nether 9 2 minecraft:red_mushroom_normal
+feature nether 9 3 minecraft:warped_fungi
+feature nether 9 4 minecraft:warped_forest_vegetation
+feature nether 9 5 minecraft:nether_sprouts
+feature nether 9 6 minecraft:twisting_vines
+feature nether 9 7 minecraft:weeping_vines
+feature nether 9 8 minecraft:crimson_fungi
+feature nether 9 9 minecraft:crimson_forest_vegetation
+source nether minecraft:basalt_deltas
+biome nether minecraft:basalt_deltas 4 0 minecraft:delta
+biome nether minecraft:basalt_deltas 4 1 minecraft:small_basalt_columns
+biome nether minecraft:basalt_deltas 4 2 minecraft:large_basalt_columns
+biome nether minecraft:basalt_deltas 7 0 minecraft:basalt_blobs
+biome nether minecraft:basalt_deltas 7 1 minecraft:blackstone_blobs
+biome nether minecraft:basalt_deltas 7 2 minecraft:spring_delta
+biome nether minecraft:basalt_deltas 7 3 minecraft:patch_fire
+biome nether minecraft:basalt_deltas 7 4 minecraft:patch_soul_fire
+biome nether minecraft:basalt_deltas 7 5 minecraft:glowstone_extra
+biome nether minecraft:basalt_deltas 7 6 minecraft:glowstone
+biome nether minecraft:basalt_deltas 7 7 minecraft:brown_mushroom_nether
+biome nether minecraft:basalt_deltas 7 8 minecraft:red_mushroom_nether
+biome nether minecraft:basalt_deltas 7 9 minecraft:ore_magma
+biome nether minecraft:basalt_deltas 7 10 minecraft:spring_closed_double
+biome nether minecraft:basalt_deltas 7 11 minecraft:ore_gold_deltas
+biome nether minecraft:basalt_deltas 7 12 minecraft:ore_quartz_deltas
+biome nether minecraft:basalt_deltas 7 13 minecraft:ore_ancient_debris_large
+biome nether minecraft:basalt_deltas 7 14 minecraft:ore_debris_small
+source nether minecraft:crimson_forest
+biome nether minecraft:crimson_forest 7 0 minecraft:spring_open
+biome nether minecraft:crimson_forest 7 1 minecraft:patch_fire
+biome nether minecraft:crimson_forest 7 2 minecraft:glowstone_extra
+biome nether minecraft:crimson_forest 7 3 minecraft:glowstone
+biome nether minecraft:crimson_forest 7 4 minecraft:ore_magma
+biome nether minecraft:crimson_forest 7 5 minecraft:spring_closed
+biome nether minecraft:crimson_forest 7 6 minecraft:ore_gravel_nether
+biome nether minecraft:crimson_forest 7 7 minecraft:ore_blackstone
+biome nether minecraft:crimson_forest 7 8 minecraft:ore_gold_nether
+biome nether minecraft:crimson_forest 7 9 minecraft:ore_quartz_nether
+biome nether minecraft:crimson_forest 7 10 minecraft:ore_ancient_debris_large
+biome nether minecraft:crimson_forest 7 11 minecraft:ore_debris_small
+biome nether minecraft:crimson_forest 9 0 minecraft:spring_lava
+biome nether minecraft:crimson_forest 9 1 minecraft:brown_mushroom_normal
+biome nether minecraft:crimson_forest 9 2 minecraft:red_mushroom_normal
+biome nether minecraft:crimson_forest 9 3 minecraft:weeping_vines
+biome nether minecraft:crimson_forest 9 4 minecraft:crimson_fungi
+biome nether minecraft:crimson_forest 9 5 minecraft:crimson_forest_vegetation
+source nether minecraft:nether_wastes
+biome nether minecraft:nether_wastes 7 0 minecraft:spring_open
+biome nether minecraft:nether_wastes 7 1 minecraft:patch_fire
+biome nether minecraft:nether_wastes 7 2 minecraft:patch_soul_fire
+biome nether minecraft:nether_wastes 7 3 minecraft:glowstone_extra
+biome nether minecraft:nether_wastes 7 4 minecraft:glowstone
+biome nether minecraft:nether_wastes 7 5 minecraft:brown_mushroom_nether
+biome nether minecraft:nether_wastes 7 6 minecraft:red_mushroom_nether
+biome nether minecraft:nether_wastes 7 7 minecraft:ore_magma
+biome nether minecraft:nether_wastes 7 8 minecraft:spring_closed
+biome nether minecraft:nether_wastes 7 9 minecraft:ore_gravel_nether
+biome nether minecraft:nether_wastes 7 10 minecraft:ore_blackstone
+biome nether minecraft:nether_wastes 7 11 minecraft:ore_gold_nether
+biome nether minecraft:nether_wastes 7 12 minecraft:ore_quartz_nether
+biome nether minecraft:nether_wastes 7 13 minecraft:ore_ancient_debris_large
+biome nether minecraft:nether_wastes 7 14 minecraft:ore_debris_small
+biome nether minecraft:nether_wastes 9 0 minecraft:spring_lava
+biome nether minecraft:nether_wastes 9 1 minecraft:brown_mushroom_normal
+biome nether minecraft:nether_wastes 9 2 minecraft:red_mushroom_normal
+source nether minecraft:soul_sand_valley
+biome nether minecraft:soul_sand_valley 2 0 minecraft:basalt_pillar
+biome nether minecraft:soul_sand_valley 7 0 minecraft:spring_open
+biome nether minecraft:soul_sand_valley 7 1 minecraft:patch_fire
+biome nether minecraft:soul_sand_valley 7 2 minecraft:patch_soul_fire
+biome nether minecraft:soul_sand_valley 7 3 minecraft:glowstone_extra
+biome nether minecraft:soul_sand_valley 7 4 minecraft:glowstone
+biome nether minecraft:soul_sand_valley 7 5 minecraft:patch_crimson_roots
+biome nether minecraft:soul_sand_valley 7 6 minecraft:ore_magma
+biome nether minecraft:soul_sand_valley 7 7 minecraft:spring_closed
+biome nether minecraft:soul_sand_valley 7 8 minecraft:ore_soul_sand
+biome nether minecraft:soul_sand_valley 7 9 minecraft:ore_gravel_nether
+biome nether minecraft:soul_sand_valley 7 10 minecraft:ore_blackstone
+biome nether minecraft:soul_sand_valley 7 11 minecraft:ore_gold_nether
+biome nether minecraft:soul_sand_valley 7 12 minecraft:ore_quartz_nether
+biome nether minecraft:soul_sand_valley 7 13 minecraft:ore_ancient_debris_large
+biome nether minecraft:soul_sand_valley 7 14 minecraft:ore_debris_small
+biome nether minecraft:soul_sand_valley 9 0 minecraft:spring_lava
+source nether minecraft:warped_forest
+biome nether minecraft:warped_forest 7 0 minecraft:spring_open
+biome nether minecraft:warped_forest 7 1 minecraft:patch_fire
+biome nether minecraft:warped_forest 7 2 minecraft:patch_soul_fire
+biome nether minecraft:warped_forest 7 3 minecraft:glowstone_extra
+biome nether minecraft:warped_forest 7 4 minecraft:glowstone
+biome nether minecraft:warped_forest 7 5 minecraft:ore_magma
+biome nether minecraft:warped_forest 7 6 minecraft:spring_closed
+biome nether minecraft:warped_forest 7 7 minecraft:ore_gravel_nether
+biome nether minecraft:warped_forest 7 8 minecraft:ore_blackstone
+biome nether minecraft:warped_forest 7 9 minecraft:ore_gold_nether
+biome nether minecraft:warped_forest 7 10 minecraft:ore_quartz_nether
+biome nether minecraft:warped_forest 7 11 minecraft:ore_ancient_debris_large
+biome nether minecraft:warped_forest 7 12 minecraft:ore_debris_small
+biome nether minecraft:warped_forest 9 0 minecraft:spring_lava
+biome nether minecraft:warped_forest 9 1 minecraft:brown_mushroom_normal
+biome nether minecraft:warped_forest 9 2 minecraft:red_mushroom_normal
+biome nether minecraft:warped_forest 9 3 minecraft:warped_fungi
+biome nether minecraft:warped_forest 9 4 minecraft:warped_forest_vegetation
+biome nether minecraft:warped_forest 9 5 minecraft:nether_sprouts
+biome nether minecraft:warped_forest 9 6 minecraft:twisting_vines
+schedule nether minecraft:basalt_deltas 4 0 minecraft:delta
+schedule nether minecraft:basalt_deltas 4 1 minecraft:small_basalt_columns
+schedule nether minecraft:basalt_deltas 4 2 minecraft:large_basalt_columns
+schedule nether minecraft:basalt_deltas 7 0 minecraft:basalt_blobs
+schedule nether minecraft:basalt_deltas 7 1 minecraft:blackstone_blobs
+schedule nether minecraft:basalt_deltas 7 2 minecraft:spring_delta
+schedule nether minecraft:basalt_deltas 7 4 minecraft:patch_fire
+schedule nether minecraft:basalt_deltas 7 5 minecraft:patch_soul_fire
+schedule nether minecraft:basalt_deltas 7 6 minecraft:glowstone_extra
+schedule nether minecraft:basalt_deltas 7 7 minecraft:glowstone
+schedule nether minecraft:basalt_deltas 7 9 minecraft:brown_mushroom_nether
+schedule nether minecraft:basalt_deltas 7 10 minecraft:red_mushroom_nether
+schedule nether minecraft:basalt_deltas 7 11 minecraft:ore_magma
+schedule nether minecraft:basalt_deltas 7 12 minecraft:spring_closed_double
+schedule nether minecraft:basalt_deltas 7 13 minecraft:ore_gold_deltas
+schedule nether minecraft:basalt_deltas 7 14 minecraft:ore_quartz_deltas
+schedule nether minecraft:basalt_deltas 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:basalt_deltas 7 22 minecraft:ore_debris_small
+schedule nether minecraft:crimson_forest 7 3 minecraft:spring_open
+schedule nether minecraft:crimson_forest 7 4 minecraft:patch_fire
+schedule nether minecraft:crimson_forest 7 6 minecraft:glowstone_extra
+schedule nether minecraft:crimson_forest 7 7 minecraft:glowstone
+schedule nether minecraft:crimson_forest 7 11 minecraft:ore_magma
+schedule nether minecraft:crimson_forest 7 15 minecraft:spring_closed
+schedule nether minecraft:crimson_forest 7 17 minecraft:ore_gravel_nether
+schedule nether minecraft:crimson_forest 7 18 minecraft:ore_blackstone
+schedule nether minecraft:crimson_forest 7 19 minecraft:ore_gold_nether
+schedule nether minecraft:crimson_forest 7 20 minecraft:ore_quartz_nether
+schedule nether minecraft:crimson_forest 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:crimson_forest 7 22 minecraft:ore_debris_small
+schedule nether minecraft:crimson_forest 9 0 minecraft:spring_lava
+schedule nether minecraft:crimson_forest 9 1 minecraft:brown_mushroom_normal
+schedule nether minecraft:crimson_forest 9 2 minecraft:red_mushroom_normal
+schedule nether minecraft:crimson_forest 9 7 minecraft:weeping_vines
+schedule nether minecraft:crimson_forest 9 8 minecraft:crimson_fungi
+schedule nether minecraft:crimson_forest 9 9 minecraft:crimson_forest_vegetation
+schedule nether minecraft:nether_wastes 7 3 minecraft:spring_open
+schedule nether minecraft:nether_wastes 7 4 minecraft:patch_fire
+schedule nether minecraft:nether_wastes 7 5 minecraft:patch_soul_fire
+schedule nether minecraft:nether_wastes 7 6 minecraft:glowstone_extra
+schedule nether minecraft:nether_wastes 7 7 minecraft:glowstone
+schedule nether minecraft:nether_wastes 7 9 minecraft:brown_mushroom_nether
+schedule nether minecraft:nether_wastes 7 10 minecraft:red_mushroom_nether
+schedule nether minecraft:nether_wastes 7 11 minecraft:ore_magma
+schedule nether minecraft:nether_wastes 7 15 minecraft:spring_closed
+schedule nether minecraft:nether_wastes 7 17 minecraft:ore_gravel_nether
+schedule nether minecraft:nether_wastes 7 18 minecraft:ore_blackstone
+schedule nether minecraft:nether_wastes 7 19 minecraft:ore_gold_nether
+schedule nether minecraft:nether_wastes 7 20 minecraft:ore_quartz_nether
+schedule nether minecraft:nether_wastes 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:nether_wastes 7 22 minecraft:ore_debris_small
+schedule nether minecraft:nether_wastes 9 0 minecraft:spring_lava
+schedule nether minecraft:nether_wastes 9 1 minecraft:brown_mushroom_normal
+schedule nether minecraft:nether_wastes 9 2 minecraft:red_mushroom_normal
+schedule nether minecraft:soul_sand_valley 2 0 minecraft:basalt_pillar
+schedule nether minecraft:soul_sand_valley 7 3 minecraft:spring_open
+schedule nether minecraft:soul_sand_valley 7 4 minecraft:patch_fire
+schedule nether minecraft:soul_sand_valley 7 5 minecraft:patch_soul_fire
+schedule nether minecraft:soul_sand_valley 7 6 minecraft:glowstone_extra
+schedule nether minecraft:soul_sand_valley 7 7 minecraft:glowstone
+schedule nether minecraft:soul_sand_valley 7 8 minecraft:patch_crimson_roots
+schedule nether minecraft:soul_sand_valley 7 11 minecraft:ore_magma
+schedule nether minecraft:soul_sand_valley 7 15 minecraft:spring_closed
+schedule nether minecraft:soul_sand_valley 7 16 minecraft:ore_soul_sand
+schedule nether minecraft:soul_sand_valley 7 17 minecraft:ore_gravel_nether
+schedule nether minecraft:soul_sand_valley 7 18 minecraft:ore_blackstone
+schedule nether minecraft:soul_sand_valley 7 19 minecraft:ore_gold_nether
+schedule nether minecraft:soul_sand_valley 7 20 minecraft:ore_quartz_nether
+schedule nether minecraft:soul_sand_valley 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:soul_sand_valley 7 22 minecraft:ore_debris_small
+schedule nether minecraft:soul_sand_valley 9 0 minecraft:spring_lava
+schedule nether minecraft:warped_forest 7 3 minecraft:spring_open
+schedule nether minecraft:warped_forest 7 4 minecraft:patch_fire
+schedule nether minecraft:warped_forest 7 5 minecraft:patch_soul_fire
+schedule nether minecraft:warped_forest 7 6 minecraft:glowstone_extra
+schedule nether minecraft:warped_forest 7 7 minecraft:glowstone
+schedule nether minecraft:warped_forest 7 11 minecraft:ore_magma
+schedule nether minecraft:warped_forest 7 15 minecraft:spring_closed
+schedule nether minecraft:warped_forest 7 17 minecraft:ore_gravel_nether
+schedule nether minecraft:warped_forest 7 18 minecraft:ore_blackstone
+schedule nether minecraft:warped_forest 7 19 minecraft:ore_gold_nether
+schedule nether minecraft:warped_forest 7 20 minecraft:ore_quartz_nether
+schedule nether minecraft:warped_forest 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:warped_forest 7 22 minecraft:ore_debris_small
+schedule nether minecraft:warped_forest 9 0 minecraft:spring_lava
+schedule nether minecraft:warped_forest 9 1 minecraft:brown_mushroom_normal
+schedule nether minecraft:warped_forest 9 2 minecraft:red_mushroom_normal
+schedule nether minecraft:warped_forest 9 3 minecraft:warped_fungi
+schedule nether minecraft:warped_forest 9 4 minecraft:warped_forest_vegetation
+schedule nether minecraft:warped_forest 9 5 minecraft:nether_sprouts
+schedule nether minecraft:warped_forest 9 6 minecraft:twisting_vines
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 2 0 minecraft:basalt_pillar
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 4 0 minecraft:delta
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 4 1 minecraft:small_basalt_columns
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 4 2 minecraft:large_basalt_columns
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 0 minecraft:basalt_blobs
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 1 minecraft:blackstone_blobs
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 2 minecraft:spring_delta
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 3 minecraft:spring_open
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 4 minecraft:patch_fire
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 5 minecraft:patch_soul_fire
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 6 minecraft:glowstone_extra
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 7 minecraft:glowstone
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 8 minecraft:patch_crimson_roots
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 9 minecraft:brown_mushroom_nether
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 10 minecraft:red_mushroom_nether
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 11 minecraft:ore_magma
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 12 minecraft:spring_closed_double
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 13 minecraft:ore_gold_deltas
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 14 minecraft:ore_quartz_deltas
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 15 minecraft:spring_closed
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 16 minecraft:ore_soul_sand
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 17 minecraft:ore_gravel_nether
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 18 minecraft:ore_blackstone
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 19 minecraft:ore_gold_nether
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 20 minecraft:ore_quartz_nether
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 21 minecraft:ore_ancient_debris_large
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 7 22 minecraft:ore_debris_small
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 0 minecraft:spring_lava
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 1 minecraft:brown_mushroom_normal
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 2 minecraft:red_mushroom_normal
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 3 minecraft:warped_fungi
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 4 minecraft:warped_forest_vegetation
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 5 minecraft:nether_sprouts
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 6 minecraft:twisting_vines
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 7 minecraft:weeping_vines
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 8 minecraft:crimson_fungi
+schedule nether minecraft:basalt_deltas,minecraft:crimson_forest,minecraft:nether_wastes,minecraft:soul_sand_valley,minecraft:warped_forest 9 9 minecraft:crimson_forest_vegetation
+feature end 0 0 minecraft:end_island_decorated
+feature end 4 0 minecraft:end_gateway_return
+feature end 4 1 minecraft:end_spike
+feature end 9 0 minecraft:chorus_plant
+feature end 10 0 minecraft:end_platform
+source end minecraft:end_barrens
+source end minecraft:end_highlands
+biome end minecraft:end_highlands 4 0 minecraft:end_gateway_return
+biome end minecraft:end_highlands 9 0 minecraft:chorus_plant
+source end minecraft:end_midlands
+source end minecraft:small_end_islands
+biome end minecraft:small_end_islands 0 0 minecraft:end_island_decorated
+source end minecraft:the_end
+biome end minecraft:the_end 4 0 minecraft:end_spike
+biome end minecraft:the_end 10 0 minecraft:end_platform
+schedule end minecraft:end_highlands 4 0 minecraft:end_gateway_return
+schedule end minecraft:end_highlands 9 0 minecraft:chorus_plant
+schedule end minecraft:small_end_islands 0 0 minecraft:end_island_decorated
+schedule end minecraft:the_end 4 1 minecraft:end_spike
+schedule end minecraft:the_end 10 0 minecraft:end_platform
+schedule end minecraft:end_barrens,minecraft:end_highlands,minecraft:end_midlands,minecraft:small_end_islands,minecraft:the_end 0 0 minecraft:end_island_decorated
+schedule end minecraft:end_barrens,minecraft:end_highlands,minecraft:end_midlands,minecraft:small_end_islands,minecraft:the_end 4 0 minecraft:end_gateway_return
+schedule end minecraft:end_barrens,minecraft:end_highlands,minecraft:end_midlands,minecraft:small_end_islands,minecraft:the_end 4 1 minecraft:end_spike
+schedule end minecraft:end_barrens,minecraft:end_highlands,minecraft:end_midlands,minecraft:small_end_islands,minecraft:the_end 9 0 minecraft:chorus_plant
+schedule end minecraft:end_barrens,minecraft:end_highlands,minecraft:end_midlands,minecraft:small_end_islands,minecraft:the_end 10 0 minecraft:end_platform
