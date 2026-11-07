@@ -10,6 +10,7 @@
 | `worldgen/verify_*.py` | 对照原版参考结果进行验证 |
 | `worldgen/diagnose_terrain_stages.py` | 指定种子、区块的地形阶段诊断 |
 | `worldgen/measure_stage_reuse.py` | 通过临时 Go overlay 统计基础生成、唯一坐标、重复生成、装饰上下文和 GC 后活堆；可对比不同基础缓存预算，不向生产代码添加探针 |
+| `benchmark_chunk_pipeline.py` | 使用相同基准交替比较上游与当前代码的 81 区块生成／光照／保存和已保存区块加载；保留原始输出、环境和中位数 |
 | `worldgen/compare_random_worlds.py` | 使用 5 个种子，在完整主世界坐标范围内随机抽样，运行冻结的官方服务端并逐方块比较 Go 生成结果；保留独立存档、坐标和完整数组 |
 | `worldgen/summarize_random_comparison.py` | 独立复算双方数组，输出完整状态／非空气一致率、差异分布、每区块 CSV 和 Markdown 报告 |
 | `worldgen/probes/*.java` | 世界生成和游戏交互的参考探针及辅助类 |

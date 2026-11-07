@@ -1,0 +1,2 @@
+ok  	atlas/internal/worldgen	98.249s
+ok  	atlas/internal/world	88.179s
