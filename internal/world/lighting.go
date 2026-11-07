@@ -19,24 +19,57 @@ type lightChanged struct {
 
 func denseLightStates(ch *Chunk) []uint16 {
 	states := make([]uint16, int(ch.maxY-ch.minY)*256)
-	for y := ch.minY; y < ch.maxY; y++ {
-		for z := 0; z < 16; z++ {
-			for x := 0; x < 16; x++ {
-				states[int(y-ch.minY)*256+z*16+x] = uint16(ch.GetBlock(x, z, y))
-			}
-		}
+	for si, section := range ch.sect {
+		decodeLightSection(states[si*SectionVolume:][:SectionVolume], section)
 	}
 	return states
 }
 
-func lightBlockHash(ch *Chunk) []byte {
-	dense := denseLightStates(ch)
-	encoded := make([]byte, len(dense)*2)
-	for i, state := range dense {
-		binary.LittleEndian.PutUint16(encoded[i*2:], state)
+// Expand each packed word once; empty/uniform sections need no palette lookup
+// or division per block. The destination is owned by the caller.
+func decodeLightSection(dst []uint16, section *Section) {
+	if section == nil {
+		clear(dst)
+		return
 	}
-	sum := sha256.Sum256(encoded)
-	return sum[:]
+	if section.bits == 0 {
+		value := uint16(section.palette[0])
+		for i := range dst {
+			dst[i] = value
+		}
+		return
+	}
+	perLong, mask := 64/int(section.bits), (uint64(1)<<section.bits)-1
+	at := 0
+	for _, packed := range section.data {
+		word := uint64(packed)
+		for range min(perLong, len(dst)-at) {
+			value := uint32(word & mask)
+			if section.bits != 15 {
+				value = section.palette[value]
+			}
+			dst[at] = uint16(value)
+			at++
+			word >>= section.bits
+		}
+		if at == len(dst) {
+			break
+		}
+	}
+}
+
+func lightBlockHash(ch *Chunk) []byte {
+	var dense [SectionVolume]uint16
+	var encoded [SectionVolume * 2]byte
+	hash := sha256.New()
+	for _, section := range ch.sect {
+		decodeLightSection(dense[:], section)
+		for i, state := range dense {
+			binary.LittleEndian.PutUint16(encoded[i*2:], state)
+		}
+		hash.Write(encoded[:])
+	}
+	return hash.Sum(nil)
 }
 
 func readAnvilLight(root nbt.Object, sections []nbt.Tag, ch *Chunk) (*light.Data, error) {

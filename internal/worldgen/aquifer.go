@@ -33,8 +33,10 @@ type noiseAquifer struct {
 }
 
 type aquiferCenter struct {
-	position densityPosition
-	valid    bool
+	position   densityPosition
+	valid      bool
+	fluid      aquiferFluid
+	fluidValid bool
 }
 
 func newNoiseAquifer(sampler *DensitySampler, settings *DensitySettings, random PositionalRandom) *noiseAquifer {
@@ -99,8 +101,10 @@ func (aquifer *noiseAquifer) globalFluid(y int32) aquiferFluid {
 	}
 	material := NoiseWater
 	switch aquifer.settings.DefaultFluid.Name {
-	case "minecraft:lava": material = NoiseLava
-	case "minecraft:air": material = NoiseAir
+	case "minecraft:lava":
+		material = NoiseLava
+	case "minecraft:air":
+		material = NoiseAir
 	}
 	return aquiferFluid{level: aquifer.settings.SeaLevel, material: material}
 }
@@ -225,6 +229,23 @@ func (aquifer *noiseAquifer) preliminarySurface(x, z int32) int32 {
 }
 
 func (aquifer *noiseAquifer) fluidAt(position densityPosition) aquiferFluid {
+	// Like the original NoiseBasedAquifer.statusCache, random centers belong
+	// to a unique 16x12x16 grid cell. Non-center/out-of-range probes retain the
+	// general coordinate cache rather than aliasing an unrelated center.
+	x, y, z := (position.x>>4)-aquifer.gridMin.x, floorCell(position.y, 12)/12-aquifer.gridMin.y, (position.z>>4)-aquifer.gridMin.z
+	if x >= 0 && x < 3 && z >= 0 && z < 3 && y >= 0 && y < aquifer.gridHeight {
+		cached := &aquifer.centerGrid[(x*aquifer.gridHeight+y)*3+z]
+		if cached.valid && cached.position == position {
+			if cached.fluidValid {
+				return cached.fluid
+			}
+			fluid := aquifer.calculateFluid(position.x, position.y, position.z)
+			if aquifer.err == nil {
+				cached.fluid, cached.fluidValid = fluid, true
+			}
+			return fluid
+		}
+	}
 	if fluid, exists := aquifer.fluids[position]; exists {
 		return fluid
 	}

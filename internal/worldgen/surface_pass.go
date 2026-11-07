@@ -89,6 +89,7 @@ func (generator *OverworldNoiseGenerator) ApplySurface(result *NoiseChunkResult,
 	}
 	type quartPosition struct{ x, y, z int32 }
 	biomes := make(map[quartPosition]string)
+	zoom := newChunkBiomeZoom(generator.seed, result.X, result.Z, result.MinY, result.Height)
 	for x := int32(0); x < 16; x++ {
 		for z := int32(0); z < 16; z++ {
 			blockX, blockZ := result.X*16+x, result.Z*16+z
@@ -101,7 +102,7 @@ func (generator *OverworldNoiseGenerator) ApplySurface(result *NoiseChunkResult,
 				return err
 			}
 			getBiome := func(y int32) (string, error) {
-				qx, qy, qz := BiomeQuartAtBlock(generator.seed, blockX, y, blockZ)
+				qx, qy, qz := zoom.quartAtBlock(blockX, y, blockZ)
 				position := quartPosition{x: qx, y: qy, z: qz}
 				if biome, exists := biomes[position]; exists {
 					return biome, nil

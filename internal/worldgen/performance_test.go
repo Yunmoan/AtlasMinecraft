@@ -52,10 +52,11 @@ func TestOverworldPerformanceOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	wanted := []string{
-		"0840b7b9dd99dd16ab04c6218423a9bf2a37390511bf3766d3cd27649f6cdf87",
-		// Version 10 settles generation-time bubble columns and leaf distances.
-		"de996af4874ae8daab1afb716e501834eb4fc265d8c62962cf58f671182d8124",
-		"aa37794fa094d75ee7e57ac6f7b773d016f1c0686264e4a7aabe7e2bb96b045a",
+		// Refreshed against unmodified d5b2aa2 (generation version 19), before
+		// the chunk performance changes; the older version-10 hashes were stale.
+		"be55837590fb68ae70c2b942b37acd209a44c25b3a9aa9e1afaf4d289852df8f",
+		"900ddd758a3da55b1024f3f6e172d99310b873ded4744138badb3df66a045994",
+		"df646254ffc2de48d935ef3ab8827cf68079d6fd8338833deaf69063c59e0884",
 	}
 	for i, p := range []featureChunkPosition{{-1, 0}, {0, 0}, {1, 1}} {
 		result, err := generator.Generate(p.chunkX, p.chunkZ)

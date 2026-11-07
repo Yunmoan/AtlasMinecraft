@@ -1,0 +1,36 @@
+Available: basic=206, integration=145, performance=1, reference=224, smoke=4
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.057s
+
+OK
+ok  	atlas/tools/testplan	1.716s
+Running 11 basic tests in ./internal/anvil
+ok  	atlas/internal/anvil	4.427s
+Running 2 basic tests in ./internal/chunkwire
+ok  	atlas/internal/chunkwire	1.361s
+Running 6 basic tests in ./internal/config
+ok  	atlas/internal/config	1.217s
+Running 1 basic tests in ./internal/hub
+ok  	atlas/internal/hub	1.483s
+Running 9 basic tests in ./internal/item
+ok  	atlas/internal/item	1.202s
+Running 3 basic tests in ./internal/javasave
+ok  	atlas/internal/javasave	1.345s
+Running 11 basic tests in ./internal/light
+ok  	atlas/internal/light	1.445s
+Running 4 basic tests in ./internal/logging
+ok  	atlas/internal/logging	1.443s
+Running 3 basic tests in ./internal/nbt
+ok  	atlas/internal/nbt	0.973s
+Running 11 basic tests in ./internal/player
+ok  	atlas/internal/player	1.151s
+Running 1 basic tests in ./internal/proto
+ok  	atlas/internal/proto	0.992s
+Running 26 basic tests in ./internal/server
+ok  	atlas/internal/server	1.742s
+Running 37 basic tests in ./internal/world
+ok  	atlas/internal/world	1.447s
+Running 81 basic tests in ./internal/worldgen
+ok  	atlas/internal/worldgen	16.254s
+Passed 206 selected tests.

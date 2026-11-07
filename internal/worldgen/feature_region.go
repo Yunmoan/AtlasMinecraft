@@ -28,7 +28,10 @@ type featureChunkOverlay struct {
 // OverworldFeatureRegion exposes already-generated neighboring chunks to block
 // features, including edits that cross chunk boundaries.
 type OverworldFeatureRegion struct {
-	chunks             map[featureChunkPosition]*NoiseChunkResult
+	chunks map[featureChunkPosition]*NoiseChunkResult
+	// Generator-owned regions can fetch an uncommon, farther read on demand.
+	// Standalone feature probes remain strict about their supplied neighborhood.
+	loadChunk          func(int32, int32) error
 	borrowed           map[featureChunkPosition]bool
 	overlays           map[featureChunkPosition]*featureChunkOverlay
 	heights            map[featureColumnPosition]int32
@@ -85,7 +88,14 @@ func NewFeatureRegion(chunks ...*NoiseChunkResult) (*OverworldFeatureRegion, err
 }
 
 func (region *OverworldFeatureRegion) chunkAt(blockX, blockZ int32) (*NoiseChunkResult, error) {
-	chunk := region.chunks[featureChunkPosition{blockX >> 4, blockZ >> 4}]
+	key := featureChunkPosition{blockX >> 4, blockZ >> 4}
+	chunk := region.chunks[key]
+	if chunk == nil && region.loadChunk != nil {
+		if err := region.loadChunk(key.chunkX, key.chunkZ); err != nil {
+			return nil, err
+		}
+		chunk = region.chunks[key]
+	}
 	if chunk == nil {
 		return nil, fmt.Errorf("feature requires missing neighboring chunk %d,%d", blockX>>4, blockZ>>4)
 	}

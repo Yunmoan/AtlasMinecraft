@@ -216,6 +216,7 @@ func (g *OverworldGenerator) generateStructureBlocks(start StructureStart) (*str
 	if err != nil {
 		return nil, err
 	}
+	g.bindStructureChunkLoader(region, order.Step)
 	result := &structureBlockResult{start: start.Clone(), blocks: make(map[FeaturePosition]SurfaceBlockState), postProcessing: make(map[FeaturePosition]bool), blockEntities: make(map[FeaturePosition]featureBlockEntity)}
 	world := &structureRecordingWorld{region: region, result: result}
 	minX, maxX, minZ, maxZ := box.MinX>>4, box.MaxX>>4, box.MinZ>>4, box.MaxZ>>4

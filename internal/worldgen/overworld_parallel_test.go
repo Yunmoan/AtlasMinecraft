@@ -14,9 +14,10 @@ func TestParallelOverworldAreaMatchesPostprocessedOutput(t *testing.T) {
 	}
 	positions := []featureChunkPosition{{-1, 0}, {0, 0}, {1, 1}}
 	wanted := []string{
-		"0840b7b9dd99dd16ab04c6218423a9bf2a37390511bf3766d3cd27649f6cdf87",
-		"de996af4874ae8daab1afb716e501834eb4fc265d8c62962cf58f671182d8124",
-		"aa37794fa094d75ee7e57ac6f7b773d016f1c0686264e4a7aabe7e2bb96b045a",
+		// The same version-19 baseline as TestOverworldPerformanceOutput.
+		"be55837590fb68ae70c2b942b37acd209a44c25b3a9aa9e1afaf4d289852df8f",
+		"900ddd758a3da55b1024f3f6e172d99310b873ded4744138badb3df66a045994",
+		"df646254ffc2de48d935ef3ab8827cf68079d6fd8338833deaf69063c59e0884",
 	}
 	var wg sync.WaitGroup
 	for i, p := range positions {

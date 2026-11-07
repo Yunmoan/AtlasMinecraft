@@ -19,9 +19,12 @@ type Data struct {
 }
 
 type column struct {
-	states  []uint16
-	light   *Data
-	trusted bool
+	states     []uint16
+	light      *Data
+	trusted    bool
+	seedsReady bool
+	skyFloor   [256]int
+	emitters   []int
 }
 
 // Engine owns private block snapshots. It never calls back into chunk actors,
@@ -44,6 +47,7 @@ type relightWork struct {
 	states               []uint16
 	sky, block           []byte
 	loaded               [48 * 48]bool
+	sunFloor             [48 * 48]int
 	skyQueue, blockQueue [16][]int
 }
 
@@ -186,6 +190,7 @@ func (e *Engine) Edit(p Position, changes []Change) (map[Position]*Data, error) 
 	if !relight {
 		return nil, nil
 	}
+	c.seedsReady = false
 	for dx := int32(-1); dx <= 1; dx++ {
 		for dz := int32(-1); dz <= 1; dz++ {
 			if neighbor := e.columns[Position{p.X + dx, p.Z + dz}]; neighbor != nil {
@@ -231,6 +236,42 @@ func packLayer(values []byte, width, layer, x0, z0 int) []byte {
 // propagation loses at least one level and the maximum source level is 15.
 // Outside boundary samples remain valid when solving this local 3x3 area.
 func (e *Engine) relight(center Position) map[Position]*Data {
+	// The solver cannot publish anything when every installed column in its
+	// 3x3 area has trusted light and still lacks a complete neighborhood. In
+	// that case the original publication loop preserves all snapshots. Decide
+	// this before allocating/clearing grids and scanning almost a million cells.
+	needed := false
+	for dx := int32(-1); dx <= 1 && !needed; dx++ {
+		for dz := int32(-1); dz <= 1 && !needed; dz++ {
+			p := Position{center.X + dx, center.Z + dz}
+			c := e.columns[p]
+			if c == nil {
+				continue
+			}
+			if !c.trusted {
+				needed = true
+				break
+			}
+			complete := true
+			for nx := int32(-1); nx <= 1 && complete; nx++ {
+				for nz := int32(-1); nz <= 1; nz++ {
+					if e.columns[Position{p.X + nx, p.Z + nz}] == nil {
+						complete = false
+						break
+					}
+				}
+			}
+			needed = complete
+		}
+	}
+	if !needed {
+		e.revision++ // retain revision ordering even for a solve with no output
+		return make(map[Position]*Data)
+	}
+	return e.solve(center)
+}
+
+func (e *Engine) solve(center Position) map[Position]*Data {
 	const width = 48
 	plane := width * width
 	lightHeight := e.height + 32
@@ -258,9 +299,13 @@ func (e *Engine) relight(center Position) map[Position]*Data {
 			if c == nil {
 				continue
 			}
+			if !c.seedsReady {
+				e.prepareColumnSeeds(c)
+			}
 			for z := 0; z < 16; z++ {
 				for x := 0; x < 16; x++ {
 					loaded[(dz*16+z)*width+dx*16+x] = true
+					work.sunFloor[(dz*16+z)*width+dx*16+x] = c.skyFloor[z*16+x]
 				}
 				for y := 0; y < e.height; y++ {
 					copy(states[(y+16)*plane+(dz*16+z)*width+dx*16:][:16], c.states[y*256+z*16:][:16])
@@ -275,48 +320,46 @@ func (e *Engine) relight(center Position) map[Position]*Data {
 	if e.hasSky {
 		for z := 0; z < width; z++ {
 			for x := 0; x < width; x++ {
-				if !loaded[z*width+x] {
+				flat := z*width + x
+				if !loaded[flat] {
 					continue
 				}
-				previous := e.rules.states[0]
-				for y := lightHeight - 1; y >= 0; y-- {
-					index := y*plane + z*width + x
-					current := e.rules.states[states[index]]
-					if current.Opacity > 0 || e.rules.blocked[previous.Faces[0]][current.Faces[1]] {
-						break
-					}
-					sky[index] = 15
-					previous = current
+				floor := work.sunFloor[flat]
+				for y := floor; y < lightHeight; y++ {
+					sky[y*plane+flat] = 15
 				}
-			}
-		}
-		// Interior direct-sun cells already have their final level. Queue only
-		// edges next to a lower level, not hundreds of thousands of sky blocks.
-		for y := 0; y < lightHeight; y++ {
-			for z := 0; z < width; z++ {
-				for x := 0; x < width; x++ {
-					i := y*plane + z*width + x
-					if sky[i] != 15 {
-						continue
+				// Before propagation, direct-sun columns are exactly a zero
+				// interval followed by a 15 interval. Queue only their lower
+				// edge and heights exposed to a taller neighboring interval.
+				top := floor
+				if floor > 0 && floor < lightHeight {
+					top++
+				}
+				for _, offset := range [4][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+					nx, nz := x+offset[0], z+offset[1]
+					if nx >= 0 && nx < width && nz >= 0 && nz < width && loaded[nz*width+nx] {
+						top = max(top, work.sunFloor[nz*width+nx])
 					}
-					if (y > 0 && sky[i-plane] < 14) || (x > 0 && loaded[z*width+x-1] && sky[i-1] < 14) || (x+1 < width && loaded[z*width+x+1] && sky[i+1] < 14) || (z > 0 && loaded[(z-1)*width+x] && sky[i-width] < 14) || (z+1 < width && loaded[(z+1)*width+x] && sky[i+width] < 14) {
-						skyQueue[15] = append(skyQueue[15], i)
-					}
+				}
+				for y := floor; y < top; y++ {
+					skyQueue[15] = append(skyQueue[15], y*plane+flat)
 				}
 			}
 		}
 	}
-	for y := 16; y < lightHeight-16; y++ {
-		for z := 0; z < width; z++ {
-			for x := 0; x < width; x++ {
-				if !loaded[z*width+x] {
-					continue
-				}
-				i := y*plane + z*width + x
-				if level := e.rules.states[states[i]].Emission; level > 0 {
-					block[i] = level
-					blockQueue[level] = append(blockQueue[level], i)
-				}
+	// Reuse the sparse emission sources instead of scanning all 3x3 block
+	// columns at every install. The seed metadata is invalidated by rule edits.
+	for dx := 0; dx < 3; dx++ {
+		for dz := 0; dz < 3; dz++ {
+			c := columns[dx][dz]
+			if c == nil {
+				continue
+			}
+			for _, local := range c.emitters {
+				i := (local/256+16)*plane + (dz*16+(local/16&15))*width + dx*16 + (local & 15)
+				level := e.rules.states[c.states[local]].Emission
+				block[i] = level
+				blockQueue[level] = append(blockQueue[level], i)
 			}
 		}
 	}
@@ -435,4 +478,35 @@ func (e *Engine) relight(center Position) map[Position]*Data {
 		}
 	}
 	return updates
+}
+
+// Seed metadata belongs to the engine's private block copy. Compute lazily so
+// trusted partial loads that need no solve do not pay for unused scans.
+func (e *Engine) prepareColumnSeeds(c *column) {
+	c.emitters = c.emitters[:0]
+	for i, state := range c.states {
+		if e.rules.states[state].Emission > 0 {
+			c.emitters = append(c.emitters, i)
+		}
+	}
+	if e.hasSky {
+		air := e.rules.states[0]
+		for flat := 0; flat < 256; flat++ {
+			previous := air
+			floor := 0
+			for y := e.height + 31; y >= 0; y-- {
+				current := air
+				if y >= 16 && y < e.height+16 {
+					current = e.rules.states[c.states[(y-16)*256+flat]]
+				}
+				if current.Opacity > 0 || e.rules.blocked[previous.Faces[0]][current.Faces[1]] {
+					floor = y + 1
+					break
+				}
+				previous = current
+			}
+			c.skyFloor[flat] = floor
+		}
+	}
+	c.seedsReady = true
 }

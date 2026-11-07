@@ -1,0 +1,8 @@
+=== RUN   TestOceanRuinProcessorsAgainstVanillaJAR
+    structure_ocean_ruin_processors_test.go:72: matched 13824 original BlockRot/ignore/capped archaeology/NBT cases
+--- PASS: TestOceanRuinProcessorsAgainstVanillaJAR (1.39s)
+=== RUN   TestOceanRuinStartsAgainstVanillaJAR
+    structure_ocean_ruin_test.go:92: matched 288 original cold/warm starts, 192 accepted/36 clustered
+--- PASS: TestOceanRuinStartsAgainstVanillaJAR (0.65s)
+PASS
+ok  	atlas/internal/worldgen	2.993s
