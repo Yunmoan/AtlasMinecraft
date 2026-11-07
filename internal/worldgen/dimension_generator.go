@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+const dimensionCacheLimit = 128
+
 // GeneratedDimensionChunk uses the dimension's full build height (0..256),
 // while its noise generation depth can be smaller. Skipped stages remain
 // explicit until their original algorithms and structure pipeline are ported.
@@ -198,7 +200,7 @@ func (g *DimensionGenerator) baseEntryAt(cx, cz int32) *dimensionCacheEntry {
 	if err != nil {
 		delete(g.cache, key)
 	}
-	for len(g.cache) > overworldCacheLimit {
+	for len(g.cache) > dimensionCacheLimit {
 		var oldest featureChunkPosition
 		used, found := ^uint64(0), false
 		for position, candidate := range g.cache {

@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const overworldCacheLimit = 128
+const overworldCacheLimit = 256
 
 // OverworldGenerationVersion distinguishes newly generated chunks from earlier
 // Atlas coverage without rewriting or regenerating any existing full chunks.
@@ -59,6 +59,7 @@ type OverworldGenerator struct {
 	mu                 sync.Mutex
 	clock              uint64
 	cache              map[featureChunkPosition]*overworldCacheEntry
+	cacheLimit         int
 	beehiveShuffleSalt int64
 	structures         *overworldStructureCache
 	structureDayTime   func() int64
@@ -72,6 +73,9 @@ type OverworldGenerator struct {
 type OverworldGeneratorOptions struct {
 	BeehiveShuffleSalt int64
 	GenerateStructures bool
+	// TerrainCacheLimit caps retained completed base snapshots. Zero uses 256;
+	// smaller limits trade repeated generation for lower retained memory.
+	TerrainCacheLimit int
 }
 
 // Runtime installs the world's clock before workers start. Moon-dependent
@@ -132,6 +136,13 @@ func NewOverworldGeneratorWithBeehiveSalt(seed, salt int64) (*OverworldGenerator
 }
 
 func NewOverworldGeneratorWithOptions(seed int64, options OverworldGeneratorOptions) (*OverworldGenerator, error) {
+	limit := options.TerrainCacheLimit
+	if limit == 0 {
+		limit = overworldCacheLimit
+	}
+	if limit < 1 || limit > 4096 {
+		return nil, fmt.Errorf("terrain cache limit must be 1..4096, or zero for the default")
+	}
 	noise, err := NewOverworldNoiseGenerator(seed)
 	if err != nil {
 		return nil, err
@@ -140,7 +151,7 @@ func NewOverworldGeneratorWithOptions(seed int64, options OverworldGeneratorOpti
 	if err != nil {
 		return nil, err
 	}
-	generator := &OverworldGenerator{seed: seed, noise: noise, plans: make(map[string]decorationFeature), cache: make(map[featureChunkPosition]*overworldCacheEntry)}
+	generator := &OverworldGenerator{seed: seed, noise: noise, plans: make(map[string]decorationFeature), cache: make(map[featureChunkPosition]*overworldCacheEntry), cacheLimit: limit}
 	generator.SetTerrainWorkers(min(4, runtime.GOMAXPROCS(0)))
 	generator.beehiveShuffleSalt = options.BeehiveShuffleSalt
 	if options.GenerateStructures {
@@ -268,7 +279,7 @@ func (generator *OverworldGenerator) baseEntryAt(cx, cz int32) *overworldCacheEn
 	if err != nil {
 		delete(generator.cache, key)
 	}
-	for len(generator.cache) > overworldCacheLimit {
+	for len(generator.cache) > generator.cacheLimit {
 		var oldest featureChunkPosition
 		used := ^uint64(0)
 		found := false
