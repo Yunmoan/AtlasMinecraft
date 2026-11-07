@@ -121,10 +121,20 @@ func (s *DensitySampler) sampleCorner(node *DensityNode, x, y, z int32) (float64
 		dx&(s.cellWidth-1) == 0 && dz&(s.cellWidth-1) == 0 && dy&(s.cellHeight-1) == 0 {
 		width, height := s.chunk.cornerWidth, s.chunk.cornerHeight
 		index := (int(dz>>s.chunk.cornerShiftXZ)*width+int(dx>>s.chunk.cornerShiftXZ))*height + int(dy>>s.chunk.cornerShiftY)
-		cache := s.chunk.denseCorners[node]
+		runtime := s.nodeRuntime(node)
+		var cache *densityCornerValues
+		if runtime != nil {
+			cache = runtime.corners
+		} else {
+			cache = s.chunk.denseCorners[node]
+		}
 		if cache == nil {
 			cache = &densityCornerValues{values: make([]float64, width*width*height), valid: make([]bool, width*width*height)}
-			s.chunk.denseCorners[node] = cache
+			if runtime != nil {
+				runtime.corners = cache
+			} else {
+				s.chunk.denseCorners[node] = cache
+			}
 		}
 		if cache.valid[index] {
 			return cache.values[index], nil

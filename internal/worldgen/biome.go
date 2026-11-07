@@ -139,6 +139,7 @@ func newOverworldBiomeSampler(seed int64, settings *DensitySettings) (*Overworld
 		return nil, err
 	}
 	density := NewDensitySampler(seed)
+	density.bind(settings)
 	density.horizontal = make(map[densityCacheKey]float64)
 	return &OverworldBiomeSampler{settings: settings, density: density, index: index, previous: -1}, nil
 }
