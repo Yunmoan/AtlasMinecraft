@@ -231,6 +231,42 @@ func packLayer(values []byte, width, layer, x0, z0 int) []byte {
 // propagation loses at least one level and the maximum source level is 15.
 // Outside boundary samples remain valid when solving this local 3x3 area.
 func (e *Engine) relight(center Position) map[Position]*Data {
+	// The solver cannot publish anything when every installed column in its
+	// 3x3 area has trusted light and still lacks a complete neighborhood. In
+	// that case the original publication loop preserves all snapshots. Decide
+	// this before allocating/clearing grids and scanning almost a million cells.
+	needed := false
+	for dx := int32(-1); dx <= 1 && !needed; dx++ {
+		for dz := int32(-1); dz <= 1 && !needed; dz++ {
+			p := Position{center.X + dx, center.Z + dz}
+			c := e.columns[p]
+			if c == nil {
+				continue
+			}
+			if !c.trusted {
+				needed = true
+				break
+			}
+			complete := true
+			for nx := int32(-1); nx <= 1 && complete; nx++ {
+				for nz := int32(-1); nz <= 1; nz++ {
+					if e.columns[Position{p.X + nx, p.Z + nz}] == nil {
+						complete = false
+						break
+					}
+				}
+			}
+			needed = complete
+		}
+	}
+	if !needed {
+		e.revision++ // retain revision ordering even for a solve with no output
+		return make(map[Position]*Data)
+	}
+	return e.solve(center)
+}
+
+func (e *Engine) solve(center Position) map[Position]*Data {
 	const width = 48
 	plane := width * width
 	lightHeight := e.height + 32

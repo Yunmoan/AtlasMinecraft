@@ -138,7 +138,9 @@ func newOverworldBiomeSampler(seed int64, settings *DensitySettings) (*Overworld
 	if err != nil {
 		return nil, err
 	}
-	return &OverworldBiomeSampler{settings: settings, density: NewDensitySampler(seed), index: index, previous: -1}, nil
+	density := NewDensitySampler(seed)
+	density.horizontal = make(map[densityCacheKey]float64)
+	return &OverworldBiomeSampler{settings: settings, density: density, index: index, previous: -1}, nil
 }
 
 func (s *OverworldBiomeSampler) BiomeAtQuart(qx, qy, qz int32) (string, error) {

@@ -18,6 +18,10 @@ type DensitySampler struct {
 	beardifier            *StructureBeardifier
 	cellWidth, cellHeight int32
 	chunk                 *chunkDensityContext
+	// Only the built-in biome router opts in. Its flat_cache/cache_2d
+	// arguments are independent of Y; the general direct sampler deliberately
+	// retains its original semantics for arbitrary probe expressions.
+	horizontal map[densityCacheKey]float64
 }
 
 func NewDensitySampler(seed int64) *DensitySampler {
@@ -73,7 +77,9 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 	case "blend_offset":
 		return 0, nil
 	case "beardifier":
-		if s.beardifier == nil { return 0, nil }
+		if s.beardifier == nil {
+			return 0, nil
+		}
 		return s.beardifier.Sample(x, y, z), nil
 	case "end_islands":
 		if s.endIslands == nil {
@@ -84,10 +90,16 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 		if s.chunk != nil {
 			return s.sampleFlatCache(n, x, y, z)
 		}
+		if s.horizontal != nil {
+			return s.sampleHorizontal(n, x, y, z)
+		}
 		return child(densityArgument)
 	case "cache_2d":
 		if s.chunk != nil {
 			return s.sampleCache2D(n, x, y, z)
+		}
+		if s.horizontal != nil {
+			return s.sampleHorizontal(n, x, y, z)
 		}
 		return child(densityArgument)
 	case "cache_all_in_cell":
