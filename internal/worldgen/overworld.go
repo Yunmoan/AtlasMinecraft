@@ -410,10 +410,25 @@ func (generator *OverworldGenerator) decorateRegion(bases map[featureChunkPositi
 	for position := range region.chunks {
 		region.borrowed[position] = true
 	}
+	region.loadChunk = func(x, z int32) error {
+		entry := generator.baseEntryAt(x, z)
+		<-entry.ready
+		if entry.err != nil {
+			return entry.err
+		}
+		position := featureChunkPosition{x, z}
+		bases[position] = entry.base
+		region.chunks[position] = entry.base.terrain
+		region.borrowed[position] = true
+		return nil
+	}
 	biomeAtQuart := func(qx, qy, qz int32) (string, error) {
 		base := bases[featureChunkPosition{qx >> 2, qz >> 2}]
 		if base == nil {
-			return "", fmt.Errorf("biome requires missing neighbor %d,%d", qx>>2, qz>>2)
+			if _, err := region.chunkAt(qx*4, qz*4); err != nil {
+				return "", err
+			}
+			base = bases[featureChunkPosition{qx >> 2, qz >> 2}]
 		}
 		qy = max(int32(-16), min(int32(79), qy))
 		return base.biomes[(qy+16)>>2][((qy&3)<<4)|((qz&3)<<2)|(qx&3)], nil

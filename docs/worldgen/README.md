@@ -19,6 +19,7 @@ generation callers do not need to understand the extraction.
 | Animals and vegetation | [Initial animals](initial_animals_1.21.1.md), [tree decorators](tree_decorators.md), [sculk/mushrooms](sculk_mushroom_1.21.1.md) |
 | Generated block updates | [Template updates](template_updates_1.21.1.md), [Postprocessing lists](postprocessing_1.21.1.md), [falling blocks](falling_blocks_1.21.1.md), [bubble columns](bubble_columns_1.21.1.md), [fluid execution](fluid_simulation_1.21.1.md) |
 | Diagnosis and performance | [River/ocean regression](river_ocean_regression.md), [final ocean reference](final_ocean_reference_1.21.1.md), [Jigsaw performance](jigsaw_performance.md), [chunk generation/loading performance](chunk_performance_2026-11-07.md), [vanilla mechanism comparison](vanilla_generation_performance_reference_2026-11-07.md), [vanilla fitting and performance](vanilla_fit_performance_2026-11-07.md) |
+| Runtime generation failures | [Missing neighbors in ocean ruins and large dripstone](chunk_generation_neighborhood_fix_2026-11-07.md) |
 | Random full-chunk comparison | [Three-dimension report (2026-11-07)](random_chunk_comparison_2026-11-07.md): 1,000 chunks, complete block states and non-air-union metrics |
 
 `internal/worldgen` is a pure Go port of selected generation primitives from
