@@ -226,12 +226,19 @@ def main():
         writer = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
+    selection = config.get("selection")
+    sampling_note = (
+        f"- 选样：{selection}。这是诊断样本，不用于估计全世界平均一致率。"
+        if selection
+        else f'- 抽样：每种子 {config["count_per_seed"]} 块，随机抽样器种子 {config["sampling_seed"]}；区块 X/Z 均匀抽取自 {config["chunk_coordinate_bounds"]}。'
+    )
     out = [
-        "# 随机区块逐方块对比实测",
+        "# 定点区块逐方块对比实测" if selection else "# 随机区块逐方块对比实测",
         "",
-        f'- 基线：Go `{config["head"]}`，生成版本 19；官方 Minecraft Java 1.21.1。',
+        f'- 基线提交：Go `{config["head"]}`，生成版本 {config.get("generation_version", 19)}；官方 Minecraft Java 1.21.1。',
         f"- 范围：{dimension_label}，结构开启；Y={min_y}～{max_y}，每块 {blocks_per_chunk:,} 个位置。",
-        f'- 抽样：每种子 {config["count_per_seed"]} 块，随机抽样器种子 {config["sampling_seed"]}；区块 X/Z 均匀抽取自 {config["chunk_coordinate_bounds"]}。',
+        sampling_note,
+        *([f'- 被测源码树 SHA-256：`{config["source_tree_sha256"]}`；包含工作区改动，不能仅用基线提交代替。'] if config.get("source_tree_sha256") else []),
         f'- 已完成 {len(rows)}/{len(config["cases"])} 块；所有已计入数组均经过独立逐项复算及 SHA-256 检查。',
         "",
         "| 世界种子 | 区块数 | 完整状态一致率 | 排除双方空气后一致率 | 全部吻合区块 |",
@@ -272,7 +279,7 @@ def main():
             else "使用维度的完整建造高度进行比较；非空气指标可避免大量上层空气或末地虚空抬高一致率。"
         ),
         f"此处衡量新生成{dimension_label}方块状态，不比较方块实体 NBT、实体、光照、生物群系等价性或运行若干刻后的状态；不代表整个维度的穷举结果或其他维度。",
-        "均匀随机空间样本的结果不等于每种群系/结构分别均衡抽样的结果。manifest.json 保存全部坐标，chunks.csv 保存每区块统计，种子目录保留原版存档和双方 u16be 方块数组。",
+        "样本结果不等于每种群系/结构分别均衡抽样的结果。manifest.json 保存全部坐标，chunks.csv 保存每区块统计，种子目录保留双方 u16be 方块数组；原版存档可位于独立复用目录。",
     ]
     if dimension == "end":
         out += [

@@ -141,6 +141,9 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 		if err != nil {
 			return 0, err
 		}
+		if a == 0 && s.zeroMultiply(evaluation) {
+			return 0, nil
+		}
 		b, err := child(densityRight)
 		if err != nil {
 			return 0, err

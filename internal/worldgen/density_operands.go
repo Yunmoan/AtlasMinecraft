@@ -74,6 +74,16 @@ func (s *DensitySampler) nodeRuntime(n *DensityNode) *densityRuntime {
 	return nil
 }
 
+// Vanilla's general Ap2 multiply skips its right operand when the left is
+// zero and returns positive zero. A constant operand instead creates MulOrAdd,
+// which must evaluate its input and retain ordinary multiplication semantics.
+// Keep unbound/manual probes on the general evaluator's existing error path.
+func (s *DensitySampler) zeroMultiply(e *densityEvaluation) bool {
+	return e.op == densityOpMul && e.program != nil && e.program == s.program &&
+		e.children[densityLeft] != nil && e.children[densityRight] != nil &&
+		e.children[densityLeft].Kind != "constant" && e.children[densityRight].Kind != "constant"
+}
+
 func prepareDensityEvaluation(n *DensityNode) *densityEvaluation {
 	e := &densityEvaluation{op: densityOpcodes[n.Kind]}
 	for i, key := range [...]string{"argument", "input", "argument1", "argument2", "when_in_range", "when_out_of_range", "shift_x", "shift_y", "shift_z"} {
