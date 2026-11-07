@@ -9,6 +9,8 @@
 | `worldgen/build_*.py` | 世界生成数据、模板和参考结果的构建工具 |
 | `worldgen/verify_*.py` | 对照原版参考结果进行验证 |
 | `worldgen/diagnose_terrain_stages.py` | 指定种子、区块的地形阶段诊断 |
+| `worldgen/compare_random_worlds.py` | 使用 5 个种子，在完整主世界坐标范围内随机抽样，运行冻结的官方服务端并逐方块比较 Go 生成结果；保留独立存档、坐标和完整数组 |
+| `worldgen/summarize_random_comparison.py` | 独立复算双方数组，输出完整状态／非空气一致率、差异分布、每区块 CSV 和 Markdown 报告 |
 | `worldgen/probes/*.java` | 世界生成和游戏交互的参考探针及辅助类 |
 | `worldgen/extract_native_bubble_columns.go` | 从原版世界提取气泡柱坐标 |
 | `worldgen/build_scheduled_tick_probe.py` | 对照原版计划更新队列与 NBT 加载／保存；`--check` 校验固定参考文件 |
@@ -54,6 +56,16 @@ python tools/protocol/build_items.py
 # 验证一个随机数参考探针
 python tools/worldgen/verify_reference.py --probe ReferenceProbe
 
+# 5 个种子，每种子 100 个完整区块（较耗时）；中断后原命令可继续
+python tools/worldgen/compare_random_worlds.py --count 100
+python tools/worldgen/summarize_random_comparison.py artifacts/random-world-comparison-2026-11-07
+
+# 下界／末地：沿用 5 个种子，每种子每维度 50 个区块，完整高度 0..255
+python tools/worldgen/compare_random_worlds.py --dimension nether --count 50
+python tools/worldgen/compare_random_worlds.py --dimension end --count 50
+python tools/worldgen/summarize_random_comparison.py artifacts/random-nether-comparison-2026-11-07
+python tools/worldgen/summarize_random_comparison.py artifacts/random-end-comparison-2026-11-07
+
 # 验证结构选址参考结果
 python tools/worldgen/verify_structure_reference.py --probe StructurePlacementProbe
 
@@ -68,3 +80,7 @@ Python 工具使用标准库。调用官方参考代码的工具还需要 JDK 21
 参考输入和结果位于 [`testdata`](../testdata/README.md)，运行时内嵌资源位于 `internal`，临时日志和编译结果位于 `artifacts`。部分参考集需先运行对应 `build_*` 工具生成；目录整理不会补充尚未生成的测试数据。
 
 验证脚本的 `--update` 会更新参考数据，仅在有意重新生成基准时使用。更详细的算法说明见[文档导航](../docs/README.md)。
+
+随机区块比较默认写入当天的 `artifacts/random-{world|nether|end}-comparison-YYYY-MM-DD`，可用 `--output` 固定目录。继续运行会检查生成代码与记录提交是否一致，并核对当前原版数组及双方已存数组的 SHA-256；参考变化或数组损坏会重新比较对应区块。代码基线不符时应提交代码并指定新目录。汇总工具再次逐项复算；双方全空区块的排空指标为空值。
+
+本次 5 种子、三个维度的结果和验证限制见[随机区块对比简报](../docs/worldgen/random_chunk_comparison_2026-11-07.md)，可公开的坐标、计数和哈希位于 `testdata/worldgen/random_comparison_2026-11-07/`。

@@ -1,0 +1,926 @@
+{
+  "overall": {
+    "Total": 16384000,
+    "Equal": 16371402,
+    "NonAirUnion": 5620164,
+    "NonAirEqual": 5607566,
+    "SameBlock": 16371502,
+    "SameOccupancy": 16377735,
+    "SurfaceColumns": 64000,
+    "SameSurface": 63956,
+    "SurfaceAbsoluteError": 44,
+    "chunks": 250,
+    "exact_percent": 99.92310791015625,
+    "nonair_percent": 99.77584284017335,
+    "block_type_percent": 99.92371826171875,
+    "occupancy_percent": 99.96176147460938,
+    "surface_height_equal_percent": 99.93125,
+    "surface_height_mae": 0.0006875,
+    "perfect_chunks": 201,
+    "both_empty_chunks": 0,
+    "nonempty_chunks": 250,
+    "vanilla_nonair": 5617006,
+    "go_nonair": 5617057,
+    "chunk_min_percent": 97.0489501953125,
+    "chunk_median_percent": 100.0,
+    "chunk_max_percent": 100.0
+  },
+  "seeds": {
+    "0": {
+      "Total": 3276800,
+      "Equal": 3275178,
+      "NonAirUnion": 1129733,
+      "NonAirEqual": 1128111,
+      "SameBlock": 3275240,
+      "SameOccupancy": 3275317,
+      "SurfaceColumns": 12800,
+      "SameSurface": 12795,
+      "SurfaceAbsoluteError": 5,
+      "chunks": 50,
+      "exact_percent": 99.95050048828125,
+      "nonair_percent": 99.85642625292878,
+      "block_type_percent": 99.952392578125,
+      "occupancy_percent": 99.95474243164062,
+      "surface_height_equal_percent": 99.9609375,
+      "surface_height_mae": 0.000390625,
+      "perfect_chunks": 41,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 50,
+      "vanilla_nonair": 1129052,
+      "go_nonair": 1128931,
+      "chunk_min_percent": 97.7203369140625,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "1234": {
+      "Total": 3276800,
+      "Equal": 3275996,
+      "NonAirUnion": 1097510,
+      "NonAirEqual": 1096706,
+      "SameBlock": 3275996,
+      "SameOccupancy": 3276513,
+      "SurfaceColumns": 12800,
+      "SameSurface": 12772,
+      "SurfaceAbsoluteError": 28,
+      "chunks": 50,
+      "exact_percent": 99.9754638671875,
+      "nonair_percent": 99.92674326429828,
+      "block_type_percent": 99.9754638671875,
+      "occupancy_percent": 99.99124145507812,
+      "surface_height_equal_percent": 99.78125,
+      "surface_height_mae": 0.0021875,
+      "perfect_chunks": 39,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 50,
+      "vanilla_nonair": 1097448,
+      "go_nonair": 1097285,
+      "chunk_min_percent": 98.86932373046875,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "-7046029254386353131": {
+      "Total": 3276800,
+      "Equal": 3274311,
+      "NonAirUnion": 1153024,
+      "NonAirEqual": 1150535,
+      "SameBlock": 3274323,
+      "SameOccupancy": 3274671,
+      "SurfaceColumns": 12800,
+      "SameSurface": 12790,
+      "SurfaceAbsoluteError": 10,
+      "chunks": 50,
+      "exact_percent": 99.92404174804688,
+      "nonair_percent": 99.78413285412967,
+      "block_type_percent": 99.92440795898438,
+      "occupancy_percent": 99.93502807617188,
+      "surface_height_equal_percent": 99.921875,
+      "surface_height_mae": 0.00078125,
+      "perfect_chunks": 38,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 50,
+      "vanilla_nonair": 1151997,
+      "go_nonair": 1151922,
+      "chunk_min_percent": 97.20458984375,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "4511451270791457643": {
+      "Total": 3276800,
+      "Equal": 3271799,
+      "NonAirUnion": 1207790,
+      "NonAirEqual": 1202789,
+      "SameBlock": 3271819,
+      "SameOccupancy": 3275871,
+      "SurfaceColumns": 12800,
+      "SameSurface": 12800,
+      "SurfaceAbsoluteError": 0,
+      "chunks": 50,
+      "exact_percent": 99.84738159179688,
+      "nonair_percent": 99.5859379527898,
+      "block_type_percent": 99.84799194335938,
+      "occupancy_percent": 99.97164916992188,
+      "surface_height_equal_percent": 100.0,
+      "surface_height_mae": 0.0,
+      "perfect_chunks": 41,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 50,
+      "vanilla_nonair": 1207178,
+      "go_nonair": 1207473,
+      "chunk_min_percent": 97.0489501953125,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "7122209284156038298": {
+      "Total": 3276800,
+      "Equal": 3274118,
+      "NonAirUnion": 1032107,
+      "NonAirEqual": 1029425,
+      "SameBlock": 3274124,
+      "SameOccupancy": 3275363,
+      "SurfaceColumns": 12800,
+      "SameSurface": 12799,
+      "SurfaceAbsoluteError": 1,
+      "chunks": 50,
+      "exact_percent": 99.91815185546875,
+      "nonair_percent": 99.74014322158459,
+      "block_type_percent": 99.9183349609375,
+      "occupancy_percent": 99.95614624023438,
+      "surface_height_equal_percent": 99.9921875,
+      "surface_height_mae": 7.8125e-05,
+      "perfect_chunks": 42,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 50,
+      "vanilla_nonair": 1031331,
+      "go_nonair": 1031446,
+      "chunk_min_percent": 97.75238037109375,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    }
+  },
+  "top_differences_vanilla_to_go": [
+    [
+      "minecraft:basalt -> minecraft:netherrack",
+      1677
+    ],
+    [
+      "minecraft:basalt -> minecraft:blackstone",
+      1322
+    ],
+    [
+      "minecraft:warped_wart_block -> minecraft:air",
+      1084
+    ],
+    [
+      "minecraft:air -> minecraft:warped_wart_block",
+      1078
+    ],
+    [
+      "minecraft:netherrack -> minecraft:basalt",
+      1058
+    ],
+    [
+      "minecraft:nether_wart_block -> minecraft:air",
+      1003
+    ],
+    [
+      "minecraft:air -> minecraft:nether_wart_block",
+      953
+    ],
+    [
+      "minecraft:blackstone -> minecraft:basalt",
+      661
+    ],
+    [
+      "minecraft:netherrack -> minecraft:blackstone",
+      497
+    ],
+    [
+      "minecraft:air -> minecraft:basalt",
+      329
+    ],
+    [
+      "minecraft:blackstone -> minecraft:netherrack",
+      317
+    ],
+    [
+      "minecraft:basalt -> minecraft:air",
+      266
+    ],
+    [
+      "minecraft:warped_stem -> minecraft:air",
+      174
+    ],
+    [
+      "minecraft:basalt -> minecraft:lava",
+      153
+    ],
+    [
+      "minecraft:air -> minecraft:warped_stem",
+      136
+    ],
+    [
+      "minecraft:air -> minecraft:crimson_stem",
+      116
+    ],
+    [
+      "minecraft:air -> minecraft:weeping_vines_plant",
+      109
+    ],
+    [
+      "minecraft:nether_brick_fence -> minecraft:nether_brick_fence",
+      100
+    ],
+    [
+      "minecraft:shroomlight -> minecraft:air",
+      80
+    ],
+    [
+      "minecraft:crimson_roots -> minecraft:air",
+      80
+    ],
+    [
+      "minecraft:red_mushroom -> minecraft:air",
+      79
+    ],
+    [
+      "minecraft:weeping_vines_plant -> minecraft:air",
+      78
+    ],
+    [
+      "minecraft:warped_roots -> minecraft:air",
+      69
+    ],
+    [
+      "minecraft:crimson_stem -> minecraft:air",
+      69
+    ],
+    [
+      "minecraft:air -> minecraft:crimson_roots",
+      64
+    ],
+    [
+      "minecraft:cave_air -> minecraft:nether_wart_block",
+      63
+    ],
+    [
+      "minecraft:air -> minecraft:twisting_vines_plant",
+      61
+    ],
+    [
+      "minecraft:warped_stem -> minecraft:warped_wart_block",
+      57
+    ],
+    [
+      "minecraft:air -> minecraft:shroomlight",
+      57
+    ],
+    [
+      "minecraft:nether_wart_block -> minecraft:crimson_stem",
+      53
+    ]
+  ],
+  "differences_by_y": [
+    [
+      2,
+      16
+    ],
+    [
+      3,
+      17
+    ],
+    [
+      4,
+      55
+    ],
+    [
+      5,
+      50
+    ],
+    [
+      6,
+      37
+    ],
+    [
+      7,
+      46
+    ],
+    [
+      8,
+      65
+    ],
+    [
+      9,
+      99
+    ],
+    [
+      10,
+      91
+    ],
+    [
+      11,
+      115
+    ],
+    [
+      12,
+      110
+    ],
+    [
+      13,
+      60
+    ],
+    [
+      14,
+      36
+    ],
+    [
+      15,
+      23
+    ],
+    [
+      16,
+      16
+    ],
+    [
+      17,
+      16
+    ],
+    [
+      18,
+      16
+    ],
+    [
+      19,
+      2
+    ],
+    [
+      22,
+      20
+    ],
+    [
+      23,
+      29
+    ],
+    [
+      24,
+      24
+    ],
+    [
+      25,
+      21
+    ],
+    [
+      26,
+      10
+    ],
+    [
+      27,
+      9
+    ],
+    [
+      28,
+      7
+    ],
+    [
+      29,
+      10
+    ],
+    [
+      30,
+      8
+    ],
+    [
+      31,
+      2
+    ],
+    [
+      32,
+      3
+    ],
+    [
+      33,
+      9
+    ],
+    [
+      34,
+      8
+    ],
+    [
+      35,
+      21
+    ],
+    [
+      36,
+      30
+    ],
+    [
+      37,
+      41
+    ],
+    [
+      38,
+      55
+    ],
+    [
+      39,
+      67
+    ],
+    [
+      40,
+      97
+    ],
+    [
+      41,
+      79
+    ],
+    [
+      42,
+      87
+    ],
+    [
+      43,
+      89
+    ],
+    [
+      44,
+      115
+    ],
+    [
+      45,
+      119
+    ],
+    [
+      46,
+      115
+    ],
+    [
+      47,
+      117
+    ],
+    [
+      48,
+      135
+    ],
+    [
+      49,
+      151
+    ],
+    [
+      50,
+      151
+    ],
+    [
+      51,
+      124
+    ],
+    [
+      52,
+      123
+    ],
+    [
+      53,
+      125
+    ],
+    [
+      54,
+      110
+    ],
+    [
+      55,
+      107
+    ],
+    [
+      56,
+      114
+    ],
+    [
+      57,
+      99
+    ],
+    [
+      58,
+      117
+    ],
+    [
+      59,
+      136
+    ],
+    [
+      60,
+      125
+    ],
+    [
+      61,
+      151
+    ],
+    [
+      62,
+      170
+    ],
+    [
+      63,
+      135
+    ],
+    [
+      64,
+      130
+    ],
+    [
+      65,
+      152
+    ],
+    [
+      66,
+      165
+    ],
+    [
+      67,
+      153
+    ],
+    [
+      68,
+      189
+    ],
+    [
+      69,
+      194
+    ],
+    [
+      70,
+      190
+    ],
+    [
+      71,
+      154
+    ],
+    [
+      72,
+      124
+    ],
+    [
+      73,
+      133
+    ],
+    [
+      74,
+      180
+    ],
+    [
+      75,
+      119
+    ],
+    [
+      76,
+      101
+    ],
+    [
+      77,
+      109
+    ],
+    [
+      78,
+      97
+    ],
+    [
+      79,
+      115
+    ],
+    [
+      80,
+      97
+    ],
+    [
+      81,
+      63
+    ],
+    [
+      82,
+      105
+    ],
+    [
+      83,
+      78
+    ],
+    [
+      84,
+      86
+    ],
+    [
+      85,
+      55
+    ],
+    [
+      86,
+      54
+    ],
+    [
+      87,
+      66
+    ],
+    [
+      88,
+      79
+    ],
+    [
+      89,
+      90
+    ],
+    [
+      90,
+      107
+    ],
+    [
+      91,
+      101
+    ],
+    [
+      92,
+      100
+    ],
+    [
+      93,
+      122
+    ],
+    [
+      94,
+      156
+    ],
+    [
+      95,
+      170
+    ],
+    [
+      96,
+      188
+    ],
+    [
+      97,
+      180
+    ],
+    [
+      98,
+      234
+    ],
+    [
+      99,
+      230
+    ],
+    [
+      100,
+      257
+    ],
+    [
+      101,
+      243
+    ],
+    [
+      102,
+      328
+    ],
+    [
+      103,
+      285
+    ],
+    [
+      104,
+      210
+    ],
+    [
+      105,
+      175
+    ],
+    [
+      106,
+      130
+    ],
+    [
+      107,
+      103
+    ],
+    [
+      108,
+      112
+    ],
+    [
+      109,
+      94
+    ],
+    [
+      110,
+      113
+    ],
+    [
+      111,
+      124
+    ],
+    [
+      112,
+      129
+    ],
+    [
+      113,
+      116
+    ],
+    [
+      114,
+      109
+    ],
+    [
+      115,
+      100
+    ],
+    [
+      116,
+      125
+    ],
+    [
+      117,
+      146
+    ],
+    [
+      118,
+      169
+    ],
+    [
+      119,
+      153
+    ],
+    [
+      120,
+      132
+    ],
+    [
+      121,
+      116
+    ],
+    [
+      122,
+      104
+    ],
+    [
+      123,
+      74
+    ],
+    [
+      124,
+      56
+    ],
+    [
+      125,
+      33
+    ],
+    [
+      126,
+      17
+    ],
+    [
+      128,
+      44
+    ]
+  ],
+  "worst_chunks": [
+    {
+      "seed": 4511451270791457643,
+      "x": -251498,
+      "z": 365282,
+      "exact_percent": 97.0489501953125,
+      "nonair_percent": 91.53832691634581
+    },
+    {
+      "seed": -7046029254386353131,
+      "x": -167244,
+      "z": -1383319,
+      "exact_percent": 97.20458984375,
+      "nonair_percent": 92.22806719837095
+    },
+    {
+      "seed": 0,
+      "x": -501831,
+      "z": 14849,
+      "exact_percent": 97.7203369140625,
+      "nonair_percent": 92.14056499552842
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": 966277,
+      "z": 1550069,
+      "exact_percent": 97.75238037109375,
+      "nonair_percent": 93.85071386824747
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": 961265,
+      "z": -59899,
+      "exact_percent": 97.99346923828125,
+      "nonair_percent": 94.2726480836237
+    },
+    {
+      "seed": 1234,
+      "x": 1179345,
+      "z": 1509903,
+      "exact_percent": 98.86932373046875,
+      "nonair_percent": 97.38430583501007
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": -645172,
+      "z": 599395,
+      "exact_percent": 98.8861083984375,
+      "nonair_percent": 97.57869249394673
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": -350182,
+      "z": -95772,
+      "exact_percent": 98.91357421875,
+      "nonair_percent": 95.46149923508415
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": 1357503,
+      "z": 167759,
+      "exact_percent": 99.200439453125,
+      "nonair_percent": 97.99418159546777
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": 1133593,
+      "z": 104304,
+      "exact_percent": 99.3011474609375,
+      "nonair_percent": 97.65728900255755
+    },
+    {
+      "seed": -7046029254386353131,
+      "x": 662199,
+      "z": 1170430,
+      "exact_percent": 99.36065673828125,
+      "nonair_percent": 98.66048593350384
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": 1633584,
+      "z": 708095,
+      "exact_percent": 99.45220947265625,
+      "nonair_percent": 98.57182639137527
+    },
+    {
+      "seed": -7046029254386353131,
+      "x": -1872416,
+      "z": -429352,
+      "exact_percent": 99.72991943359375,
+      "nonair_percent": 98.87124545628467
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": -359665,
+      "z": -1357811,
+      "exact_percent": 99.8046875,
+      "nonair_percent": 99.3024903275026
+    },
+    {
+      "seed": 0,
+      "x": -330419,
+      "z": 1492463,
+      "exact_percent": 99.8565673828125,
+      "nonair_percent": 99.66287702184127
+    }
+  ],
+  "official_shutdown_audit": {
+    "0": {
+      "seed": 0,
+      "dimension": "nether",
+      "chunks": 50,
+      "shutdown": "clean",
+      "exit_code": 0
+    },
+    "1234": {
+      "seed": 1234,
+      "dimension": "nether",
+      "chunks": 50,
+      "shutdown": "clean",
+      "exit_code": 0
+    },
+    "-7046029254386353131": {
+      "seed": -7046029254386353131,
+      "dimension": "nether",
+      "chunks": 50,
+      "shutdown": "clean",
+      "exit_code": 0
+    },
+    "4511451270791457643": {
+      "seed": 4511451270791457643,
+      "dimension": "nether",
+      "chunks": 50,
+      "shutdown": "clean",
+      "exit_code": 0
+    },
+    "7122209284156038298": {
+      "seed": 7122209284156038298,
+      "dimension": "nether",
+      "chunks": 50,
+      "shutdown": "clean",
+      "exit_code": 0
+    }
+  },
+  "final_vanilla_validation_complete": true,
+  "dimension": "nether"
+}

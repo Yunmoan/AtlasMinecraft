@@ -1,0 +1,1191 @@
+{
+  "overall": {
+    "Total": 49152000,
+    "Equal": 49142454,
+    "NonAirUnion": 16414878,
+    "NonAirEqual": 16405437,
+    "SameBlock": 49142917,
+    "SameOccupancy": 49146383,
+    "SurfaceColumns": 128000,
+    "SameSurface": 127176,
+    "SurfaceAbsoluteError": 4647,
+    "chunks": 500,
+    "exact_percent": 99.98057861328125,
+    "nonair_percent": 99.9424851040623,
+    "block_type_percent": 99.98152058919271,
+    "occupancy_percent": 99.98857218424479,
+    "surface_height_equal_percent": 99.35625,
+    "surface_height_mae": 0.0363046875,
+    "perfect_chunks": 368,
+    "both_empty_chunks": 0,
+    "nonempty_chunks": 500,
+    "vanilla_nonair": 16411843,
+    "go_nonair": 16412296,
+    "chunk_min_percent": 99.04683430989584,
+    "chunk_median_percent": 100.0,
+    "chunk_max_percent": 100.0
+  },
+  "seeds": {
+    "0": {
+      "Total": 9830400,
+      "Equal": 9828330,
+      "NonAirUnion": 3361556,
+      "NonAirEqual": 3359486,
+      "SameBlock": 9828483,
+      "SameOccupancy": 9828720,
+      "SurfaceColumns": 25600,
+      "SameSurface": 25284,
+      "SurfaceAbsoluteError": 2158,
+      "chunks": 100,
+      "exact_percent": 99.97894287109375,
+      "nonair_percent": 99.93842137391137,
+      "block_type_percent": 99.98049926757812,
+      "occupancy_percent": 99.98291015625,
+      "surface_height_equal_percent": 98.765625,
+      "surface_height_mae": 0.084296875,
+      "perfect_chunks": 78,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 100,
+      "vanilla_nonair": 3360717,
+      "go_nonair": 3360715,
+      "chunk_min_percent": 99.28080240885416,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "1234": {
+      "Total": 9830400,
+      "Equal": 9826773,
+      "NonAirUnion": 3217892,
+      "NonAirEqual": 3214265,
+      "SameBlock": 9826978,
+      "SameOccupancy": 9828332,
+      "SurfaceColumns": 25600,
+      "SameSurface": 25293,
+      "SurfaceAbsoluteError": 1940,
+      "chunks": 100,
+      "exact_percent": 99.96310424804688,
+      "nonair_percent": 99.88728645958285,
+      "block_type_percent": 99.96518961588542,
+      "occupancy_percent": 99.97896321614583,
+      "surface_height_equal_percent": 98.80078125,
+      "surface_height_mae": 0.07578125,
+      "perfect_chunks": 73,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 100,
+      "vanilla_nonair": 3216589,
+      "go_nonair": 3217127,
+      "chunk_min_percent": 99.04683430989584,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "-7046029254386353131": {
+      "Total": 9830400,
+      "Equal": 9829125,
+      "NonAirUnion": 3299098,
+      "NonAirEqual": 3297823,
+      "SameBlock": 9829152,
+      "SameOccupancy": 9829692,
+      "SurfaceColumns": 25600,
+      "SameSurface": 25482,
+      "SurfaceAbsoluteError": 310,
+      "chunks": 100,
+      "exact_percent": 99.98703002929688,
+      "nonair_percent": 99.96135307287022,
+      "block_type_percent": 99.9873046875,
+      "occupancy_percent": 99.9927978515625,
+      "surface_height_equal_percent": 99.5390625,
+      "surface_height_mae": 0.012109375,
+      "perfect_chunks": 68,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 100,
+      "vanilla_nonair": 3298703,
+      "go_nonair": 3298785,
+      "chunk_min_percent": 99.20756022135416,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "4511451270791457643": {
+      "Total": 9830400,
+      "Equal": 9829461,
+      "NonAirUnion": 3263545,
+      "NonAirEqual": 3262711,
+      "SameBlock": 9829491,
+      "SameOccupancy": 9829798,
+      "SurfaceColumns": 25600,
+      "SameSurface": 25583,
+      "SurfaceAbsoluteError": 19,
+      "chunks": 100,
+      "exact_percent": 99.99044799804688,
+      "nonair_percent": 99.9744449670527,
+      "block_type_percent": 99.99075317382812,
+      "occupancy_percent": 99.99387613932292,
+      "surface_height_equal_percent": 99.93359375,
+      "surface_height_mae": 0.0007421875,
+      "perfect_chunks": 75,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 100,
+      "vanilla_nonair": 3263326,
+      "go_nonair": 3263162,
+      "chunk_min_percent": 99.20552571614584,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    },
+    "7122209284156038298": {
+      "Total": 9830400,
+      "Equal": 9828765,
+      "NonAirUnion": 3272787,
+      "NonAirEqual": 3271152,
+      "SameBlock": 9828813,
+      "SameOccupancy": 9829841,
+      "SurfaceColumns": 25600,
+      "SameSurface": 25534,
+      "SurfaceAbsoluteError": 220,
+      "chunks": 100,
+      "exact_percent": 99.98336791992188,
+      "nonair_percent": 99.95004257838961,
+      "block_type_percent": 99.98385620117188,
+      "occupancy_percent": 99.9943135579427,
+      "surface_height_equal_percent": 99.7421875,
+      "surface_height_mae": 0.00859375,
+      "perfect_chunks": 74,
+      "both_empty_chunks": 0,
+      "nonempty_chunks": 100,
+      "vanilla_nonair": 3272508,
+      "go_nonair": 3272507,
+      "chunk_min_percent": 99.3896484375,
+      "chunk_median_percent": 100.0,
+      "chunk_max_percent": 100.0
+    }
+  },
+  "top_differences_vanilla_to_go": [
+    [
+      "minecraft:air -> minecraft:spruce_leaves",
+      393
+    ],
+    [
+      "minecraft:stone -> minecraft:dripstone_block",
+      385
+    ],
+    [
+      "minecraft:deepslate -> minecraft:cave_air",
+      363
+    ],
+    [
+      "minecraft:spruce_leaves -> minecraft:air",
+      323
+    ],
+    [
+      "minecraft:air -> minecraft:snow",
+      253
+    ],
+    [
+      "minecraft:air -> minecraft:vine",
+      242
+    ],
+    [
+      "minecraft:air -> minecraft:sculk_vein",
+      223
+    ],
+    [
+      "minecraft:snow -> minecraft:air",
+      219
+    ],
+    [
+      "minecraft:birch_leaves -> minecraft:air",
+      216
+    ],
+    [
+      "minecraft:air -> minecraft:birch_leaves",
+      216
+    ],
+    [
+      "minecraft:grass_block -> minecraft:grass_block",
+      205
+    ],
+    [
+      "minecraft:air -> minecraft:short_grass",
+      176
+    ],
+    [
+      "minecraft:air -> minecraft:jungle_leaves",
+      174
+    ],
+    [
+      "minecraft:moss_block -> minecraft:stone",
+      170
+    ],
+    [
+      "minecraft:air -> minecraft:oak_leaves",
+      169
+    ],
+    [
+      "minecraft:dripstone_block -> minecraft:stone",
+      163
+    ],
+    [
+      "minecraft:oak_leaves -> minecraft:air",
+      156
+    ],
+    [
+      "minecraft:sand -> minecraft:dirt",
+      151
+    ],
+    [
+      "minecraft:short_grass -> minecraft:air",
+      141
+    ],
+    [
+      "minecraft:air -> minecraft:mangrove_leaves",
+      141
+    ],
+    [
+      "minecraft:sculk_vein -> minecraft:air",
+      139
+    ],
+    [
+      "minecraft:cave_vines_plant -> minecraft:air",
+      136
+    ],
+    [
+      "minecraft:air -> minecraft:cave_vines_plant",
+      133
+    ],
+    [
+      "minecraft:deepslate -> minecraft:sculk",
+      127
+    ],
+    [
+      "minecraft:air -> minecraft:pointed_dripstone",
+      120
+    ],
+    [
+      "minecraft:mangrove_leaves -> minecraft:air",
+      120
+    ],
+    [
+      "minecraft:clay -> minecraft:stone",
+      115
+    ],
+    [
+      "minecraft:moss_block -> minecraft:deepslate",
+      108
+    ],
+    [
+      "minecraft:water -> minecraft:kelp_plant",
+      107
+    ],
+    [
+      "minecraft:air -> minecraft:jungle_log",
+      106
+    ]
+  ],
+  "differences_by_y": [
+    [
+      -54,
+      4
+    ],
+    [
+      -53,
+      1
+    ],
+    [
+      -52,
+      61
+    ],
+    [
+      -51,
+      81
+    ],
+    [
+      -50,
+      46
+    ],
+    [
+      -49,
+      70
+    ],
+    [
+      -48,
+      36
+    ],
+    [
+      -47,
+      73
+    ],
+    [
+      -46,
+      44
+    ],
+    [
+      -45,
+      76
+    ],
+    [
+      -44,
+      5
+    ],
+    [
+      -43,
+      2
+    ],
+    [
+      -41,
+      18
+    ],
+    [
+      -40,
+      16
+    ],
+    [
+      -39,
+      7
+    ],
+    [
+      -38,
+      3
+    ],
+    [
+      -37,
+      4
+    ],
+    [
+      -36,
+      3
+    ],
+    [
+      -34,
+      1
+    ],
+    [
+      -32,
+      27
+    ],
+    [
+      -31,
+      47
+    ],
+    [
+      -30,
+      26
+    ],
+    [
+      -29,
+      13
+    ],
+    [
+      -28,
+      8
+    ],
+    [
+      -27,
+      33
+    ],
+    [
+      -26,
+      18
+    ],
+    [
+      -25,
+      12
+    ],
+    [
+      -24,
+      5
+    ],
+    [
+      -23,
+      3
+    ],
+    [
+      -22,
+      8
+    ],
+    [
+      -21,
+      3
+    ],
+    [
+      -20,
+      8
+    ],
+    [
+      -19,
+      9
+    ],
+    [
+      -18,
+      26
+    ],
+    [
+      -17,
+      11
+    ],
+    [
+      -16,
+      20
+    ],
+    [
+      -15,
+      34
+    ],
+    [
+      -14,
+      30
+    ],
+    [
+      -13,
+      25
+    ],
+    [
+      -12,
+      28
+    ],
+    [
+      -11,
+      103
+    ],
+    [
+      -10,
+      115
+    ],
+    [
+      -9,
+      124
+    ],
+    [
+      -8,
+      53
+    ],
+    [
+      -7,
+      65
+    ],
+    [
+      -6,
+      75
+    ],
+    [
+      -5,
+      80
+    ],
+    [
+      -4,
+      143
+    ],
+    [
+      -3,
+      149
+    ],
+    [
+      -2,
+      122
+    ],
+    [
+      -1,
+      120
+    ],
+    [
+      0,
+      79
+    ],
+    [
+      1,
+      44
+    ],
+    [
+      2,
+      21
+    ],
+    [
+      3,
+      68
+    ],
+    [
+      4,
+      59
+    ],
+    [
+      5,
+      65
+    ],
+    [
+      6,
+      76
+    ],
+    [
+      7,
+      78
+    ],
+    [
+      8,
+      63
+    ],
+    [
+      9,
+      51
+    ],
+    [
+      10,
+      84
+    ],
+    [
+      11,
+      100
+    ],
+    [
+      12,
+      91
+    ],
+    [
+      13,
+      92
+    ],
+    [
+      14,
+      79
+    ],
+    [
+      15,
+      49
+    ],
+    [
+      16,
+      47
+    ],
+    [
+      17,
+      21
+    ],
+    [
+      18,
+      36
+    ],
+    [
+      19,
+      51
+    ],
+    [
+      20,
+      38
+    ],
+    [
+      21,
+      37
+    ],
+    [
+      22,
+      65
+    ],
+    [
+      23,
+      51
+    ],
+    [
+      24,
+      41
+    ],
+    [
+      25,
+      31
+    ],
+    [
+      26,
+      39
+    ],
+    [
+      27,
+      46
+    ],
+    [
+      28,
+      47
+    ],
+    [
+      29,
+      20
+    ],
+    [
+      30,
+      18
+    ],
+    [
+      31,
+      24
+    ],
+    [
+      32,
+      28
+    ],
+    [
+      33,
+      24
+    ],
+    [
+      34,
+      30
+    ],
+    [
+      35,
+      11
+    ],
+    [
+      36,
+      6
+    ],
+    [
+      37,
+      1
+    ],
+    [
+      38,
+      14
+    ],
+    [
+      39,
+      29
+    ],
+    [
+      40,
+      50
+    ],
+    [
+      41,
+      56
+    ],
+    [
+      42,
+      62
+    ],
+    [
+      43,
+      76
+    ],
+    [
+      44,
+      60
+    ],
+    [
+      45,
+      38
+    ],
+    [
+      46,
+      34
+    ],
+    [
+      47,
+      33
+    ],
+    [
+      48,
+      21
+    ],
+    [
+      49,
+      25
+    ],
+    [
+      50,
+      15
+    ],
+    [
+      51,
+      11
+    ],
+    [
+      52,
+      53
+    ],
+    [
+      53,
+      87
+    ],
+    [
+      54,
+      75
+    ],
+    [
+      55,
+      47
+    ],
+    [
+      56,
+      57
+    ],
+    [
+      57,
+      88
+    ],
+    [
+      58,
+      131
+    ],
+    [
+      59,
+      133
+    ],
+    [
+      60,
+      144
+    ],
+    [
+      61,
+      66
+    ],
+    [
+      62,
+      35
+    ],
+    [
+      63,
+      132
+    ],
+    [
+      64,
+      139
+    ],
+    [
+      65,
+      146
+    ],
+    [
+      66,
+      133
+    ],
+    [
+      67,
+      164
+    ],
+    [
+      68,
+      163
+    ],
+    [
+      69,
+      176
+    ],
+    [
+      70,
+      151
+    ],
+    [
+      71,
+      150
+    ],
+    [
+      72,
+      161
+    ],
+    [
+      73,
+      127
+    ],
+    [
+      74,
+      113
+    ],
+    [
+      75,
+      111
+    ],
+    [
+      76,
+      116
+    ],
+    [
+      77,
+      94
+    ],
+    [
+      78,
+      72
+    ],
+    [
+      79,
+      72
+    ],
+    [
+      80,
+      43
+    ],
+    [
+      81,
+      54
+    ],
+    [
+      82,
+      59
+    ],
+    [
+      83,
+      42
+    ],
+    [
+      84,
+      33
+    ],
+    [
+      85,
+      20
+    ],
+    [
+      86,
+      20
+    ],
+    [
+      87,
+      22
+    ],
+    [
+      88,
+      24
+    ],
+    [
+      89,
+      12
+    ],
+    [
+      90,
+      12
+    ],
+    [
+      91,
+      17
+    ],
+    [
+      92,
+      41
+    ],
+    [
+      93,
+      37
+    ],
+    [
+      94,
+      18
+    ],
+    [
+      95,
+      48
+    ],
+    [
+      96,
+      49
+    ],
+    [
+      97,
+      45
+    ],
+    [
+      98,
+      18
+    ],
+    [
+      99,
+      17
+    ],
+    [
+      100,
+      39
+    ],
+    [
+      101,
+      61
+    ],
+    [
+      102,
+      85
+    ],
+    [
+      103,
+      64
+    ],
+    [
+      104,
+      64
+    ],
+    [
+      105,
+      100
+    ],
+    [
+      106,
+      79
+    ],
+    [
+      107,
+      61
+    ],
+    [
+      108,
+      50
+    ],
+    [
+      109,
+      30
+    ],
+    [
+      110,
+      46
+    ],
+    [
+      111,
+      35
+    ],
+    [
+      112,
+      23
+    ],
+    [
+      113,
+      23
+    ],
+    [
+      114,
+      24
+    ],
+    [
+      115,
+      32
+    ],
+    [
+      116,
+      42
+    ],
+    [
+      117,
+      53
+    ],
+    [
+      118,
+      48
+    ],
+    [
+      119,
+      48
+    ],
+    [
+      120,
+      41
+    ],
+    [
+      121,
+      30
+    ],
+    [
+      122,
+      15
+    ],
+    [
+      123,
+      16
+    ],
+    [
+      124,
+      15
+    ],
+    [
+      125,
+      10
+    ],
+    [
+      127,
+      2
+    ],
+    [
+      128,
+      8
+    ],
+    [
+      129,
+      4
+    ],
+    [
+      130,
+      1
+    ],
+    [
+      131,
+      11
+    ],
+    [
+      132,
+      14
+    ],
+    [
+      133,
+      20
+    ],
+    [
+      134,
+      39
+    ],
+    [
+      135,
+      48
+    ],
+    [
+      136,
+      39
+    ],
+    [
+      137,
+      10
+    ],
+    [
+      138,
+      7
+    ],
+    [
+      139,
+      6
+    ],
+    [
+      140,
+      7
+    ]
+  ],
+  "worst_chunks": [
+    {
+      "seed": 1234,
+      "x": 1029160,
+      "z": -1249360,
+      "exact_percent": 99.04683430989584,
+      "nonair_percent": 96.97858893331613
+    },
+    {
+      "seed": 1234,
+      "x": 68903,
+      "z": -1772761,
+      "exact_percent": 99.12007649739584,
+      "nonair_percent": 97.35263512272755
+    },
+    {
+      "seed": 4511451270791457643,
+      "x": 1164285,
+      "z": 1687259,
+      "exact_percent": 99.20552571614584,
+      "nonair_percent": 97.93259526576549
+    },
+    {
+      "seed": -7046029254386353131,
+      "x": -1047847,
+      "z": -1166241,
+      "exact_percent": 99.20756022135416,
+      "nonair_percent": 97.20025876940771
+    },
+    {
+      "seed": 0,
+      "x": 953524,
+      "z": 564006,
+      "exact_percent": 99.28080240885416,
+      "nonair_percent": 98.3147808261626
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": 1078314,
+      "z": 95460,
+      "exact_percent": 99.3896484375,
+      "nonair_percent": 98.45233182005778
+    },
+    {
+      "seed": 1234,
+      "x": 118125,
+      "z": 1014457,
+      "exact_percent": 99.47611490885416,
+      "nonair_percent": 98.60153152663878
+    },
+    {
+      "seed": 0,
+      "x": -665504,
+      "z": 1001040,
+      "exact_percent": 99.49544270833334,
+      "nonair_percent": 98.43912263586871
+    },
+    {
+      "seed": 0,
+      "x": 1127501,
+      "z": -367225,
+      "exact_percent": 99.51273600260416,
+      "nonair_percent": 98.8648482119582
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": -640294,
+      "z": 135354,
+      "exact_percent": 99.71110026041666,
+      "nonair_percent": 99.0515629174459
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": 1455542,
+      "z": -685476,
+      "exact_percent": 99.71923828125,
+      "nonair_percent": 99.14667326242889
+    },
+    {
+      "seed": 1234,
+      "x": 848022,
+      "z": 1444122,
+      "exact_percent": 99.749755859375,
+      "nonair_percent": 99.44872714234492
+    },
+    {
+      "seed": 7122209284156038298,
+      "x": -1303003,
+      "z": 1265556,
+      "exact_percent": 99.7650146484375,
+      "nonair_percent": 99.24272226593234
+    },
+    {
+      "seed": 1234,
+      "x": -87920,
+      "z": -144328,
+      "exact_percent": 99.7772216796875,
+      "nonair_percent": 99.56761239116271
+    },
+    {
+      "seed": 1234,
+      "x": 343297,
+      "z": 1436773,
+      "exact_percent": 99.79044596354166,
+      "nonair_percent": 99.374829291979
+    }
+  ],
+  "official_shutdown_audit": {
+    "0": {
+      "seed": 0,
+      "sample_chunks": 100,
+      "save_all_flush_acknowledged": true,
+      "shutdown": "stop_timed_out_then_process_terminated_by_harness",
+      "reference_validation": "all 100 FULL chunks decoded successfully by verify-chunks -validate-vanilla"
+    },
+    "1234": {
+      "seed": 1234,
+      "sample_chunks": 100,
+      "save_all_flush_acknowledged": true,
+      "shutdown": "stop_timed_out_then_process_terminated_by_harness",
+      "reference_validation": "all 100 FULL chunks decoded successfully by verify-chunks -validate-vanilla"
+    },
+    "-7046029254386353131": {
+      "seed": -7046029254386353131,
+      "chunks": 100,
+      "shutdown": "stop_wait_terminated_after_confirmed_save_all_flush",
+      "reference_validation": "all 100 FULL chunks decoded successfully by verify-chunks -validate-vanilla"
+    },
+    "4511451270791457643": {
+      "seed": 4511451270791457643,
+      "chunks": 100,
+      "shutdown": "stop_wait_terminated_after_confirmed_save_all_flush",
+      "reference_validation": "all 100 FULL chunks decoded successfully by verify-chunks -validate-vanilla"
+    },
+    "7122209284156038298": {
+      "seed": 7122209284156038298,
+      "chunks": 100,
+      "shutdown": "stop_wait_terminated_after_confirmed_save_all_flush",
+      "reference_validation": "all 100 FULL chunks decoded successfully by verify-chunks -validate-vanilla"
+    }
+  },
+  "final_vanilla_validation_complete": true,
+  "dimension": "overworld"
+}
