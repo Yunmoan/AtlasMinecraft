@@ -40,22 +40,24 @@ type DensitySettings struct {
 	Raw    json.RawMessage
 	// Vanilla noise cells are four blocks per horizontal size unit and four
 	// blocks per vertical size unit. Interpolated density nodes use these sizes.
-	CellWidth  int32
-	CellHeight int32
-	MinY       int32
-	Height     int32
-	SeaLevel   int32
-	Aquifers   bool
-	OreVeins   bool
-	Legacy     bool
+	CellWidth    int32
+	CellHeight   int32
+	MinY         int32
+	Height       int32
+	SeaLevel     int32
+	Aquifers     bool
+	OreVeins     bool
+	Legacy       bool
 	DefaultBlock SurfaceBlockState
 	DefaultFluid SurfaceBlockState
+	program      *densityProgram
 }
 
 type densityCompiler struct {
 	registry *densityRegistry
 	parsed   map[string]*DensityNode
 	visiting map[string]bool
+	program  *densityProgram
 }
 
 func newDensityCompiler() (*densityCompiler, error) {
@@ -63,7 +65,7 @@ func newDensityCompiler() (*densityCompiler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &densityCompiler{registry: r, parsed: make(map[string]*DensityNode), visiting: make(map[string]bool)}, nil
+	return &densityCompiler{registry: r, parsed: make(map[string]*DensityNode), visiting: make(map[string]bool), program: &densityProgram{}}, nil
 }
 
 // LoadDensityFunction resolves and validates one built-in registry entry.
@@ -88,14 +90,14 @@ func LoadDensitySettings(name string) (*DensitySettings, error) {
 		return nil, fmt.Errorf("unknown 1.21.1 noise settings %q", name)
 	}
 	var settings struct {
-		Router   map[string]json.RawMessage `json:"noise_router"`
-		SeaLevel int32                      `json:"sea_level"`
-		Aquifers bool                       `json:"aquifers_enabled"`
-		OreVeins bool                       `json:"ore_veins_enabled"`
-		Legacy   bool                       `json:"legacy_random_source"`
-		DefaultBlock SurfaceBlockState       `json:"default_block"`
-		DefaultFluid SurfaceBlockState       `json:"default_fluid"`
-		Noise    struct {
+		Router       map[string]json.RawMessage `json:"noise_router"`
+		SeaLevel     int32                      `json:"sea_level"`
+		Aquifers     bool                       `json:"aquifers_enabled"`
+		OreVeins     bool                       `json:"ore_veins_enabled"`
+		Legacy       bool                       `json:"legacy_random_source"`
+		DefaultBlock SurfaceBlockState          `json:"default_block"`
+		DefaultFluid SurfaceBlockState          `json:"default_fluid"`
+		Noise        struct {
 			MinY       int32 `json:"min_y"`
 			Height     int32 `json:"height"`
 			Horizontal int32 `json:"size_horizontal"`
@@ -122,6 +124,7 @@ func LoadDensitySettings(name string) (*DensitySettings, error) {
 		}
 		result.Router[field] = node
 	}
+	result.program = c.program
 	return result, nil
 }
 
@@ -164,7 +167,7 @@ func (c *densityCompiler) parse(raw json.RawMessage, path string) (*DensityNode,
 			return nil, fmt.Errorf("%s: expected finite constant or density object", path)
 		}
 		n := &DensityNode{Kind: "constant", Numbers: map[string]float64{"value": value}}
-		n.evaluation = prepareDensityEvaluation(n)
+		c.prepare(n)
 		return n, nil
 	}
 	var fields map[string]json.RawMessage
@@ -300,7 +303,7 @@ func (c *densityCompiler) parse(raw json.RawMessage, path string) (*DensityNode,
 			return nil, fmt.Errorf("%s: unexpected field %q for %s", path, key, fullKind)
 		}
 	}
-	n.evaluation = prepareDensityEvaluation(n)
+	c.prepare(n)
 	return n, nil
 }
 

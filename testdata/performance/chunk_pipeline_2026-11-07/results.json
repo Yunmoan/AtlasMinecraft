@@ -1,0 +1,130 @@
+{
+  "trials": [
+    {
+      "pair": 1,
+      "variant": "before",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 30847565500,
+      "bytes_per_op": 4427305704,
+      "allocs_per_op": 16916934
+    },
+    {
+      "pair": 1,
+      "variant": "before",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 909725600,
+      "bytes_per_op": 124031352,
+      "allocs_per_op": 277761
+    },
+    {
+      "pair": 1,
+      "variant": "after",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 15548440500,
+      "bytes_per_op": 3131620552,
+      "allocs_per_op": 14867841
+    },
+    {
+      "pair": 1,
+      "variant": "after",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 325812600,
+      "bytes_per_op": 92233712,
+      "allocs_per_op": 277811
+    },
+    {
+      "pair": 2,
+      "variant": "after",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 14138178500,
+      "bytes_per_op": 3127069296,
+      "allocs_per_op": 14867302
+    },
+    {
+      "pair": 2,
+      "variant": "after",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 344670000,
+      "bytes_per_op": 92249584,
+      "allocs_per_op": 277720
+    },
+    {
+      "pair": 2,
+      "variant": "before",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 30821341000,
+      "bytes_per_op": 4498417992,
+      "allocs_per_op": 17069109
+    },
+    {
+      "pair": 2,
+      "variant": "before",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 885270700,
+      "bytes_per_op": 124059896,
+      "allocs_per_op": 278094
+    },
+    {
+      "pair": 3,
+      "variant": "before",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 30326556500,
+      "bytes_per_op": 4475028096,
+      "allocs_per_op": 17020660
+    },
+    {
+      "pair": 3,
+      "variant": "before",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 870010500,
+      "bytes_per_op": 124045112,
+      "allocs_per_op": 277906
+    },
+    {
+      "pair": 3,
+      "variant": "after",
+      "benchmark": "GenerateNormalArea",
+      "ns_per_op": 15076156600,
+      "bytes_per_op": 3105526288,
+      "allocs_per_op": 14866730
+    },
+    {
+      "pair": 3,
+      "variant": "after",
+      "benchmark": "LoadSavedNormalArea",
+      "ns_per_op": 327343800,
+      "bytes_per_op": 92235352,
+      "allocs_per_op": 277692
+    }
+  ],
+  "summary": {
+    "GenerateNormalArea": {
+      "before": {
+        "ns_per_op": 30821341000,
+        "bytes_per_op": 4475028096,
+        "allocs_per_op": 17020660
+      },
+      "after": {
+        "ns_per_op": 15076156600,
+        "bytes_per_op": 3127069296,
+        "allocs_per_op": 14867302
+      },
+      "time_reduction_percent": 51.085332075590095,
+      "allocation_reduction_percent": 30.121795239785687
+    },
+    "LoadSavedNormalArea": {
+      "before": {
+        "ns_per_op": 885270700,
+        "bytes_per_op": 124045112,
+        "allocs_per_op": 277906
+      },
+      "after": {
+        "ns_per_op": 327343800,
+        "bytes_per_op": 92235352,
+        "allocs_per_op": 277720
+      },
+      "time_reduction_percent": 63.02331027108432,
+      "allocation_reduction_percent": 25.643702913501343
+    }
+  }
+}

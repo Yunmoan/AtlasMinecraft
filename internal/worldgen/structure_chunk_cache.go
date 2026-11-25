@@ -24,6 +24,21 @@ type structureChunkEntry struct {
 
 const structureChunkCacheLimit = 128
 
+// Canonical pieces can span farther than the initial 5x5 replay halo. Those
+// reads need the preceding decoration stage, not a bare CARVERS snapshot.
+// Bind this only after the prefix replay, whose ordinary feature reads use
+// base terrain; replaying the same prefix recursively would expand forever.
+func (g *OverworldGenerator) bindStructureChunkLoader(region *OverworldFeatureRegion, step int32) {
+	region.loadChunk = func(cx, cz int32) error {
+		snapshot, err := g.structureChunkBefore(cx, cz, step)
+		if err != nil {
+			return err
+		}
+		region.installStructureChunk(featureChunkPosition{cx, cz}, snapshot)
+		return nil
+	}
+}
+
 func (g *OverworldGenerator) structureChunkBefore(cx, cz, step int32) (*structureChunkSnapshot, error) {
 	key := structureChunkKey{cx, cz, step}
 	g.precedingMu.Lock()

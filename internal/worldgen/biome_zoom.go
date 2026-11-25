@@ -7,10 +7,52 @@ import (
 )
 
 func BiomeQuartAtBlock(seed int64, x, y, z int32) (int32, int32, int32) {
+	zoom := biomeZoom{seed: biomeZoomSeed(seed)}
+	return zoom.quartAtBlock(x, y, z)
+}
+
+type biomeZoom struct {
+	seed                     uint64
+	minX, minY, minZ, height int32
+	offsets                  [][3]float64
+	valid                    []bool
+}
+
+func biomeZoomSeed(seed int64) uint64 {
 	var seedBytes [8]byte
 	binary.LittleEndian.PutUint64(seedBytes[:], uint64(seed))
 	hash := sha256.Sum256(seedBytes[:])
-	zoomSeed := binary.LittleEndian.Uint64(hash[:8])
+	return binary.LittleEndian.Uint64(hash[:8])
+}
+
+// The surface pass revisits the same quart corners at almost every block.
+// Cache only deterministic offsets, keeping distance arithmetic and strict
+// corner tie order identical. The window includes both adjacent quart halos.
+func newChunkBiomeZoom(seed int64, cx, cz, minY, height int32) biomeZoom {
+	zoom := biomeZoom{seed: biomeZoomSeed(seed), minX: cx*4 - 1, minZ: cz*4 - 1, minY: (minY - 2) >> 2, height: height/4 + 2}
+	if height > 0 && height <= 4096 && minY%16 == 0 && height%16 == 0 {
+		zoom.offsets = make([][3]float64, 36*int(zoom.height))
+		zoom.valid = make([]bool, len(zoom.offsets))
+	}
+	return zoom
+}
+
+func (zoom *biomeZoom) offset(x, y, z int32) [3]float64 {
+	if len(zoom.offsets) != 0 {
+		dx, dy, dz := x-zoom.minX, y-zoom.minY, z-zoom.minZ
+		if dx >= 0 && dx < 6 && dz >= 0 && dz < 6 && dy >= 0 && dy < zoom.height {
+			i := int((dz*6+dx)*zoom.height + dy)
+			if !zoom.valid[i] {
+				zoom.offsets[i] = biomeFiddledOffset(zoom.seed, x, y, z)
+				zoom.valid[i] = true
+			}
+			return zoom.offsets[i]
+		}
+	}
+	return biomeFiddledOffset(zoom.seed, x, y, z)
+}
+
+func (zoom *biomeZoom) quartAtBlock(x, y, z int32) (int32, int32, int32) {
 	blockX, blockY, blockZ := x-2, y-2, z-2
 	quartX, quartY, quartZ := blockX>>2, blockY>>2, blockZ>>2
 	fracX, fracY, fracZ := float64(blockX&3)/4, float64(blockY&3)/4, float64(blockZ&3)/4
@@ -31,7 +73,11 @@ func BiomeQuartAtBlock(seed int64, x, y, z int32) (int32, int32, int32) {
 			qz++
 			dz--
 		}
-		distance := biomeFiddledDistance(zoomSeed, qx, qy, qz, dx, dy, dz)
+		offset := zoom.offset(qx, qy, qz)
+		dx += offset[0]
+		dy += offset[1]
+		dz += offset[2]
+		distance := dx*dx + dy*dy + dz*dz
 		if distance < bestDistance {
 			bestDistance, selected = distance, corner
 		}
@@ -49,6 +95,14 @@ func BiomeQuartAtBlock(seed int64, x, y, z int32) (int32, int32, int32) {
 }
 
 func biomeFiddledDistance(seed uint64, x, y, z int32, dx, dy, dz float64) float64 {
+	offset := biomeFiddledOffset(seed, x, y, z)
+	dx += offset[0]
+	dy += offset[1]
+	dz += offset[2]
+	return dx*dx + dy*dy + dz*dz
+}
+
+func biomeFiddledOffset(seed uint64, x, y, z int32) [3]float64 {
 	mix := func(value uint64, coordinate int64) uint64 {
 		return value*(value*6364136223846793005+1442695040888963407) + uint64(coordinate)
 	}
@@ -70,8 +124,5 @@ func biomeFiddledDistance(seed uint64, x, y, z int32, dx, dy, dz float64) float6
 	offsetY := offset(hash)
 	hash = mix(hash, int64(seed))
 	offsetZ := offset(hash)
-	dx += offsetX
-	dy += offsetY
-	dz += offsetZ
-	return dx*dx + dy*dy + dz*dz
+	return [3]float64{offsetX, offsetY, offsetZ}
 }

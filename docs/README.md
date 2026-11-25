@@ -13,7 +13,8 @@ Atlas 是面向 Minecraft Java 1.21.1 的 Go 服务端。项目的启动方式�
 | 结构如何选址、拼装和保存 | [结构生成流水线](worldgen/structure_pipeline.md) |
 | 下界、末地与传送门 | [维度流水线](worldgen/dimension_pipeline.md) |
 | 初始动物生成 | [动物生成说明](worldgen/initial_animals_1.21.1.md) |
-| 调试地形或性能问题 | [河流海洋回归](worldgen/river_ocean_regression.md)、[Jigsaw 性能](worldgen/jigsaw_performance.md) |
+| 调试地形或性能问题 | [河流海洋回归](worldgen/river_ocean_regression.md)、[Jigsaw 性能](worldgen/jigsaw_performance.md)、[区块生成与加载性能](worldgen/chunk_performance_2026-11-07.md)、[原版机制对照](worldgen/vanilla_generation_performance_reference_2026-11-07.md)、[原版拟合与性能验收](worldgen/vanilla_fit_performance_2026-11-07.md) |
+| 本次 PR 的整体性能成绩和原始输出 | [上游与最终代码统一复测](../testdata/performance/chunk_pipeline_2026-11-07/README.md) |
 | 选择测试组、检查测试前置条件 | [开发工具与测试入口](../tools/README.md) |
 
 ## 文档、工具和数据分别放在哪里

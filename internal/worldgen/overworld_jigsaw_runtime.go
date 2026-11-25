@@ -80,6 +80,9 @@ func (g *OverworldGenerator) structureRegionBefore(cx, cz, step int32) (*Overwor
 		}
 	}
 	region, _, err := g.decorateRegion(bases, chunks, cx, cz, int(step), preceding)
+	if err == nil {
+		g.bindStructureChunkLoader(region, step)
+	}
 	return region, err
 }
 

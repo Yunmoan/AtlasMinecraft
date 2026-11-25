@@ -18,6 +18,12 @@ type DensitySampler struct {
 	beardifier            *StructureBeardifier
 	cellWidth, cellHeight int32
 	chunk                 *chunkDensityContext
+	// Only the built-in biome router opts in. Its flat_cache/cache_2d
+	// arguments are independent of Y; the general direct sampler deliberately
+	// retains its original semantics for arbitrary probe expressions.
+	horizontal map[densityCacheKey]float64
+	program    *densityProgram
+	runtime    []densityRuntime
 }
 
 func NewDensitySampler(seed int64) *DensitySampler {
@@ -31,6 +37,7 @@ func NewCellDensitySampler(seed int64, settings *DensitySettings) *DensitySample
 	s := NewDensitySampler(seed)
 	s.cellWidth, s.cellHeight = settings.CellWidth, settings.CellHeight
 	s.legacy = settings.Legacy
+	s.bind(settings)
 	return s
 }
 
@@ -52,6 +59,18 @@ func (s *DensitySampler) noise(name string) (*NormalNoise, error) {
 	return n, nil
 }
 
+func (s *DensitySampler) nodeNoise(node *DensityNode) (*NormalNoise, error) {
+	runtime := s.nodeRuntime(node)
+	if runtime != nil && runtime.noise != nil {
+		return runtime.noise, nil
+	}
+	noise, err := s.noise(node.Noise)
+	if err == nil && runtime != nil {
+		runtime.noise = noise
+	}
+	return noise, err
+}
+
 func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) {
 	if n == nil {
 		return 0, fmt.Errorf("nil density node")
@@ -65,32 +84,40 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 	child := func(index int) (float64, error) {
 		return s.Sample(evaluation.children[index], x, y, z)
 	}
-	switch n.Kind {
-	case "constant":
+	switch evaluation.op {
+	case densityOpConstant:
 		return evaluation.numbers[densityValue], nil
-	case "blend_alpha":
+	case densityOpBlendAlpha:
 		return 1, nil // No old/new chunk blending in a direct sample.
-	case "blend_offset":
+	case densityOpBlendOffset:
 		return 0, nil
-	case "beardifier":
-		if s.beardifier == nil { return 0, nil }
+	case densityOpBeardifier:
+		if s.beardifier == nil {
+			return 0, nil
+		}
 		return s.beardifier.Sample(x, y, z), nil
-	case "end_islands":
+	case densityOpEndIslands:
 		if s.endIslands == nil {
 			s.endIslands = NewEndIslandDensity(s.Seed)
 		}
 		return s.endIslands.Sample(x, z), nil
-	case "flat_cache":
+	case densityOpFlatCache:
 		if s.chunk != nil {
 			return s.sampleFlatCache(n, x, y, z)
 		}
+		if s.horizontal != nil {
+			return s.sampleHorizontal(n, x, y, z)
+		}
 		return child(densityArgument)
-	case "cache_2d":
+	case densityOpCache2D:
 		if s.chunk != nil {
 			return s.sampleCache2D(n, x, y, z)
 		}
+		if s.horizontal != nil {
+			return s.sampleHorizontal(n, x, y, z)
+		}
 		return child(densityArgument)
-	case "cache_all_in_cell":
+	case densityOpCacheAllInCell:
 		if s.chunk == nil {
 			return 0, fmt.Errorf("cell cache requires a NoiseChunk")
 		}
@@ -99,9 +126,9 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 		value, err := child(densityArgument)
 		s.chunk.fillingCell = previous
 		return value, err
-	case "cache_once", "blend_density":
+	case densityOpCacheOnce, densityOpBlendDensity:
 		return child(densityArgument)
-	case "interpolated":
+	case densityOpInterpolated:
 		if s.chunk != nil && s.chunk.singlePoint {
 			return child(densityArgument)
 		}
@@ -109,57 +136,60 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 			return 0, fmt.Errorf("interpolated density requires a noise cell")
 		}
 		return s.interpolate(n.argument(), x, y, z)
-	case "add", "mul", "min", "max":
+	case densityOpAdd, densityOpMul, densityOpMin, densityOpMax:
 		a, err := child(densityLeft)
 		if err != nil {
 			return 0, err
+		}
+		if a == 0 && s.zeroMultiply(evaluation) {
+			return 0, nil
 		}
 		b, err := child(densityRight)
 		if err != nil {
 			return 0, err
 		}
-		switch n.Kind {
-		case "add":
+		switch evaluation.op {
+		case densityOpAdd:
 			return a + b, nil
-		case "mul":
+		case densityOpMul:
 			return a * b, nil
-		case "min":
+		case densityOpMin:
 			return math.Min(a, b), nil
 		default:
 			return math.Max(a, b), nil
 		}
-	case "abs", "square", "cube", "half_negative", "quarter_negative", "squeeze":
+	case densityOpAbs, densityOpSquare, densityOpCube, densityOpHalfNegative, densityOpQuarterNegative, densityOpSqueeze:
 		v, err := child(densityArgument)
 		if err != nil {
 			return 0, err
 		}
-		switch n.Kind {
-		case "abs":
+		switch evaluation.op {
+		case densityOpAbs:
 			return math.Abs(v), nil
-		case "square":
+		case densityOpSquare:
 			return v * v, nil
-		case "cube":
+		case densityOpCube:
 			return v * v * v, nil
-		case "half_negative":
+		case densityOpHalfNegative:
 			if v < 0 {
 				return v * 0.5, nil
 			}
-		case "quarter_negative":
+		case densityOpQuarterNegative:
 			if v < 0 {
 				return v * 0.25, nil
 			}
-		case "squeeze":
+		case densityOpSqueeze:
 			v = math.Max(-1, math.Min(1, v))
 			return v/2 - v*v*v/24, nil
 		}
 		return v, nil
-	case "clamp":
+	case densityOpClamp:
 		v, err := child(densityInput)
 		if err != nil {
 			return 0, err
 		}
 		return math.Max(evaluation.numbers[densityMin], math.Min(evaluation.numbers[densityMax], v)), nil
-	case "range_choice":
+	case densityOpRangeChoice:
 		v, err := child(densityInput)
 		if err != nil {
 			return 0, err
@@ -168,34 +198,34 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 			return child(densityWhenIn)
 		}
 		return child(densityWhenOut)
-	case "y_clamped_gradient":
+	case densityOpYClampedGradient:
 		from, to := evaluation.numbers[densityFromY], evaluation.numbers[densityToY]
 		if from == to {
 			return 0, fmt.Errorf("zero-width y gradient")
 		}
 		t := math.Max(0, math.Min(1, (float64(y)-from)/(to-from)))
 		return evaluation.numbers[densityFromValue] + t*(evaluation.numbers[densityToValue]-evaluation.numbers[densityFromValue]), nil
-	case "noise":
-		noise, err := s.noise(n.Noise)
+	case densityOpNoise:
+		noise, err := s.nodeNoise(n)
 		if err != nil {
 			return 0, err
 		}
 		xz, ys := evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale]
 		return noise.Noise(float64(x)*xz, float64(y)*ys, float64(z)*xz), nil
-	case "shift", "shift_a", "shift_b":
-		noise, err := s.noise(n.Noise)
+	case densityOpShift, densityOpShiftA, densityOpShiftB:
+		noise, err := s.nodeNoise(n)
 		if err != nil {
 			return 0, err
 		}
 		fx, fy, fz := float64(x), float64(y), float64(z)
-		switch n.Kind {
-		case "shift_a":
+		switch evaluation.op {
+		case densityOpShiftA:
 			fy = 0
-		case "shift_b":
+		case densityOpShiftB:
 			fx, fy, fz = fz, fx, 0
 		}
 		return 4 * noise.Noise(fx*0.25, fy*0.25, fz*0.25), nil
-	case "shifted_noise":
+	case densityOpShiftedNoise:
 		shiftX, err := child(densityShiftX)
 		if err != nil {
 			return 0, err
@@ -208,16 +238,16 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 		if err != nil {
 			return 0, err
 		}
-		noise, err := s.noise(n.Noise)
+		noise, err := s.nodeNoise(n)
 		if err != nil {
 			return 0, err
 		}
 		xz, ys := evaluation.numbers[densityXZScale], evaluation.numbers[densityYScale]
 		return noise.Noise(float64(x)*xz+shiftX, float64(y)*ys+shiftY, float64(z)*xz+shiftZ), nil
-	case "spline":
+	case densityOpSpline:
 		v, err := s.sampleSpline(n.Spline, x, y, z)
 		return float64(v), err
-	case "old_blended_noise":
+	case densityOpOldBlendedNoise:
 		b := s.blended[n]
 		if b == nil {
 			if s.legacy {
@@ -230,7 +260,7 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 			s.blended[n] = b
 		}
 		return b.Noise(x, y, z), nil
-	case "weird_scaled_sampler":
+	case densityOpWeirdScaledSampler:
 		input, err := child(densityInput)
 		if err != nil {
 			return 0, err
@@ -261,7 +291,7 @@ func (s *DensitySampler) Sample(n *DensityNode, x, y, z int32) (float64, error) 
 				rarity = 3
 			}
 		}
-		noise, err := s.noise(n.Noise)
+		noise, err := s.nodeNoise(n)
 		if err != nil {
 			return 0, err
 		}
@@ -281,9 +311,14 @@ func (s *DensitySampler) interpolate(n *DensityNode, x, y, z int32) (float64, er
 	fz := float64(z-z0) / float64(s.cellWidth)
 	var corners [2][2][2]float64
 	var cell *interpolatedDensityCell
+	runtime := s.nodeRuntime(n)
 	position := densityPosition{x0, y0, z0}
 	if s.chunk != nil {
-		cell = s.chunk.interpolated[n]
+		if runtime != nil {
+			cell = runtime.cell
+		} else {
+			cell = s.chunk.interpolated[n]
+		}
 	}
 	if cell != nil && cell.position == position {
 		corners = cell.corners
@@ -304,7 +339,11 @@ func (s *DensitySampler) interpolate(n *DensityNode, x, y, z int32) (float64, er
 		if s.chunk != nil {
 			if cell == nil {
 				cell = &interpolatedDensityCell{}
-				s.chunk.interpolated[n] = cell
+				if runtime != nil {
+					runtime.cell = cell
+				} else {
+					s.chunk.interpolated[n] = cell
+				}
 			}
 			cell.position, cell.corners = position, corners
 		}
@@ -321,6 +360,9 @@ func (s *DensitySampler) interpolate(n *DensityNode, x, y, z int32) (float64, er
 }
 
 func floorCell(v, size int32) int32 {
+	if size > 0 && size&(size-1) == 0 {
+		return v &^ (size - 1)
+	}
 	q := v / size
 	if v%size < 0 {
 		q--

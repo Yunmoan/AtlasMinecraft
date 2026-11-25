@@ -1,5 +1,7 @@
 package worldgen
 
+import "math/bits"
+
 type densityPosition struct {
 	x, y, z int32
 }
@@ -10,18 +12,45 @@ type densityCacheKey struct {
 }
 
 type chunkDensityContext struct {
-	minX, minZ   int32
-	fillingCell  bool
-	singlePoint  bool
-	flat         map[densityCacheKey]float64
-	corners      map[densityCacheKey]float64
-	twoD         map[densityCacheKey]float64
-	interpolated map[*DensityNode]*interpolatedDensityCell
+	minX, minZ                  int32
+	fillingCell                 bool
+	singlePoint                 bool
+	flat                        map[densityCacheKey]float64
+	corners                     map[densityCacheKey]float64
+	twoD                        map[densityCacheKey]float64
+	interpolated                map[*DensityNode]*interpolatedDensityCell
+	denseCorners                map[*DensityNode]*densityCornerValues
+	minY, height                int32
+	cornerWidth, cornerHeight   int
+	cornerShiftXZ, cornerShiftY uint
+}
+
+type densityCornerValues struct {
+	values []float64
+	valid  []bool
 }
 
 type interpolatedDensityCell struct {
 	position densityPosition
 	corners  [2][2][2]float64
+}
+
+// Reuse only density values, never the selected biome: nearest-biome ties
+// must still observe every call in the original traversal order. Bound this
+// private cache because spawn searches can visit arbitrarily many columns.
+func (s *DensitySampler) sampleHorizontal(node *DensityNode, x, y, z int32) (float64, error) {
+	key := densityCacheKey{node: node, position: densityPosition{x: x, z: z}}
+	if value, ok := s.horizontal[key]; ok {
+		return value, nil
+	}
+	value, err := s.Sample(node.argument(), x, y, z)
+	if err == nil {
+		if len(s.horizontal) >= 4096 {
+			clear(s.horizontal)
+		}
+		s.horizontal[key] = value
+	}
+	return value, err
 }
 
 func NewNoiseChunkDensitySampler(seed int64, settings *DensitySettings, cx, cz int32) *DensitySampler {
@@ -32,6 +61,17 @@ func NewNoiseChunkDensitySampler(seed int64, settings *DensitySettings, cx, cz i
 		corners:      make(map[densityCacheKey]float64),
 		twoD:         make(map[densityCacheKey]float64),
 		interpolated: make(map[*DensityNode]*interpolatedDensityCell),
+		minY:         settings.MinY, height: settings.Height,
+	}
+	if settings.CellWidth > 0 && settings.CellHeight > 0 && settings.Height >= 0 &&
+		settings.CellWidth&(settings.CellWidth-1) == 0 && settings.CellHeight&(settings.CellHeight-1) == 0 {
+		width, height := int(16/settings.CellWidth)+1, int(settings.Height/settings.CellHeight)+1
+		if int64(width)*int64(width)*int64(height) <= 65536 {
+			sampler.chunk.denseCorners = make(map[*DensityNode]*densityCornerValues)
+			sampler.chunk.cornerWidth, sampler.chunk.cornerHeight = width, height
+			sampler.chunk.cornerShiftXZ = uint(bits.TrailingZeros32(uint32(settings.CellWidth)))
+			sampler.chunk.cornerShiftY = uint(bits.TrailingZeros32(uint32(settings.CellHeight)))
+		}
 	}
 	return sampler
 }
@@ -70,6 +110,43 @@ func (s *DensitySampler) sampleCache2D(node *DensityNode, x, y, z int32) (float6
 func (s *DensitySampler) sampleCorner(node *DensityNode, x, y, z int32) (float64, error) {
 	if s.chunk == nil {
 		return s.Sample(node, x, y, z)
+	}
+	// Interpolation corners inside this chunk form a small regular lattice.
+	// Index it directly instead of hashing a node plus three coordinates and
+	// repeatedly growing the much larger coordinate map. Out-of-range probes
+	// keep the original map path, including their error/retry behavior.
+	dx, dy, dz := x-s.chunk.minX, y-s.chunk.minY, z-s.chunk.minZ
+	if s.chunk.denseCorners != nil &&
+		dx >= 0 && dx <= 16 && dz >= 0 && dz <= 16 && dy >= 0 && dy <= s.chunk.height &&
+		dx&(s.cellWidth-1) == 0 && dz&(s.cellWidth-1) == 0 && dy&(s.cellHeight-1) == 0 {
+		width, height := s.chunk.cornerWidth, s.chunk.cornerHeight
+		index := (int(dz>>s.chunk.cornerShiftXZ)*width+int(dx>>s.chunk.cornerShiftXZ))*height + int(dy>>s.chunk.cornerShiftY)
+		runtime := s.nodeRuntime(node)
+		var cache *densityCornerValues
+		if runtime != nil {
+			cache = runtime.corners
+		} else {
+			cache = s.chunk.denseCorners[node]
+		}
+		if cache == nil {
+			cache = &densityCornerValues{values: make([]float64, width*width*height), valid: make([]bool, width*width*height)}
+			if runtime != nil {
+				runtime.corners = cache
+			} else {
+				s.chunk.denseCorners[node] = cache
+			}
+		}
+		if cache.valid[index] {
+			return cache.values[index], nil
+		}
+		previous := s.chunk.fillingCell
+		s.chunk.fillingCell = false
+		value, err := s.Sample(node, x, y, z)
+		s.chunk.fillingCell = previous
+		if err == nil {
+			cache.values[index], cache.valid[index] = value, true
+		}
+		return value, err
 	}
 	key := densityCacheKey{node: node, position: densityPosition{x: x, y: y, z: z}}
 	if value, exists := s.chunk.corners[key]; exists {

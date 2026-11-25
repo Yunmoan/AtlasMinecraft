@@ -94,10 +94,7 @@ func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, bea
 		finalDensity.Children["argument2"].evaluation = prepareDensityEvaluation(finalDensity.Children["argument2"])
 		finalDensity.evaluation = prepareDensityEvaluation(finalDensity)
 	}
-	density := &DensityNode{Kind: "cache_all_in_cell", Children: map[string]*DensityNode{
-		"argument": finalDensity,
-	}}
-	density.evaluation = prepareDensityEvaluation(density)
+	density := newDensityCellFiller(sampler, finalDensity)
 	rootRandom := NewXoroshiro(seed).ForkPositional()
 	aquifer := newNoiseAquifer(sampler, settings, rootRandom.FromHashOf("minecraft:aquifer").ForkPositional())
 	oreRandom := rootRandom.FromHashOf("minecraft:ore").ForkPositional()
@@ -117,6 +114,12 @@ func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, bea
 	for cellX := int32(0); cellX < 16/width; cellX++ {
 		for cellZ := int32(0); cellZ < 16/width; cellZ++ {
 			for cellY := settings.Height/height - 1; cellY >= 0; cellY-- {
+				origin := densityPosition{cx*16 + cellX*width, settings.MinY + cellY*height, cz*16 + cellZ*width}
+				values, err := density.fill(origin)
+				if err != nil {
+					return nil, fmt.Errorf("final density cell at %v: %w", origin, err)
+				}
+				valueIndex := 0
 				for localY := height - 1; localY >= 0; localY-- {
 					y := settings.MinY + cellY*height + localY
 					for localX := int32(0); localX < width; localX++ {
@@ -124,10 +127,8 @@ func generateNoiseChunk(seed int64, settings *DensitySettings, cx, cz int32, bea
 						for localZ := int32(0); localZ < width; localZ++ {
 							z := cellZ*width + localZ
 							blockX, blockZ := cx*16+x, cz*16+z
-							value, err := sampler.Sample(density, blockX, y, blockZ)
-							if err != nil {
-								return nil, fmt.Errorf("final density at %d,%d,%d: %w", blockX, y, blockZ, err)
-							}
+							value := values[valueIndex]
+							valueIndex++
 							material, solid, update := aquifer.compute(blockX, y, blockZ, value)
 							result.aquiferShouldSchedule = update
 							if aquifer.err != nil {

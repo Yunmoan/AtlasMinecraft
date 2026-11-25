@@ -1,0 +1,7 @@
+goos: windows
+goarch: amd64
+pkg: atlas/internal/world
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGenerateNormalArea/workers=8-16         	       1	30821341000 ns/op	        81.00 chunks/op	4498417992 B/op	17069109 allocs/op
+BenchmarkLoadSavedNormalArea/workers=8-16        	       1	 885270700 ns/op	        81.00 chunks/op	124059896 B/op	  278094 allocs/op
+PASS
